@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  postgres_auth:
+    image: postgres:15
+    container_name: postgres_auth
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:?}
+      - POSTGRES_USER=${POSTGRES_USER:?}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?}
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+#  postgres_migration:
+#    profiles: [ "migration" ]
+#    container_name: user_service.postgres_migration
+#    build:
+#      context: .
+#    restart: on-failure
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    networks:
+#      - user_service.postgres.network
+#    volumes:
+#      - ./config:/app/config:ro
+#      - ./alembic.ini:/app/alembic.ini:ro
+#      - ./src/infrastructure/db/migrations:/app/src/infrastructure/db/migrations:ro
+#
+#    command: [ "python", "-m", "alembic", "upgrade", "head" ]
+#
+
+volumes:
+  postgres_data:

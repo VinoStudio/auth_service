@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  pgadmin_auth:
+    container_name: pgadmin_auth
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5437:80"
+    depends_on:
+      - postgres_auth

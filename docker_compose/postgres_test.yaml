@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  postgres_test_auth:
+    image: postgres:15
+    container_name: postgres_test_auth
+    restart: always
+    volumes:
+      - postgres_test:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_TEST_DB:?}
+      - POSTGRES_USER=${POSTGRES_TEST_USER:?}
+      - POSTGRES_PASSWORD=${POSTGRES_TEST_PASSWORD:?}
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_test:
