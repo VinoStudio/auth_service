@@ -6,8 +6,8 @@ from dataclasses import (
 )
 from typing import Iterable
 
-from application.base.queries.base import BaseQuery
-from application.base.queries.query_handler import (
+from src.application.base.queries.base import BaseQuery
+from src.application.base.queries.query_handler import (
     BaseQueryHandler,
     QT,
     QR,
@@ -15,7 +15,7 @@ from application.base.queries.query_handler import (
 
 
 @dataclass(eq=False)
-class QueryMediator(ABC):
+class BaseQueryMediator(ABC):
     query_map: dict[QT, BaseQueryHandler] = field(
         default_factory=dict,
         kw_only=True,

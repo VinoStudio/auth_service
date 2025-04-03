@@ -2,16 +2,18 @@ from functools import lru_cache
 
 from dishka import AsyncContainer, make_async_container
 
-from application.di_setup import MediatorProvider, MediatorConfigProvider
-from application.user.di_setup import (
-    CommandRegisterProvider,
-    EventRegisterProvider,
-    QueryRegisterProvider,
+from src.application.cqrs_di_setup import MediatorProvider, MediatorConfigProvider
+from src.application.user.user_di_setup import UserCommandProvider
+from src.application.session.session_di_setup import SessionManagerProvider
+from src.application.security.jwt_di_setup import JWTProvider
+
+from src.infrastructure.db.di_setup import DatabaseProvider, SessionProvider
+from src.infrastructure.message_broker.di_setup import MessageBrokerProvider
+from src.infrastructure.repositories.di_setup import (
+    RepositoryProvider,
+    UnitOfWorkProvider,
 )
-from infrastructure.db.di_setup import DatabaseProvider, SessionProvider
-from infrastructure.message_broker.di_setup import MessageBrokerProvider
-from infrastructure.repositories.di_setup import RepositoryProvider, UnitOfWorkProvider
-from settings.config import ConfigProvider
+from src.settings.config import ConfigProvider
 
 
 @lru_cache(maxsize=1)
@@ -23,9 +25,9 @@ def get_container() -> AsyncContainer:
         RepositoryProvider(),
         UnitOfWorkProvider(),
         MessageBrokerProvider(),
+        JWTProvider(),
+        SessionManagerProvider(),
         MediatorProvider(),
-        CommandRegisterProvider(),
-        EventRegisterProvider(),
-        QueryRegisterProvider(),
+        UserCommandProvider(),
         MediatorConfigProvider(),
     )

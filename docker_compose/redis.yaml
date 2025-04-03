@@ -1,0 +1,49 @@
+services:
+  redis_auth:
+    image: redis:latest
+    container_name: redis_auth
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - redis-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+#  redisinsight_auth:
+#    image: redislabs/redisinsight:latest
+#    container_name: redis_ui
+#    ports:
+#      - '8101:8001'
+#    volumes:
+#      - redisinsight_data:/db
+#    networks:
+#      - redis-network
+#    depends_on:
+#      - redis_auth
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander_ui
+    environment:
+      - REDIS_HOST=redis_auth
+      - REDIS_PORT=6379
+    ports:
+      - "8081:8081"
+    networks:
+      - redis-network
+    depends_on:
+      - redis_auth
+
+networks:
+  redis-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  #redisinsight_data:

@@ -21,7 +21,9 @@ class RedisRepository(BaseMemoryRepository):
     async def get(self, key: str) -> str | None:
         async with self.redis.client() as client:
             value = await client.get(key)
-            return value.decode("utf-8") or None
+            if value is None:
+                return None
+            return value.decode("utf-8")
 
     async def delete(self, key: str) -> None:
         async with self.redis.client() as client:
@@ -35,15 +37,23 @@ class RedisRepository(BaseMemoryRepository):
 class TokenBlackListRepository(RedisRepository):
     prefix = "revoked_user: "
 
-    async def add_to_blacklist(self, user_id: str, expires_in_seconds: int) -> bool:
-        """
-        If user is banned, deleted or permissions changed:
-        add a user_id to the blacklist with an expiration time to prevent any future access
+    async def add_to_blacklist(
+        self, user_id: str, expiration_duration: float | None
+    ) -> bool:
         """
 
+        Add a user_id to the blacklist with the current timestamp
+        The expiration_duration is how long to keep this record in Redis (in seconds)
+
+        """
+        # Default to a longer period (e.g., 7 days) if no expiration is provided
+        if expiration_duration is None:
+            expiration_duration = 60 * 24 * 7  # 7 days in seconds
+
         key = f"{self.prefix}{user_id}"
-        value = str(datetime.now(UTC))
-        return await self.set(key=key, value=value, expire=expires_in_seconds)
+        value = str(datetime.now(UTC).timestamp())
+
+        return await self.set(key=key, value=value, expire=expiration_duration)
 
     async def get_from_blacklist(self, user_id: str) -> str | None:
         """Check if a session is blacklisted"""

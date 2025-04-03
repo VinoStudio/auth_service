@@ -3,20 +3,22 @@ EXEC = docker exec -it
 LOGS = docker logs
 ENV = --env-file .env
 APP = auth_service_dev
+GROUP = -p auth_service
 
 APP_FILE = ./docker_compose/auth_dev.yaml
 POSTGRES_FILE = ./docker_compose/postgres.yaml
 POSTGRES_TEST_FILE= ./docker_compose/postgres_test.yaml
+REDIS_FILE = ./docker_compose/redis.yaml
 PGADMIN_FILE = ./docker_compose/pgadmin.yaml
 
 
 .PHONY: app
 app:
-	$(DC) -f $(APP_FILE) -f $(POSTGRES_FILE) -f $(POSTGRES_TEST_FILE) -f $(PGADMIN_FILE) $(ENV) up --build -d
+	$(DC) $(GROUP) -f $(APP_FILE) -f $(POSTGRES_FILE) -f $(POSTGRES_TEST_FILE) -f $(PGADMIN_FILE) -f $(REDIS_FILE) $(ENV) up --build -d
 
 .PHONY: down
 down:
-	$(DC) -f $(APP_FILE) -f $(POSTGRES_FILE) -f $(POSTGRES_TEST_FILE) -f $(PGADMIN_FILE) $(ENV) down
+	$(DC) $(GROUP) -f $(APP_FILE) -f $(POSTGRES_FILE) -f $(POSTGRES_TEST_FILE) -f $(PGADMIN_FILE) -f $(REDIS_FILE) $(ENV) down
 
 .PHONY: db
 db:

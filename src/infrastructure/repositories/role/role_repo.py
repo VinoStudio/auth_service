@@ -177,8 +177,14 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
         return True
 
-    async def get_existing_role_permissions(self) -> Sequence[models.Permission]:
+    async def get_existing_permissions(self) -> Sequence[models.Permission]:
         query = self.get_permission()
+        result = await self._session.execute(query)
+
+        return result.scalars().all()
+
+    async def get_existing_roles(self) -> Sequence[models.Role]:
+        query = select(models.Role)
         result = await self._session.execute(query)
 
         return result.scalars().all()

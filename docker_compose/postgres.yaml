@@ -1,12 +1,10 @@
-version: '3.9'
-
 services:
   postgres_auth:
     image: postgres:15
     container_name: postgres_auth
     restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_auth_service_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${POSTGRES_DB:?}
       - POSTGRES_USER=${POSTGRES_USER:?}
@@ -40,4 +38,4 @@ services:
 #
 
 volumes:
-  postgres_data:
+  postgres_auth_service_data:

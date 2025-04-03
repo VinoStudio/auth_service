@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from src.services.exception.base import ServiceException
+from src.application.base.exception import ApplicationException
 
 @dataclass(frozen=True)
-class TokenRevokedException(ServiceException):
+class TokenRevokedException(ApplicationException):
     value: str
 
     @property
@@ -10,7 +10,7 @@ class TokenRevokedException(ServiceException):
         return f"Given {self.value} refresh token was revoked"
 
 @dataclass(frozen=True)
-class TokenExpiredException(ServiceException):
+class TokenExpiredException(ApplicationException):
     value: str
 
     @property
@@ -19,8 +19,8 @@ class TokenExpiredException(ServiceException):
 
 
 @dataclass(frozen=True)
-class TokenValidationError(ServiceException):
+class TokenValidationError(ApplicationException):
     value: str
 
     def message(self):
-        return f"Given {self.value} is invalid"
+        return f"Given token is invalid"

@@ -10,7 +10,7 @@ from src.domain.user.values import (
 from src.domain.role.entity.role import Role
 from src.domain.role.values.role_name import RoleName
 from src.domain.permission.values.permission_name import PermissionName
-
+from src.domain.session.values.device_info import DeviceInfo
 
 class OrmToDomainConverter:
     """Converts SQLAlchemy ORM models to domain entities"""
@@ -80,6 +80,17 @@ class OrmToDomainConverter:
             permission_name=PermissionName(name),
         )
 
+    @staticmethod
+    def user_session_to_domain(session: models.UserSession) -> domain.Session:
+        return domain.Session(
+            id=session.id,
+            user_id=session.user_id,
+            device_info=DeviceInfo.create(session.device_info),
+            user_agent=session.user_agent,
+            last_activity=session.last_activity,
+            is_active=session.is_active,
+        )
+
 class DomainToOrmConverter:
     @staticmethod
     def domain_to_user_model(user: domain.User) -> models.User:
@@ -88,6 +99,8 @@ class DomainToOrmConverter:
             username=user.username.to_raw(),
             email=user.email.to_raw(),
             hashed_password=user.password.to_raw(),
+            jwt_data=user.jwt_data,
+            created_at=user.created_at,
             deleted_at=user.deleted_at,
             updated_at=user.updated_at,
             version=user.version,
@@ -102,6 +115,7 @@ class DomainToOrmConverter:
             id=user.id.to_raw(),
             username=user.username.to_raw(),
             email=user.email.to_raw(),
+            jwt_data=user.jwt_data,
             hashed_password=user.password.to_raw(),
             deleted_at=user.deleted_at,
             updated_at=user.updated_at,
@@ -111,7 +125,7 @@ class DomainToOrmConverter:
         if len(user.sessions) > 0:
             user_model.sessions = [
                 models.UserSession(
-                    id=session.id.to_raw(),
+                    id=session.id,
                     user_id=session.user_id,  # type: ignore
                     device_info=session.device_info,
                     user_agent=session.user_agent,
@@ -158,6 +172,18 @@ class DomainToOrmConverter:
                 )
                 for permission in role.permission
             ],
+        )
+
+    @staticmethod
+    def domain_to_user_session(session: domain.Session):
+        return models.UserSession(
+            id=session.id,
+            user_id=session.user_id,  # type: ignore
+            device_info=session.device_info.to_bytes(),
+            user_agent=session.user_agent,
+            device_id=session.device_id,
+            last_activity=session.last_activity,
+            is_active=session.is_active
         )
 
 # def convert_db_model_to_user_entity(user: models.User) -> entities.User:

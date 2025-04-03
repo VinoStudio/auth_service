@@ -5,9 +5,9 @@ from dataclasses import dataclass
 @dataclass
 class AsyncKafkaProducer(AsyncMessageProducer):
 
-    async def publish(self, topic: str, message: bytes, key: bytes | None) -> None:
+    async def publish(self, topic: str, value: bytes, key: bytes | None) -> None:
         """Publish a message to a topic."""
-        await self.producer.send(topic, value=message, key=key)
+        await self.producer.send(topic=topic, value=value, key=key)
 
     async def start(self) -> None:
         """Start the producer."""

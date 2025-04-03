@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Generic
 
-from application.base.commands import BaseCommand
-from application.base.commands import CommandHandler, CT, CR
+from src.application.base.commands import BaseCommand
+from src.application.base.commands import CommandHandler, CT, CR
 
 
 @dataclass(eq=False)
-class CommandMediator(ABC):
-    command_map: dict[BaseCommand, list[CommandHandler]] = field(
+class BaseCommandMediator(ABC):
+    command_map: dict[CT, list[CommandHandler]] = field(
         default_factory=lambda: defaultdict(list),
         kw_only=True,
     )

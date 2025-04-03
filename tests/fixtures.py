@@ -6,6 +6,7 @@ from src.infrastructure.repositories.di_setup import (
     RepositoryProvider,
     UnitOfWorkProvider,
 )
+from src.application.security.jwt_di_setup import JWTProvider
 from src.settings.config import ConfigProvider
 
 
@@ -16,6 +17,7 @@ def init_test_di_container() -> AsyncContainer:
         SessionProvider(),
         RepositoryProvider(),
         UnitOfWorkProvider(),
+        JWTProvider(),
         # MessageBrokerProvider(),
     )
 

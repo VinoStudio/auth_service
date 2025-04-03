@@ -48,7 +48,7 @@ class User(AggregateRoot):
 
         return user
 
-    def _set_jwt_user_data(self) -> None:
+    def _set_jwt_user_data(self, device_id: bytes | None = None) -> None:
         permissions = set()
         roles = set()
 
@@ -63,6 +63,9 @@ class User(AggregateRoot):
             "roles": list(roles),
             "permissions": list(permissions),
         }
+
+        if device_id is not None:
+            data["device_id"] = device_id
 
         self.jwt_data = orjson.dumps(data)
 
@@ -87,6 +90,7 @@ class User(AggregateRoot):
 
         if session not in self._sessions:
             self._sessions.add(session)
+            self._set_jwt_user_data(device_id=session.device_id)
             self._version_upgrade()
 
     def remove_session(self, session: Session) -> None:
@@ -131,7 +135,7 @@ class User(AggregateRoot):
             raise UserIsDeletedException(user_id=self.id.to_raw())
 
     def _pass_is_match(self, password: str):
-        if self.password.verify(password=password):
+        if not self.password.verify(password=password):
             raise PasswordDoesNotMatchException()
 
     def _version_upgrade(self) -> None:
@@ -142,7 +146,7 @@ class User(AggregateRoot):
             "id": self.id.to_raw(),
             "username": self.username.to_raw(),
             "email": self.email.to_raw(),
-            "password": self.password.to_raw(),
+            "hashed_password": self.password.to_raw(),
             "jwt_data": self.jwt_data,
             "created_at": self.created_at,
             "deleted_at": self.deleted_at,
