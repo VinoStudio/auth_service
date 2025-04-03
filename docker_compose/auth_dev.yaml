@@ -1,7 +1,5 @@
-version: '3.9'
-
 services:
-  auth-app:
+  auth_service:
     build:
       context: ..
       dockerfile: Dockerfile
@@ -17,6 +15,10 @@ services:
     env_file:
       - ../.env
 
+    networks:
+      - default
+      - kafka_network
+
     depends_on:
       postgres_auth:
         condition: service_healthy
@@ -24,3 +26,11 @@ services:
         condition: service_healthy
 
     command: "uvicorn --factory src.presentation.api.main:create_app --timeout-graceful-shutdown 2 --reload --log-level info --host 0.0.0.0 --port 8000"
+
+
+networks:
+  default:
+    driver: bridge
+  kafka_network:
+    external: True
+    name: kafka_network

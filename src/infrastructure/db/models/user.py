@@ -1,14 +1,12 @@
 from typing import List, TYPE_CHECKING
 
 from src.infrastructure.db.models import BaseModel
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, LargeBinary
-from sqlalchemy.sql import func, cast
+from sqlalchemy import String, TIMESTAMP, LargeBinary
+from sqlalchemy.sql import func
 from sqlalchemy.sql.elements import Null
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
 from datetime import datetime, UTC
-import sqlalchemy as sa
-import bcrypt
 
 if TYPE_CHECKING:
     from src.infrastructure.db.models import (
@@ -22,8 +20,8 @@ class User(BaseModel):
     id: Mapped[str] = mapped_column(primary_key=True, unique=True, default=str(uuid7()))
     username: Mapped[str | None] = mapped_column(String(64), unique=True)
     email: Mapped[str] = mapped_column(String(64), unique=True)
-    hashed_password: Mapped[bytes] = mapped_column(LargeBinary(60))
-    jwt_data: Mapped[bytes | None] = mapped_column(LargeBinary(100))
+    hashed_password: Mapped[bytes] = mapped_column(LargeBinary(120))
+    jwt_data: Mapped[bytes | None] = mapped_column(LargeBinary(250))
     created_at: Mapped[datetime] = mapped_column(
         default=datetime.now(UTC),
         server_default=func.now(),

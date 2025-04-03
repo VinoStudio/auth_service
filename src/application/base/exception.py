@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from domain.base.exceptions.application import AppException
+from src.domain.base.exceptions.application import AppException
 
 
 @dataclass(frozen=True)

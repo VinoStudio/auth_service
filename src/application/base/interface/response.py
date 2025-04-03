@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class ResponseProtocol(Protocol):
+    def set_cookie(self, key: str, value: str, **kwargs) -> None: ...
+    def delete_cookie(self, key: str, **kwargs) -> None: ...

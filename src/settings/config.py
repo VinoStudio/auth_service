@@ -9,10 +9,11 @@ class JWTSettings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24
     refresh_token_expire_minutes: int = 60 * 24 * 7
     verify_token_expire_minutes: int = 60
-    algorithm: str = "RS256"
+    algorithm: str = "HS256"
     httponly: bool = True
     secure: bool = True
     samesite: str = "Lax"
+    cookie_path: str = "/"
 
 
 # class SMTPSettings(BaseSettings):
@@ -27,8 +28,8 @@ class JWTSettings(BaseSettings):
 
 
 class RedisSettings(BaseSettings):
-    host: str = Field(default="redis_auth", alias="REDIS_HOST")
-    port: int = Field(default="6379", alias="REDIS_PORT")
+    host: str = Field(default="localhost", alias="REDIS_HOST")
+    port: int = Field(default=6379, alias="REDIS_PORT")
 
     @property
     def redis_url(self):

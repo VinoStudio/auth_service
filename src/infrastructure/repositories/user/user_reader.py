@@ -3,6 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
 
+from src.application.dto.user import UserCredentials
 from src.infrastructure.db.models import User
 from src.infrastructure.exceptions.repository import (
     UserDoesNotExistException,
@@ -17,6 +18,7 @@ from src.infrastructure.repositories.converters import OrmToDomainConverter
 from sqlalchemy import text
 
 import src.infrastructure.db.models as models
+import src.application.dto as dto
 import src.domain as domain
 
 
@@ -25,7 +27,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         stmt = self.get_user().where(models.User.id == user_id)
 
         result = await self._session.execute(stmt)
-        user: models.User | None = result.scalars().one()
+        user: models.User | None = result.scalars().one_or_none()
 
         if user is None:
             raise UserDoesNotExistException(user_id)
@@ -71,12 +73,35 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return user
 
+    async def get_user_credentials_by_email_or_username(
+        self, email_or_username: str
+    ) -> dto.UserCredentials:
+        result = await self._session.execute(
+            text(
+                """
+                SELECT u.id, u.jwt_data, u.hashed_password
+                FROM "user" u
+                WHERE (u.email = :email_or_username OR u.username = :email_or_username) and u.deleted_at is null
+                """
+            ),
+            {"email_or_username": email_or_username},
+        )
+
+        fetched_user = result.fetchone()
+
+        if fetched_user is None:
+            raise UserDoesNotExistException(email_or_username)
+
+        return dto.UserCredentials(*fetched_user)
+
     async def get_all_users(self, pagination: Pagination) -> Iterable[models.User]:
         stmt = self.get_user().limit(pagination.limit).offset(pagination.offset)
 
         result = await self._session.execute(stmt)
 
-        return [*result.scalars().all()]
+        return [
+            OrmToDomainConverter.user_to_domain(user) for user in result.scalars().all()
+        ]
 
     async def get_all_usernames(self) -> Iterable[str]: ...
 

@@ -1,36 +1,76 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Any, List
 import src.domain as domain
 
 
 @dataclass
 class BaseRoleRepository(ABC):
     @abstractmethod
-    async def get_role_by_id(self, role_id: str) -> domain.Role:
+    async def create_role(self, role: domain.Role) -> Any:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_roles(self) -> Iterable[domain.Role]:
+    async def update_role(self, role: domain.Role) -> Any:
         raise NotImplementedError
 
     @abstractmethod
-    async def create_role(self, role: domain.Role) -> domain.Role:
+    async def create_permission(self, permission: domain.Permission) -> Any:
         raise NotImplementedError
 
-    async def update_role(self, role: domain.Role) -> Optional[domain.Role]:
+    @abstractmethod
+    async def get_role_by_id(self, role_id: str) -> Any:
         raise NotImplementedError
 
-    async def delete_role(self, role_id: str) -> None:
+    @abstractmethod
+    async def get_role_by_name(self, name: str) -> Any:
         raise NotImplementedError
 
+    @abstractmethod
+    async def get_all_roles(self) -> Any:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def update_role_name(self, role_id: str, name: str) -> Any:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete_role(self, role_id: str) -> Any:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_role_permission(self, role_id: str, permission_id: str) -> Any:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_role_permissions(self, role_id: str) -> Any:
+        raise NotImplementedError
+
+    @abstractmethod
     async def set_role_permissions(
-        self, role_id: str, permissions: Iterable[domain.Permission]
-    ) -> None:
+        self, role_id: str, permission_ids: List[str]
+    ) -> Any:
         raise NotImplementedError
 
-    async def get_role_permissions(self, role_id: str) -> Iterable[domain.Permission]:
+    @abstractmethod
+    async def get_existing_permissions(self) -> Any:
         raise NotImplementedError
 
-    async def get_role_by_name(self, name: str) -> Optional[domain.Role]:
+    async def get_existing_roles(self) -> Any:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_users_with_role(self, role_id: str, pagination: "Pagination") -> Any:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_roles_with_metrics(self) -> Any:
+        raise NotImplementedError
+
+    @staticmethod
+    def get_role():
+        pass
+
+    @staticmethod
+    def get_permission():
+        pass

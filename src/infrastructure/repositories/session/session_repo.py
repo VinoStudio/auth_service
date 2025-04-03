@@ -1,70 +1,125 @@
-from typing import Optional, Dict, Any, List
-
+from typing import Optional, Dict, Any, List, Sequence
 from sqlalchemy import select, text
-
-from src.infrastructure.base.repository import SQLAlchemyRepository
 from dataclasses import dataclass
 from datetime import datetime, timedelta, UTC, timezone
 
+from src.infrastructure.base.repository import SQLAlchemyRepository
 from src.infrastructure.base.repository.session_repo import BaseSessionRepository
-from src.infrastructure.db.models import UserSession
+from src.infrastructure.repositories.converters import (
+    OrmToDomainConverter,
+    DomainToOrmConverter,
+)
 
-from uuid6 import uuid7
+import src.infrastructure.db.models as models
+import src.domain as domain
 
 
 @dataclass
 class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
     """Repository for managing refresh tokens in the database"""
 
-    async def create_session(
-        self, user_id: str, client_info: Dict[str, Any]
-    ) -> UserSession:
+    async def create_session(self, session: domain.Session) -> None:
         """Create a new user session record"""
-        user_session = UserSession(
-            id=str(uuid7()),
-            user_agent=client_info.get("user_agent", "unknown"),
-            device_info=client_info.get("device", "unknown"),
-            is_active=True,
-            user_id=user_id,
-        )
-        self._session.add(user_session)
-        await self._session.refresh(user_session)
-        return user_session
 
-    async def get_active_sessions(self, user_id: str) -> List[UserSession]:
+        user_session: models.UserSession = DomainToOrmConverter.domain_to_user_session(
+            session
+        )
+
+        self._session.add(user_session)
+        await self._session.flush()
+
+    async def get_session_by_id(self, session_id: str) -> Optional[domain.Session]:
+        result = await self._session.execute(
+            select(models.UserSession).where(models.UserSession.id == session_id)
+        )
+
+        user_session: models.UserSession = result.scalars().first()
+
+        if not user_session:
+            return None
+
+        return OrmToDomainConverter.user_session_to_domain(user_session)
+
+    async def get_active_session_by_device_id(
+        self, user_id: str, device_id: str
+    ) -> Optional[domain.Session]:
+        """Find existing session by user ID and device ID"""
+
+        result = await self._session.execute(
+            select(models.UserSession)
+            .where(models.UserSession.user_id == user_id)
+            .where(models.UserSession.device_id == device_id)
+            .order_by(models.UserSession.last_activity.desc())
+            .limit(1)
+        )
+
+        user_session: models.UserSession = result.scalars().first()
+
+        if not user_session:
+            return None
+
+        return OrmToDomainConverter.user_session_to_domain(user_session)
+
+    async def get_user_active_sessions(self, user_id: str) -> List[domain.Session]:
         """Get all active sessions for a user"""
         result = await self._session.execute(
-            select(UserSession).filter(
-                UserSession.user_id == user_id, UserSession.is_active == True
+            select(models.UserSession).filter(
+                models.UserSession.user_id == user_id,
+                models.UserSession.is_active == True,
             )
         )
-        return [*result.scalars().all()]
+        return [
+            OrmToDomainConverter.user_session_to_domain(user_session)
+            for user_session in result.scalars().all()
+        ]
 
-    async def deactivate_session(self, session_id: str) -> Optional[UserSession]:
+    async def deactivate_session(self, session_id: str) -> Optional[domain.Session]:
         """Deactivate a user session"""
-        result = await self._session.execute(
-            select(UserSession).filter(UserSession.id == session_id)
+
+        await self._session.execute(
+            text(
+                """
+                UPDATE user_session
+                SET is_active = :is_active
+                WHERE id = :session_id
+                """
+            ),
+            dict(is_active=False, session_id=session_id),
         )
-        session = result.scalars().first()
 
-        if session:
-            session.is_active = False
-            await self._session.commit()
-            await self._session.refresh(session)
+    async def deactivate_user_session(self, user_id: str, device_id: str):
+        await self._session.execute(
+            text(
+                """
+                UPDATE user_session
+                SET is_active = :is_active
+                WHERE user_id = :user_id AND device_id = :device_id
+                """
+            ),
+            dict(is_active=False, user_id=user_id, device_id=device_id),
+        )
 
-        return session
+    async def get_user_sessions(self, user_id: str) -> Sequence[models.UserSession]:
+        result = await self._session.execute(
+            select(models.UserSession).filter(
+                models.UserSession.user_id == user_id,
+                models.UserSession.is_active == True,
+            )
+        )
+        return result.scalars().all()
 
     async def deactivate_all_sessions(self, user_id: str) -> int:
         """Deactivate all sessions for a user"""
-        sessions = await self.get_active_sessions(user_id)
-        count = 0
+        sessions = await self.get_user_sessions(user_id)
+        deactivated_count = 0
 
         for session in sessions:
-            session.is_active = False
-            count += 1
+            user_session: models.UserSession = session
+            user_session.is_active = False
+            await self._session.refresh(user_session)
+            deactivated_count += 1
 
-        await self._session.commit()
-        return count
+        return deactivated_count
 
     async def update_session_activity(self, session_id: str) -> None:
         """Update the last activity time of a session"""

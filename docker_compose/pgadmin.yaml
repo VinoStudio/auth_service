@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   pgadmin_auth:
     container_name: pgadmin_auth

@@ -1,4 +1,4 @@
-from application.base.queries.base import BaseQuery
+from src.application.base.queries.base import BaseQuery
 from abc import ABC
 from typing import Generic, TypeVar, Any
 from dataclasses import dataclass

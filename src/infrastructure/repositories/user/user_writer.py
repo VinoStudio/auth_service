@@ -8,6 +8,8 @@ from src.infrastructure.base.repository.base import SQLAlchemyRepository
 from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.repositories.pagination import Pagination
 from sqlalchemy import text
+from sqlalchemy.orm import selectinload
+from sqlalchemy.future import select
 from src.infrastructure.repositories.converters import (
     OrmToDomainConverter,
     DomainToOrmConverter,
@@ -20,7 +22,7 @@ import src.infrastructure.db.models as models
 @dataclass
 class UserWriter(SQLAlchemyRepository, BaseUserWriter):
     async def create_user(self, user: domain.User) -> None:
-        """Only create user in DB, but role should add separately through set_user_basic_roles method"""
+        """Inserts user and all connected roles, sessions and permissions"""
 
         user_model: models.User = DomainToOrmConverter.domain_to_user_model(user)
 
@@ -35,12 +37,11 @@ class UserWriter(SQLAlchemyRepository, BaseUserWriter):
 
         await self._session.merge(user_model)
 
-    async def set_user_basic_roles(
+    async def set_user_roles(
         self, user_id: str, role: Optional[Iterable[domain.Role] | domain.Role] = None
     ) -> None:
-        """Helper to add basic roles to user"""
+        """Helper to add roles to user"""
 
-        basic_roles = []
         query = text(
             """
             INSERT INTO user_roles (user_id, role_id)
@@ -55,22 +56,25 @@ class UserWriter(SQLAlchemyRepository, BaseUserWriter):
 
         await self._session.execute(query, values)
 
-    async def check_if_username_exists(self, username: str) -> bool:
-        """Query to check if a user with the given username exists before inserting in DB."""
+    async def check_if_field_exists(self, field: str, value: str) -> bool:
+        """Query to check if a user with the given field value exists.
 
-        result = await self._session.execute(
-            text(
-                """
-                    SELECT EXISTS (
-                        SELECT 1
-                        FROM "user"
-                        WHERE username = :username
-                    )
-                """
-            ),
-            dict(username=username),
-        )
-        # Extract the actual boolean value from the result
+        Args:
+            field: Field to check (either "username" or "email")
+            value: The value to check for
+        """
+
+        if field not in ("username", "email"):
+            raise ValueError("Field must be either 'username' or 'email'")
+
+        query = f"""
+            SELECT EXISTS (
+                SELECT 1
+                FROM "user"
+                WHERE {field} = :{field}
+            )
+        """
+        result = await self._session.execute(text(query), {field: value})
         return result.scalar()
 
     async def check_user_has_permission(

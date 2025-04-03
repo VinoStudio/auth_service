@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, String, Boolean, Integer, ForeignKey, DateTime, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, Boolean, func, TIMESTAMP, LargeBinary
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from src.infrastructure.db.models import BaseModel
 from src.infrastructure.db.models import UserMixin
@@ -17,9 +16,12 @@ class UserSession(BaseModel, UserMixin):
     _back_populates_field = "sessions"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=str(uuid7()))
     user_agent: Mapped[str] = mapped_column(String(100))
-    device_info: Mapped[str] = mapped_column(String(120))
+    device_info: Mapped[bytes] = mapped_column(LargeBinary(500))
+    device_id: Mapped[str] = mapped_column(String(120))
     last_activity: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(UTC), server_default=func.now()
+        default=datetime.now(UTC),
+        server_default=func.now(),
+        type_=TIMESTAMP(timezone=True),
     )
     is_active: Mapped[bool] = mapped_column(
         Boolean,

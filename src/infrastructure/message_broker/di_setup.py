@@ -1,5 +1,6 @@
 from dishka import provide, Provider, Scope, decorate
 
+from src.application.base.event_publisher.event_dispatcher import BaseEventDispatcher
 from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 from src.infrastructure.base.message_broker.consumer import AsyncMessageConsumer
 from src.settings.config import Config
@@ -14,9 +15,7 @@ class MessageBrokerProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_message_producer(self, config: Config) -> AsyncMessageProducer:
         return AsyncKafkaProducer(
-            producer=AIOKafkaProducer(
-                bootstrap_servers=config.kafka.kafka_url,
-            ),
+            producer=AIOKafkaProducer(bootstrap_servers=config.kafka.kafka_url),
         )
 
 
@@ -29,7 +28,7 @@ class KafkaConsumerManagerProvider(Provider):
     @decorate
     async def kafka_consumer_registry(
         self,
-        session_factory: async_sessionmaker[AsyncSession],
+        event_dispatcher: BaseEventDispatcher,
         manager: KafkaConsumerManager,
     ) -> KafkaConsumerManager:
         user_topic_consumer_1 = AsyncKafkaConsumer(
@@ -41,7 +40,7 @@ class KafkaConsumerManagerProvider(Provider):
                 enable_auto_commit=True,
                 auto_commit_interval_ms=1000,
             ),
-            session_factory=session_factory,
+            event_dispatcher=event_dispatcher,
         )
 
         user_topic_consumer_2 = AsyncKafkaConsumer(

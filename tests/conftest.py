@@ -4,12 +4,14 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine
 from sqlalchemy import text
 
+from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.repository.user_writer import BaseUserWriter
+from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.db.uow import SQLAlchemyUoW
 from tests.fixtures import init_test_di_container
 from src.infrastructure.db.models import BaseModel
-from src.infrastructure.repositories import RoleRepository
+from src.infrastructure.repositories import RoleRepository, UserReader
 
 from src.domain.user.entity.user import User
 from src.domain.user.values import (
@@ -78,7 +80,7 @@ async def create_test_permissions_roles():
 
     async with container() as c:
         role_repo: RoleRepository = await c.get(BaseRoleRepository)
-        uow: SQLAlchemyUoW = await c.get(SQLAlchemyUoW)
+        uow: SQLAlchemyUoW = await c.get(UnitOfWork)
 
         await role_repo.create_role(role=user_role)
         await role_repo.create_role(role=moderator)
@@ -95,22 +97,25 @@ async def create_test_permissions_roles():
         await uow.commit()
 
 
-# @pytest.fixture(scope="session")
-# async def create_test_user():
-#     container = init_test_di_container()
-#
-#     async with container() as c:
-#         user_writer = await c.get(BaseUserWriter)
-#         uow = await c.get(SQLAlchemyUoW)
-#
-#         await user_writer.create_user(
-#             User.create(
-#                 UserId("user_id"),
-#                 Username("username"),
-#                 FullName("first_name", "last_name", "middle_name"),
-#             )
-#         )
-#         await uow.commit()
+@pytest.fixture(scope="session")
+async def create_test_user():
+    container = init_test_di_container()
+
+    async with container() as c:
+        user_writer = await c.get(BaseUserWriter)
+        role_repo = await c.get(BaseRoleRepository)
+        uow = await c.get(UnitOfWork)
+
+        await user_writer.create_user(
+            User.create(
+                UserId("user_id"),
+                Username("username"),
+                Email("test_email@test.com"),
+                Password.create("test_password1SS2"),
+                await role_repo.get_role_by_name("user"),
+            )
+        )
+        await uow.commit()
 
 
 @pytest.fixture(scope="session")
