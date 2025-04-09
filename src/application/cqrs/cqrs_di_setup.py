@@ -11,7 +11,7 @@ from src.application.mediator.command_mediator import CommandMediator
 from src.application.mediator.query_mediator import QueryMediator
 from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 
-from src.application.user.commands import (
+from src.application.cqrs.user.commands import (
     LoginUserCommand,
     RegisterUserCommand,
     RefreshUserTokensCommand,
@@ -21,8 +21,14 @@ from src.application.user.commands import (
     RefreshUserTokensCommandHandler,
     LogoutUserCommandHandler,
 )
+
+from src.application.cqrs.role.commands import (
+    CreateRoleCommandHandler,
+    CreateRoleCommand,
+)
+
 from src.infrastructure.message_broker.events import UserRegistered
-from src.application.user.events.internal.user_registered import (
+from src.application.cqrs.user.events.internal.user_registered import (
     UserRegisteredEventHandler,
 )
 
@@ -58,6 +64,7 @@ class MediatorConfigProvider(Provider):
         login_user: LoginUserCommandHandler,
         logout_user: LogoutUserCommandHandler,
         refresh_user_tokens: RefreshUserTokensCommandHandler,
+        create_role: CreateRoleCommandHandler,
     ) -> BaseCommandMediator:
         command_mediator.register_command(RegisterUserCommand, [register_user])
         command_mediator.register_command(LoginUserCommand, [login_user])
@@ -65,6 +72,7 @@ class MediatorConfigProvider(Provider):
         command_mediator.register_command(
             RefreshUserTokensCommand, [refresh_user_tokens]
         )
+        command_mediator.register_command(CreateRoleCommand, [create_role])
 
         return command_mediator
 

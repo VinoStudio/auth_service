@@ -5,11 +5,10 @@ from src.application.base.security import (
     BaseCookieManager,
     BaseJWTManager,
 )
-from src.infrastructure.base.repository.base import BaseMemoryRepository
-from src.application.security.jwt_manager import JWTManager
-from src.application.security.cookie_manager import CookieManager
-from src.application.security.jwt_encoder import JWTEncoder
-from src.application.security.jwt_payload_generator import JWTPayloadGenerator
+from src.application.services.security.jwt_manager import JWTManager
+from src.application.services.security.cookie_manager import CookieManager
+from src.application.services.security.jwt_encoder import JWTEncoder
+from src.application.services.security.jwt_payload_generator import JWTPayloadGenerator
 from src.infrastructure.repositories import TokenBlackListRepository
 from src.settings.config import Config
 

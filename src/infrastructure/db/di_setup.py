@@ -40,9 +40,7 @@ class TestDatabaseProvider(Provider):
         return engine
 
     @provide(scope=Scope.APP)
-    async def get_session_factory(
-        self, engine: AsyncEngine
-    ) -> async_sessionmaker[AsyncSession]:
+    async def get_session_factory(self, engine: AsyncEngine) -> async_sessionmaker:
         return build_session_factory(engine)
 
 

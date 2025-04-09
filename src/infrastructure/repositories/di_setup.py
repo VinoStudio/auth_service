@@ -4,11 +4,13 @@ from redis.asyncio import Redis, from_url
 
 from src.infrastructure.base.repository.base import SQLAlchemyRepository, BaseMemoryRepository
 from src.infrastructure.base.repository import BaseSessionRepository
+from src.infrastructure.base.repository.permission_repo import BasePermissionRepository
 from src.infrastructure.base.repository.user_reader import BaseUserReader
 from src.infrastructure.base.repository.user_writer import BaseUserWriter
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.db.uow import SQLAlchemyUoW
+from src.infrastructure.repositories.permission.permission_repo import PermissionRepository
 from src.infrastructure.repositories.token.redis_repo import TokenBlackListRepository
 from src.infrastructure.repositories.session.session_repo import SessionRepository
 from src.infrastructure.repositories.user.user_reader import UserReader
@@ -34,6 +36,8 @@ class RepositoryProvider(Provider):
     user_writer = provide(UserWriter, scope=Scope.REQUEST, provides=BaseUserWriter)
 
     role_repo = provide(RoleRepository, scope=Scope.REQUEST, provides=BaseRoleRepository)
+
+    permission_repo = provide(PermissionRepository, scope=Scope.REQUEST, provides=BasePermissionRepository)
 
     session_repo = provide(SessionRepository, scope=Scope.REQUEST, provides=BaseSessionRepository)
 

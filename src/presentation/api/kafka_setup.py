@@ -1,14 +1,17 @@
+import structlog
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import TopicAlreadyExistsError
-from settings.config import Config
+from src.settings.config import Config
 
 config: Config = Config()
 
+logger = structlog.getLogger(__name__)
+
 
 # Create a new topic with multiple partitions
-async def create_topic_with_partitions():
+def create_topic_with_partitions():
     admin_client = KafkaAdminClient(
-        bootstrap_servers=config.kafka.kafka_url, client_id="user_service_kafka_admin"
+        bootstrap_servers=config.kafka.kafka_url, client_id="auth_service_kafka_admin"
     )
 
     topic_list = [
@@ -21,8 +24,9 @@ async def create_topic_with_partitions():
 
     try:
         admin_client.create_topics(new_topics=topic_list, validate_only=False)
-        print(f"Created topic with {topic_list[0].num_partitions} partitions")
+        logger.info("Topic created successfully")
+
     except TopicAlreadyExistsError:
-        print("Topic already exists")
+        logger.debug("Topic already exists")
     finally:
         admin_client.close()

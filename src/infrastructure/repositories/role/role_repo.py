@@ -15,13 +15,17 @@ from src.infrastructure.repositories.converters import (
     OrmToDomainConverter,
     DomainToOrmConverter,
 )
+from src.infrastructure.repositories.pagination import Pagination
 
 
 @dataclass
 class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
     async def create_role(self, role: domain.Role) -> Optional[models.Role]:
-        """Since we use already existing permissions, we only create a new role and then update it with given domain.Role permissions"""
+        """
+        Since we use already existing permissions,
+        we only create a new role and then update it with given domain.Role permissions
+        """
 
         role_model: models.Role = DomainToOrmConverter.domain_to_role_creator(role)
         self._session.add(role_model)
@@ -33,16 +37,6 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         role_model: models.Role = DomainToOrmConverter.domain_to_role(role)
 
         await self._session.merge(role_model)
-
-    async def create_permission(
-        self, permission: domain.Permission
-    ) -> Optional[models.Permission]:
-        """Create a new Permission from entity"""
-        permission_model = models.Permission(
-            id=permission.id, name=permission.permission_name.to_raw()
-        )
-        self._session.add(permission_model)
-        await self._session.flush()
 
     async def get_role_by_id(self, role_id: str) -> Optional[domain.Role]:
         """Get a role with permissions by its ID."""
@@ -115,7 +109,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             """
         )
 
-        result = await self._session.execute(
+        await self._session.execute(
             query, {"role_id": role_id, "permission_id": permission_id}
         )
 
@@ -138,51 +132,6 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             permissions.append(permission)
         return permissions
 
-    async def set_role_permissions(
-        self, role_id: str, permission_ids: List[str]
-    ) -> bool:
-        """Set the exact permissions for a role (replacing existing ones)."""
-        async with self._session.begin():
-            # First clear existing permissions
-            clear_query = text(
-                """
-                DELETE FROM role_permissions 
-                WHERE role_id = :role_id
-            """
-            )
-
-            await self._session.execute(clear_query, {"role_id": role_id})
-
-            # Then add the new permissions if any
-            if permission_ids:
-                # Create values string for bulk insert
-                values_params = []
-                params = {"role_id": role_id}
-
-                for i, perm_id in enumerate(permission_ids):
-                    param_name = f"perm_id_{i}"
-                    values_params.append(f"(:role_id, :{param_name})")
-                    params[param_name] = perm_id
-
-                values_clause = ", ".join(values_params)
-
-                query = text(
-                    f"""
-                    INSERT INTO role_permissions (role_id, permission_id)
-                    VALUES {values_clause}
-                """
-                )
-
-                await self._session.execute(query, params)
-
-        return True
-
-    async def get_existing_permissions(self) -> Sequence[models.Permission]:
-        query = self.get_permission()
-        result = await self._session.execute(query)
-
-        return result.scalars().all()
-
     async def get_existing_roles(self) -> Sequence[models.Role]:
         query = select(models.Role)
         result = await self._session.execute(query)
@@ -192,7 +141,9 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
     # User-Role relationship methods
 
     async def get_users_with_role(
-        self, role_id: str, limit: int = 100, offset: int = 0
+        self,
+        role_id: str,
+        pagination: Pagination = Pagination(),
     ) -> List[Dict[str, Any]]:
         """Get users who have a specific role with pagination."""
         query = text(
@@ -207,7 +158,12 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         )
 
         result = await self._session.execute(
-            query, {"role_id": role_id, "limit": limit, "offset": offset}
+            query,
+            {
+                "role_id": role_id,
+                "limit": Pagination.limit,
+                "offset": Pagination.offset,
+            },
         )
 
         users = []
@@ -242,29 +198,32 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             )
         return roles
 
-    # Search methods
+    async def check_role_exists(self, role_name: str) -> bool:
+        """Check if a role exists"""
+        query = text(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM role
+                WHERE name = :role_name
+            )
+        """
+        )
+        result = await self._session.execute(query, {"role_name": role_name})
+        return result.scalar()
 
-    # async def find_roles_by_name(self, name_fragment: str, limit: int = 20) -> List[Role]:
-    #     """Find roles where the name contains the given fragment."""
-    #     query = text(
-    #         """
-    #         SELECT id, name
-    #         FROM role
-    #         WHERE name ILIKE :name_pattern
-    #         ORDER BY name
-    #         LIMIT :limit
-    #     """)
-    #
-    #     result = await self._session.execute(
-    #         query,
-    #         {"name_pattern": f"%{name_fragment}%", "limit": limit}
-    #     )
-    #
-    #     roles = []
-    #     for row in result:
-    #         role = Role(id=row[0], name=row[1])
-    #         roles.append(role)
-    #     return roles
+    async def count_users_with_role(self, role_name: str) -> int:
+        query = text(
+            """
+            SELECT COUNT(*)
+            FROM "user" u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN role r ON ur.role_id = r.id
+            WHERE r.name = :role_name
+        """
+        )
+        result = await self._session.execute(query, {"role_name": role_name})
+        return result.scalar()
 
     @staticmethod
     def get_role():

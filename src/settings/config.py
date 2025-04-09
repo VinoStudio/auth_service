@@ -1,3 +1,6 @@
+from functools import lru_cache
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 from dataclasses import dataclass
 from pydantic import Field, EmailStr
@@ -14,6 +17,12 @@ class JWTSettings(BaseSettings):
     secure: bool = True
     samesite: str = "Lax"
     cookie_path: str = "/"
+
+
+class LoggingSettings(BaseSettings):
+    render_json_logs: bool = False
+    path: Path | None = None
+    level: str = "DEBUG"
 
 
 # class SMTPSettings(BaseSettings):
@@ -84,7 +93,13 @@ class Config:
     kafka = KafkaConfig()
     redis = RedisSettings()
     jwt = JWTSettings()
+    logging = LoggingSettings()
     # smtp = SMTPSettings()
+
+
+@lru_cache(maxsize=1)
+def get_config() -> Config:
+    return Config()
 
 
 class ConfigProvider(Provider):

@@ -1,9 +1,8 @@
 from dishka import Scope, provide, Provider
 from src.application.base.session.session_manager import BaseSessionManager
-from src.application.session.session_manager import SessionManager
-from src.application.session.device_identifier import DeviceIdentifier
+from src.application.services.session.session_manager import SessionManager
+from src.application.services.session.device_identifier import DeviceIdentifier
 from src.infrastructure.base.repository import BaseSessionRepository
-from src.settings.config import Config
 
 
 class SessionManagerProvider(Provider):

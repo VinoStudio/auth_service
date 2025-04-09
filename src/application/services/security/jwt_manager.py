@@ -11,15 +11,13 @@ from src.application.exceptions import (
     TokenRevokedException,
     TokenExpiredException,
     TokenValidationError,
+    AccessRejectedException,
 )
-from src.application.security.jwt_encoder import JWTEncoder
-from src.application.security.jwt_payload_generator import JWTPayloadGenerator
-from src.application.security.security_user import SecurityUser
-from src.application.security.token_type import TokenType
+from src.application.services.security.security_user import SecurityUser
+from src.application.services.security.token_type import TokenType
 from src.infrastructure.repositories import TokenBlackListRepository
 
 from dataclasses import dataclass
-from typing import Any, List, Dict
 from jose import JWTError, ExpiredSignatureError
 
 import src.application.dto as dto
@@ -51,7 +49,13 @@ class JWTManager(BaseJWTManager):
         return dto.TokenPair(access_token=access_token, refresh_token=refresh_token)
 
     def get_token_from_cookie(self, request: RequestProtocol) -> str:
-        return self.cookie_manager.get_cookie(request, "refresh_token")
+
+        token = self.cookie_manager.get_cookie(request, "refresh_token")
+
+        if not token:
+            raise AccessRejectedException("You must sign in to perform this operation")
+
+        return token
 
     def set_token_in_cookie(self, response: ResponseProtocol, token: str) -> None:
         self.cookie_manager.set_cookie(

@@ -10,10 +10,8 @@ from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 from src.domain.base.events.base import BaseEvent
 from src.application.base.events import (
     EventHandler,
-    ET,
-    ER,
 )
-from src.infrastructure.message_broker.events.base import IntegrationEvent
+from src.infrastructure.message_broker.events.internal.base import IntegrationEvent
 
 
 # from logic.exceptions.events import EventIsNotRegisteredException

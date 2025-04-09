@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from abc import ABC
 from typing import Any, Generic, TypeVar
-from domain.base.events.base import BaseEvent
+from src.domain.base.events.base import BaseEvent
 
-from infrastructure.message_broker.events import ExternalEvent
+from src.infrastructure.message_broker.events.external.base import ExternalEvent
 
 ET = TypeVar("ET", bound=type(ExternalEvent))
 ER = TypeVar("ER", bound=Any)

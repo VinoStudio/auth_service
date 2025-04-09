@@ -1,14 +1,12 @@
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 from dataclasses import dataclass
 
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.session.session_manager import BaseSessionManager
-from src.application.session.device_identifier import DeviceIdentifier
-from src.infrastructure.repositories import SessionRepository
+from src.application.services.session.device_identifier import DeviceIdentifier
 from src.infrastructure.base.repository.session_repo import BaseSessionRepository
 from src.domain.session.values.device_info import DeviceInfo
 
-import src.infrastructure.db.models as models
 import src.domain as domain
 import src.application.dto as dto
 

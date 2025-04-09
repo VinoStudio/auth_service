@@ -1,44 +1,40 @@
-from abc import ABC, abstractmethod
+import structlog
 from dataclasses import dataclass, field
-from typing import Dict, List, Type
+from typing import Dict, List, Iterable
 from collections import defaultdict
 
 from src.application.base.event_publisher.event_dispatcher import BaseEventDispatcher
 from src.application.base.events import (
-    EventHandler,
     ET,
-    ER,
 )
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from src.application.base.events.external_event_handler import ExternalEventHandler
 from src.domain.base.events.base import BaseEvent
+from src.infrastructure.message_broker.events.external.base import ExternalEvent
+
+logger = structlog.getLogger(__name__)
 
 
 @dataclass
 class EventDispatcher(BaseEventDispatcher):
     """Dispatches events to appropriate handlers based on event type"""
 
-    session_factory: async_sessionmaker
-    _handlers: Dict[BaseEvent, List[ET]] = field(
+    _handlers: Dict[ExternalEvent, List[ET]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
     def register_handler(
-        self, event_type: str, handler_class: Type[EventHandler]
+        self, event_type: ExternalEvent, handlers: Iterable[ET]
     ) -> None:
         """Register a handler for a specific event type"""
-        self._handlers[event_type].append(handler_class)
+        self._handlers[event_type].extend(handlers)
 
-    async def dispatch(self, event_data: dict) -> None:
+    async def dispatch(self, event: ExternalEvent) -> None:
         """Dispatch an event to all registered handlers"""
-        event_type = event_data.get("type")
-        handler_classes = self._handlers.get(event_type, [])
+        event_handlers: Iterable[ExternalEventHandler] = self._handlers.get(
+            event.__class__
+        )
 
-        # if not handler_classes:
-        #     logging.warning(f"No handlers registered for event type: {event_type}")
-        #     return
+        for handler in event_handlers:
+            await handler.handle(event=event)
 
-        async with self.session_factory() as session:
-            for handler_class in handler_classes:
-                # Create a fresh handler with a new session
-                handler = handler_class(session)
-                await handler.handle(event_data)
+        logger.info("Event handled by dispatcher", event_type=event.__class__.__name__)

@@ -8,7 +8,7 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes
     networks:
-      - redis-network
+      - redis_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -36,13 +36,14 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - redis-network
+      - redis_network
     depends_on:
       - redis_auth
 
 networks:
-  redis-network:
-    driver: bridge
+  redis_network:
+    external: True
+    name: redis_network
 
 volumes:
   redis_data:

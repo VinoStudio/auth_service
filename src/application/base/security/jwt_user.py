@@ -19,3 +19,6 @@ class JWTUserInterface(ABC):
 
     def get_device_id(self) -> str | None:
         pass
+
+    def get_security_level(self) -> int | None:
+        pass

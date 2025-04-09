@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from infrastructure.message_broker.events.external.base import ExternalEvent
+from src.infrastructure.message_broker.events.external.base import ExternalEvent
 from dataclasses import dataclass, field
 
 

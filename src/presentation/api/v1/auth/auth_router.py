@@ -1,24 +1,17 @@
-from litestar import Controller, post, get, Request, Response, route, HttpMethod
+from litestar import Controller, Request, Response, route, HttpMethod
 from litestar.di import Provide
 from litestar.params import Body
 from litestar.exceptions import HTTPException
-from litestar.status_codes import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
-from dishka.integrations.base import FromDishka as Depends
-from dishka.integrations.litestar import inject
+from litestar.status_codes import HTTP_400_BAD_REQUEST
 from dishka import AsyncContainer
 
 from src.application.base.mediator.command import BaseCommandMediator
-from src.application.mediator.command_mediator import CommandMediator
-from src.application.mediator.query_mediator import QueryMediator
-from src.application.user.commands import RegisterUserCommand, LoginUserCommand
+from src.application.cqrs.user.commands import RegisterUserCommand, LoginUserCommand
 from src.application.dependency_injector.di import get_container
 from src.presentation.api.v1.auth.request.user import UserLogin, UserCreate
-from src.application.session.device_identifier import DeviceIdentifier
 from src.presentation.api.v1.auth.response.user import (
     CreateUserResponseSchema,
 )
-
-import src.application.dto as dto
 
 
 class AuthController(Controller):

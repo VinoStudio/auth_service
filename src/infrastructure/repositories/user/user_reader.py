@@ -43,7 +43,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         if user.deleted_at is not None:
             raise UserIsDeletedException(user_id)
 
-        return user
+        return OrmToDomainConverter.user_to_domain(user)
 
     async def get_user_by_username(self, username: str) -> models.User:
         stmt = self.get_user().where(models.User.username == username)
@@ -71,7 +71,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         if user.deleted_at is not None:
             raise UserIsDeletedException(user.id)
 
-        return user
+        return OrmToDomainConverter.user_to_domain(user)
 
     async def get_user_credentials_by_email_or_username(
         self, email_or_username: str

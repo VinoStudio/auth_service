@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from src.application.services.session import BaseSessionManager
-
+from src.application.base.session.session_manager import BaseSessionManager
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security import BaseJWTManager

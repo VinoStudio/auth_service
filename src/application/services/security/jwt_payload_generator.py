@@ -1,6 +1,6 @@
 from src.application.base.security.jwt_payload import BaseJWTPayloadGenerator
 from src.application.base.security.jwt_user import JWTUserInterface
-from src.application.security.token_type import TokenType
+from src.application.services.security.token_type import TokenType
 
 from uuid6 import uuid7
 from dataclasses import dataclass
@@ -19,6 +19,7 @@ class JWTPayloadGenerator(BaseJWTPayloadGenerator):
         payload = {
             "type": token_type,
             "sub": user.get_user_identifier(),
+            "lvl": user.get_security_level(),
             "did": user.get_device_id(),
             "roles": user.get_roles(),
             "permissions": user.get_permissions(),

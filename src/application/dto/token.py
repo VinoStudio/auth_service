@@ -13,6 +13,7 @@ class TokenPair(DTO):
 class Token(DTO):
     type: str
     sub: str
+    lvl: int
     jti: str
     did: str
     exp: float

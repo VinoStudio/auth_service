@@ -6,6 +6,7 @@ from src.infrastructure.exceptions.repository import (
     UserWithEmailDoesNotExistException,
     UserIsDeletedException,
     RoleDoesNotExistException,
+    PermissionDoesNotExistException,
 )
 from src.infrastructure.exceptions.database import (
     DatabaseException,
@@ -24,4 +25,5 @@ __all__ = (
     "UserWithUsernameDoesNotExistException",
     "UserWithEmailDoesNotExistException",
     "RoleDoesNotExistException",
+    "PermissionDoesNotExistException",
 )

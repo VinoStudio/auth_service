@@ -13,6 +13,7 @@ class SecurityUser(JWTUserInterface):
     id: str
     roles: List[str]
     permissions: List[str]
+    security_level: int | None = field(default=None)
     device_id: str | None = field(default=None)
 
     @classmethod
@@ -37,6 +38,7 @@ class SecurityUser(JWTUserInterface):
         return cls(
             id=data["sub"],
             device_id=device_id,
+            security_level=data["lvl"],
             roles=data["roles"],
             permissions=data["permissions"],
         )
@@ -46,6 +48,7 @@ class SecurityUser(JWTUserInterface):
         return cls(
             id=payload["sub"],
             roles=payload["roles"],
+            security_level=payload["lvl"],
             device_id=payload["device_id"],
             permissions=payload["permissions"],
         )
@@ -55,6 +58,7 @@ class SecurityUser(JWTUserInterface):
         return cls(
             id=token_dto.sub,
             device_id=token_dto.did,
+            security_level=token_dto.lvl,
             roles=token_dto.roles,
             permissions=token_dto.permissions,
         )
@@ -73,3 +77,6 @@ class SecurityUser(JWTUserInterface):
 
     def get_device_id(self) -> str | None:
         return self.device_id
+
+    def get_security_level(self) -> int | None:
+        return self.security_level
