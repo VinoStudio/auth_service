@@ -1,22 +1,17 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from src.application.session.session_manager import BaseSessionManager
+from src.application.services.session import BaseSessionManager
 
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security import BaseJWTManager
 from src.application.dto.token import TokenPair
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.exceptions import PasswordIsInvalidException
-from src.application.security.security_user import SecurityUser
-from src.application.session.session_manager import SessionManager
+from src.application.services.security.security_user import SecurityUser
 from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.base.uow import UnitOfWork
-
-from src.infrastructure.db.uow import SQLAlchemyUoW
-from src.infrastructure.repositories import UserWriter, RoleRepository, UserReader
 
 from src.domain.user.values import Password
 
