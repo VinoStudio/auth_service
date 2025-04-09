@@ -1,5 +1,4 @@
-from datetime import timedelta, timezone, datetime, UTC
-from unittest.mock import MagicMock
+from datetime import timedelta, datetime, UTC
 
 from src.application.base.security import BaseJWTManager
 from src.application.dto.token import TokenPair, Token
@@ -8,9 +7,9 @@ from src.application.exceptions import (
     TokenRevokedException,
     TokenValidationError,
 )
-from src.application.security.jwt_manager import JWTManager
-from src.application.security.security_user import SecurityUser
-from src.application.security.token_type import TokenType
+from src.application.services.security.jwt_manager import JWTManager
+from src.application.services.security.security_user import SecurityUser
+from src.application.services.security.token_type import TokenType
 from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.repositories import TokenBlackListRepository
 

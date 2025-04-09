@@ -59,3 +59,12 @@ class RoleDoesNotExistException(RepositoryException):
     @property
     def message(self) -> str:
         return f"A role with '{self.value}' name does not exist"
+
+
+@dataclass(frozen=True)
+class PermissionDoesNotExistException(RepositoryException):
+    value: str
+
+    @property
+    def message(self) -> str:
+        return f"A permission with '{self.value}' name does not exist"

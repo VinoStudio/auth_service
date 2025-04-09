@@ -1,6 +1,6 @@
 from dishka import Scope, provide, Provider
 
-from src.application.user.commands import (
+from src.application.cqrs.user.commands import (
     LoginUserCommandHandler,
     LogoutUserCommandHandler,
     RefreshUserTokensCommandHandler,

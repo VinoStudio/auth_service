@@ -18,7 +18,7 @@ class BaseJWTManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_token_from_cookie(self, request: RequestProtocol) -> Any:
+    def get_token_from_cookie(self, request: RequestProtocol) -> Any:
         raise NotImplementedError
 
     @abstractmethod

@@ -11,4 +11,4 @@ class SortOrder(Enum):
 class Pagination:
     offset: int = 0
     limit: int = 10
-    order: SortOrder = SortOrder.ASC
+    order: SortOrder = SortOrder.ASC.value

@@ -11,6 +11,21 @@ from src.application.exceptions.user import (
     PasswordIsInvalidException
 )
 
+from src.application.exceptions.rbac import (
+    RBACException,
+    UnauthorizedRBACOperationException,
+    RoleNotFoundException,
+    RoleAlreadyExistsException,
+    RoleCreationAccessDeniedException,
+    PermissionNotFoundException,
+    RoleInUseException,
+    AccessDeniedException,
+    PermissionAlreadyExistsException,
+    PermissionInUseException
+)
+
+from src.application.exceptions.jwt import AuthenticationException, AccessRejectedException
+
 __all__ = (
     "ApplicationException",
     "TokenExpiredException",
@@ -21,5 +36,17 @@ __all__ = (
     "EventIsNotRegisteredException",
     "UsernameAlreadyExistsException",
     "EmailAlreadyExistsException",
-    "PasswordIsInvalidException"
+    "PasswordIsInvalidException",
+    "RBACException",
+    "UnauthorizedRBACOperationException",
+    "RoleNotFoundException",
+    "RoleAlreadyExistsException",
+    "PermissionNotFoundException",
+    "RoleCreationAccessDeniedException",
+    "RoleInUseException",
+    "AccessDeniedException",
+    "PermissionAlreadyExistsException",
+    "PermissionInUseException",
+    "AuthenticationException",
+    "AccessRejectedException",
 )

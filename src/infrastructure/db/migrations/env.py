@@ -8,18 +8,19 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
+from src.settings.config import get_config
 
 #
-#BASE_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.parent
+# BASE_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.parent
 #
 # # Add the project root to sys.path so Python can find your modules
-#sys.path.insert(0, str(BASE_DIR))
+# sys.path.insert(0, str(BASE_DIR))
 #
 # # Debug: Print sys.path and BASE_DIR to verify paths
 # print("BASE_DIR:", BASE_DIR)
 # print("sys.path:", sys.path)
 
-conf = Config()
+conf = get_config()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -1,12 +1,9 @@
 from dataclasses import dataclass, field
-from src.infrastructure.message_broker.events.base import (
+from src.infrastructure.message_broker.events.internal.base import (
     IntegrationEvent,
     integration_event,
 )
 from datetime import datetime, UTC
-from typing import ClassVar
-
-from uuid6 import uuid7
 
 
 @dataclass(frozen=True)

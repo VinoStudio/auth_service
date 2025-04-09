@@ -34,8 +34,9 @@ class OrmToDomainConverter:
                 user_session = domain.Session(
                     id=session.id,
                     user_id=session.user_id,
-                    device_info=session.device_info,
-                    user_agent=session.device_info,
+                    device_info=DeviceInfo.create(session.device_info),
+                    device_id=session.device_id,
+                    user_agent=session.user_agent,
                     last_activity=session.last_activity,
                     is_active=session.is_active,
                 )
@@ -43,9 +44,11 @@ class OrmToDomainConverter:
 
         # Convert roles with permissions
         for role_model in user_model.roles:
-            role_domain = Role(
+            role_domain = domain.Role(
                 id=role_model.id,
                 name=RoleName(role_model.name),
+                description=role_model.description,
+                security_level=role_model.security_level,
             )
             for perm in role_model.permissions:
                 permission = domain.Permission(
@@ -63,6 +66,8 @@ class OrmToDomainConverter:
         role_domain = Role(
             id=role_model.id,
             name=RoleName(role_model.name),
+            description=role_model.description,
+            security_level=role_model.security_level,
         )
         for perm in role_model.permissions:
             permission = domain.Permission(
@@ -86,10 +91,12 @@ class OrmToDomainConverter:
             id=session.id,
             user_id=session.user_id,
             device_info=DeviceInfo.create(session.device_info),
+            device_id=session.device_id,
             user_agent=session.user_agent,
             last_activity=session.last_activity,
             is_active=session.is_active,
         )
+
 
 class DomainToOrmConverter:
     @staticmethod
@@ -127,8 +134,9 @@ class DomainToOrmConverter:
                 models.UserSession(
                     id=session.id,
                     user_id=session.user_id,  # type: ignore
-                    device_info=session.device_info,
+                    device_info=session.device_info.to_bytes(),
                     user_agent=session.user_agent,
+                    device_id=session.device_id,
                     last_activity=session.last_activity,
                     is_active=session.is_active,
                 )
@@ -139,6 +147,8 @@ class DomainToOrmConverter:
             models.Role(
                 id=role.id,
                 name=role.name.to_raw(),
+                description=role.description,
+                security_level=role.security_level,
                 permissions=[
                     models.Permission(
                         id=permission.id,
@@ -157,6 +167,8 @@ class DomainToOrmConverter:
         return models.Role(
             id=role.id,
             name=role.name.to_raw(),
+            description=role.description,
+            security_level=role.security_level,
             permissions=[]
         )
 
@@ -165,6 +177,8 @@ class DomainToOrmConverter:
         return models.Role(
             id=role.id,
             name=role.name.to_raw(),
+            description=role.description,
+            security_level=role.security_level,
             permissions=[
                 models.Permission(
                     id=permission.id,
@@ -185,66 +199,3 @@ class DomainToOrmConverter:
             last_activity=session.last_activity,
             is_active=session.is_active
         )
-
-# def convert_db_model_to_user_entity(user: models.User) -> entities.User:
-#     return entities.User(
-#         id=UserId(user.id),
-#         username=Username(user.username),
-#         fullname=fullname,
-#         deleted_at=DeletedAt(user.deleted_at),
-#         version=user.version,
-#     )
-#
-#
-# def convert_db_model_to_active_user_entity(user: models.User) -> entities.User:
-#     if user.deleted_at is not None:
-#         raise UserIsDeletedException(user.id)
-#
-#     fullname = FullName(
-#         first_name=user.first_name,
-#         last_name=user.last_name,
-#         middle_name=user.middle_name,
-#     )
-#     return entities.User(
-#         id=UserId(user.id),
-#         username=Username(user.username),
-#         fullname=fullname,
-#         deleted_at=DeletedAt(user.deleted_at),
-#         version=user.version,
-#     )
-#
-#
-# def convert_user_entity_to_db_model(user: entities.User) -> models.User:
-#     return models.User(
-#         id=user.id.to_raw(),
-#         username=user.username.to_raw(),
-#         first_name=user.fullname.first_name,
-#         last_name=user.fullname.last_name,
-#         middle_name=user.fullname.middle_name,
-#         deleted_at=user.deleted_at.value,
-#         version=user.version,
-#     )
-#
-#
-# def convert_user_entity_to_db_dict(user: entities.User) -> dict:
-#     return dict(
-#         id=user.id.to_raw(),
-#         username=user.username.to_raw(),
-#         first_name=user.fullname.first_name,
-#         last_name=user.fullname.last_name,
-#         middle_name=user.fullname.middle_name,
-#         deleted_at=user.deleted_at.value,
-#         version=user.version,
-#     )
-#
-#
-# #
-# # await self._session.execute(
-# #     text(
-# #         """
-# #         INSERT INTO user (id, username, first_name, last_name, middle_name, deleted_at, version)
-# #         VALUES (:id, :username, :first_name, :last_name, :middle_name, :deleted_at, :version)
-# #         """
-# #     ),
-# #     c.convert_user_entity_to_db_model(user),
-# # )

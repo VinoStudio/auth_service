@@ -10,6 +10,8 @@ from uuid6 import uuid7
 class Role(BaseEntity):
     id: str = field(default_factory=lambda: str(uuid7()), kw_only=True)
     name: RoleName
+    description: str
+    security_level: int
     _permissions: Set[Permission] = field(default_factory=set)
 
     @property

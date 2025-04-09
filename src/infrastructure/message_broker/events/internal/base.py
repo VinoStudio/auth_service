@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime, UTC
-from email.policy import default
 from typing import ClassVar, Callable, Type, TypeVar
 
 from uuid6 import uuid7

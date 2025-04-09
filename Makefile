@@ -20,10 +20,6 @@ app:
 down:
 	$(DC) $(GROUP) -f $(APP_FILE) -f $(POSTGRES_FILE) -f $(POSTGRES_TEST_FILE) -f $(PGADMIN_FILE) -f $(REDIS_FILE) $(ENV) down
 
-.PHONY: db
-db:
-	$(DC) -f $(MONGO_FILE) $(ENV) up --build -d
-
 .PHONY: logs
 logs:
 	$(LOGS) $(APP) -f
@@ -31,7 +27,3 @@ logs:
 .PHONY: app-exec
 app-exec:
 	$(EXEC) $(APP) bash
-
-#.PHONY: db-ui
-#db-ui:
-#	$(DC) -f $(MONGO_EXPRESS_FILE) $(ENV) up --build -d

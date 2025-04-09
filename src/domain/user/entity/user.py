@@ -48,18 +48,23 @@ class User(AggregateRoot):
 
         return user
 
-    def _set_jwt_user_data(self, device_id: bytes | None = None) -> None:
+    def _set_jwt_user_data(self, device_id: str | None = None) -> None:
+        security_lvl = 999
         permissions = set()
         roles = set()
 
         for role in self._roles:
             roles.add(role.name.to_raw())
 
+            if role.security_level < security_lvl:
+                security_lvl = role.security_level
+
             for permission in role.permission:
                 permissions.add(permission.permission_name.to_raw())
 
         data = {
             "sub": self.id.to_raw(),
+            "lvl": security_lvl,
             "roles": list(roles),
             "permissions": list(permissions),
         }

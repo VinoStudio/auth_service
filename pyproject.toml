@@ -21,6 +21,8 @@ dependencies = [
     "user-agents>=2.2.0",
     "python-jose[cryptography]>=3.4.0",
     "asyncpg>=0.30.0",
+    "structlog>=25.2.0",
+    "kafka-python>=2.1.5",
 ]
 
 [dependency-groups]
