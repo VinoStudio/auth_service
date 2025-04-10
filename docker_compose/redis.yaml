@@ -15,18 +15,6 @@ services:
       timeout: 5s
       retries: 3
 
-#  redisinsight_auth:
-#    image: redislabs/redisinsight:latest
-#    container_name: redis_ui
-#    ports:
-#      - '8101:8001'
-#    volumes:
-#      - redisinsight_data:/db
-#    networks:
-#      - redis-network
-#    depends_on:
-#      - redis_auth
-
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: redis-commander_ui

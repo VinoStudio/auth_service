@@ -4,7 +4,7 @@ from abc import (
 )
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Iterable, Any
+from typing import Iterable, Any, List
 
 from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 from src.domain.base.events.base import BaseEvent
@@ -29,7 +29,7 @@ class BaseEventPublisher(ABC):
     def register_event(
         self,
         event: IntegrationEvent,
-        event_handlers: Iterable[EventHandler[BaseEvent, Any]],
+        event_handlers: List[EventHandler[IntegrationEvent, Any]],
     ) -> None:
         raise NotImplementedError
 

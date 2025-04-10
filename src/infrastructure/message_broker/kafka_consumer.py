@@ -43,11 +43,11 @@ class AsyncKafkaConsumer(AsyncMessageConsumer):
                 try:
                     # Process message as before
                     event_data = orjson.loads(message.value)
-                    logger.debug("Received message", message=event_data)
+                    logger.info("Received message", message=event_data)
                     event_command = c.convert_external_event_to_event_command(
                         event_data
                     )
-                    logger.debug("Event command", event_command=event_command)
+                    logger.info("Event command", event_command=event_command)
                     await self.event_dispatcher.dispatch(event_command)
                     await self.consumer.commit()
                 except Exception as e:

@@ -25,15 +25,15 @@ class LoggingSettings(BaseSettings):
     level: str = "DEBUG"
 
 
-# class SMTPSettings(BaseSettings):
-#     host: str = Field()
-#     port: int = config.SMTP_PORT
-#     user: EmailStr = config.SMTP_USER
-#     password: str = config.SMTP_PASS
-#
-#     @property
-#     def url(self):
-#         return f"smtp://{self.user}:{self.password}@{self.host}:{self.port}"
+class SMTPSettings(BaseSettings):
+    host: str = Field(default="", alias="SMTP_HOST")
+    port: int = Field(default=587, alias="SMTP_PORT")
+    user: str = Field(default="", alias="SMTP_USER")
+    password: str = Field(default="", alias="SMTP_PASSWORD")
+
+    @property
+    def url(self):
+        return f"smtp://{self.user}:{self.password}@{self.host}:{self.port}"
 
 
 class RedisSettings(BaseSettings):
@@ -94,7 +94,7 @@ class Config:
     redis = RedisSettings()
     jwt = JWTSettings()
     logging = LoggingSettings()
-    # smtp = SMTPSettings()
+    smtp = SMTPSettings()
 
 
 @lru_cache(maxsize=1)

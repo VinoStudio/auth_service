@@ -9,7 +9,7 @@ ET = TypeVar("ET", bound=type(ExternalEvent))
 ER = TypeVar("ER", bound=Any)
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, frozen=True)
 class ExternalEventHandler(ABC, Generic[ET, ER]):
     def handle(self, event: ET) -> ER:
         raise NotImplementedError

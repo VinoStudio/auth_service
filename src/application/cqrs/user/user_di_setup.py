@@ -1,4 +1,5 @@
 from dishka import Scope, provide, Provider
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.application.cqrs.user.commands import (
     LoginUserCommandHandler,
@@ -6,6 +7,9 @@ from src.application.cqrs.user.commands import (
     RefreshUserTokensCommandHandler,
     RegisterUserCommandHandler,
 )
+
+from src.application.cqrs.user.events import UserCreatedEventHandler
+from src.application.services.tasks.notification_manager import NotificationManager
 from src.settings.config import Config
 
 
@@ -19,3 +23,13 @@ class UserCommandProvider(Provider):
 
 # class UserEventProvider(Provider):
 #     user_registered = provide(RegisterUserCommandHandler, scope=Scope.APP)
+
+
+class ExternalEventProvider(Provider):
+    @provide(scope=Scope.APP)
+    async def user_created(
+        self,
+        session_factory: async_sessionmaker,
+        notification_manager: NotificationManager,
+    ) -> UserCreatedEventHandler:
+        return UserCreatedEventHandler(session_factory, notification_manager)
