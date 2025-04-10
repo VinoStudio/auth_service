@@ -1,0 +1,67 @@
+services:
+  celery_default_worker:
+    build:
+      context: ..
+    container_name: celery_default_worker
+    env_file:
+      - ../.env
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - redis_network
+    user: celery_user
+    depends_on:
+      - auth_service
+      - redis_auth
+    command: "celery -A src.application.services.tasks.celery:celery worker --loglevel=info"
+
+  celery_flower:
+    build:
+      context: ..
+    container_name: celery_flower
+    env_file:
+      - ../.env
+    ports:
+      - "5555:5555"
+    volumes:
+      - flower_data:/app/flower_db
+    networks:
+      - redis_network
+    depends_on:
+      - auth_service
+      - redis_auth
+      - celery_default_worker
+    command: "celery -A src.application.services.tasks.celery:celery flower "
+
+#  celery_high_priority_worker:
+#    build:
+#      context: ..
+#    container_name: celery_high_priority_worker
+#    volumes:
+#      - ../src/:/app/src
+#    env_file:
+#      - ../.env
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '2'  # More CPU for priority tasks
+#          memory: 2G # More memory for priority tasks
+#      replicas: 2    # Run two instances of this worker
+#    networks:
+#      - redis_network
+#    depends_on:
+#      - auth_service
+#      - redis_auth
+#    command: "celery -A src.infrastructure.tasks.celery_app worker --loglevel=info --concurrency=8 --queue=high_priority"
+
+
+volumes:
+  flower_data:
+
+networks:
+  redis_network:
+    external: True
+    name: redis_network

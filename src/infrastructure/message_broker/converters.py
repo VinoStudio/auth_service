@@ -3,23 +3,27 @@ from dataclasses import asdict
 import orjson
 
 from src.infrastructure.message_broker.events import IntegrationEvent
+from src.infrastructure.message_broker.events.external.base import ExternalEvent
+from src.infrastructure.message_broker.events.external.user_created import UserCreated
+from src.infrastructure.message_broker.exceptions import MappingException
 
 
 def convert_event_to_broker_message(event: IntegrationEvent) -> bytes:
     return orjson.dumps(event)
 
 
-# def convert_event_to_json(event: BaseEvent) -> dict[str, any]:
-#     return asdict(event)
+def convert_external_event_to_user_created_handler(
+    event: dict[str, any],
+) -> ExternalEvent:
+    return UserCreated(
+        user_id=event.get("user_id"),
+        username=event.get("username"),
+    )
 
-# AuthEvents = UserRegisterd
-#
-#
-# def convert_consumer_message_to_event(message: dict) -> object:
-#     match message.get("type"):
-#         case "UserRegistered":
-#             convert_user_registered_to_handler(**message)
-#         case "UserDeleted":
-#             convert_user_deleted_to_handler(**message)
-#         case "UserUpdated":
-#             convert_user_updated_to_handler(**message)
+
+def convert_external_event_to_event_command(event: dict[str, any]) -> ExternalEvent:
+    match event.get("event_type"):
+        case "UserCreated":
+            return convert_external_event_to_user_created_handler(event)
+        case _:
+            raise MappingException(event.get("event_type"))

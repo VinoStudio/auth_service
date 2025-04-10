@@ -23,6 +23,9 @@ dependencies = [
     "asyncpg>=0.30.0",
     "structlog>=25.2.0",
     "kafka-python>=2.1.5",
+    "celery>=5.5.1",
+    "aiojobs>=1.4.0",
+    "flower>=2.0.1",
 ]
 
 [dependency-groups]

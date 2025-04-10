@@ -30,36 +30,33 @@ class KafkaConsumerManagerProvider(Provider):
         self,
         event_dispatcher: BaseEventDispatcher,
         manager: KafkaConsumerManager,
+        config: Config,
     ) -> KafkaConsumerManager:
-        user_topic_consumer_1 = AsyncKafkaConsumer(
+        auth_consumer_1 = AsyncKafkaConsumer(
             consumer=AIOKafkaConsumer(
-                "user_topic",
-                bootstrap_servers="localhost:9092",
-                group_id="auth_group",
+                "user_service_topic",
+                bootstrap_servers=config.kafka.kafka_url,
+                group_id="auth_service_group",
                 auto_offset_reset="earliest",
-                enable_auto_commit=True,
+                enable_auto_commit=False,
                 auto_commit_interval_ms=1000,
             ),
             event_dispatcher=event_dispatcher,
         )
 
-        user_topic_consumer_2 = AsyncKafkaConsumer(
+        auth_consumer_2 = AsyncKafkaConsumer(
             consumer=AIOKafkaConsumer(
-                "user_topic",
-                bootstrap_servers="localhost:9092",
-                group_id="auth_group",
+                "user_service_topic",
+                bootstrap_servers=config.kafka.kafka_url,
+                group_id="auth_service_group",
                 auto_offset_reset="earliest",
-                enable_auto_commit=True,
+                enable_auto_commit=False,
                 auto_commit_interval_ms=1000,
             ),
-            session_factory=session_factory,
+            event_dispatcher=event_dispatcher,
         )
 
-        await manager.register_consumer(
-            topic="user_topic", consumer=user_topic_consumer_1
-        )
-        await manager.register_consumer(
-            topic="user_topic", consumer=user_topic_consumer_2
-        )
+        manager.register_consumer(topic="user_service_topic", consumer=auth_consumer_1)
+        manager.register_consumer(topic="user_service_topic", consumer=auth_consumer_2)
 
         return manager

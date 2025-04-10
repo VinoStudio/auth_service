@@ -5,6 +5,7 @@ from src.application.base.event_publisher.event_dispatcher import BaseEventDispa
 from src.application.base.event_publisher.event_publisher import BaseEventPublisher
 from src.application.base.mediator.command import BaseCommandMediator
 from src.application.base.mediator.query import BaseQueryMediator
+from src.application.cqrs.user.events import UserCreatedEventHandler
 from src.application.event_handlers.event_dispatcher import EventDispatcher
 from src.application.event_handlers.event_publisher import EventPublisher
 from src.application.mediator.command_mediator import CommandMediator
@@ -31,6 +32,7 @@ from src.infrastructure.message_broker.events import UserRegistered
 from src.application.cqrs.user.events.internal.user_registered import (
     UserRegisteredEventHandler,
 )
+from src.infrastructure.message_broker.events.external.user_created import UserCreated
 
 
 class MediatorProvider(Provider):
@@ -52,7 +54,7 @@ class MediatorProvider(Provider):
     async def get_event_dispatcher(
         self, session_factory: async_sessionmaker
     ) -> BaseEventDispatcher:
-        return EventDispatcher(session_factory=session_factory)
+        return EventDispatcher()
 
 
 class MediatorConfigProvider(Provider):
@@ -86,3 +88,14 @@ class MediatorConfigProvider(Provider):
         )
 
         return event_publisher
+
+    @decorate
+    async def register_external_events(
+        self,
+        event_dispatcher: BaseEventDispatcher,
+        user_created: UserCreatedEventHandler,
+    ) -> BaseEventDispatcher:
+
+        event_dispatcher.register_handler(UserCreated, [user_created])
+
+        return event_dispatcher

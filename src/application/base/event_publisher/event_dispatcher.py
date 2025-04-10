@@ -10,24 +10,27 @@ from src.application.base.events import (
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from src.application.base.events.external_event_handler import ExternalEventHandler
 from src.domain.base.events.base import BaseEvent
+from src.infrastructure.message_broker.events.external.base import ExternalEvent
 
 
 @dataclass
 class BaseEventDispatcher(ABC):
     """Dispatches events to appropriate handlers based on event type"""
 
-    session_factory: async_sessionmaker
-    _handlers: Dict[BaseEvent, List[ET]] = field(
+    _handlers: Dict[ExternalEvent, List[ExternalEventHandler]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
     @abstractmethod
     def register_handler(
-        self, event_type: str, handler_class: Type[EventHandler]
+        self,
+        event_type: type[ExternalEvent],
+        handler_class: List[ExternalEventHandler],
     ) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def dispatch(self, event_data: dict) -> None:
+    async def dispatch(self, event: ExternalEvent) -> None:
         raise NotImplementedError

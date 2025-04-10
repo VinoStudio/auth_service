@@ -19,7 +19,8 @@ RUN apt update -y && \
     apt install -y python3-dev gcc musl-dev && \
     pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.dev.txt && \
-    apt-get clean
+    apt-get clean && \
+    useradd -r celery_user && chown -R celery_user:celery_user /app
 
 COPY ./src ./src
 

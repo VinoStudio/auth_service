@@ -87,5 +87,5 @@ def configure_logging() -> None:
         cache_logger_on_first_use=True,
     )
 
-    # structlog.get_logger().setLevel(config.logging.level)
-    logging.getLogger().setLevel(config.logging.level)
+    structlog.get_logger().setLevel(config.logging.level)
+    # logging.getLogger().setLevel(config.logging.level)
