@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Type
 
 from src.application.base.mediator.query import BaseQueryMediator
 from src.application.base.queries import BaseQueryHandler, QT, QR, BaseQuery
@@ -14,12 +15,12 @@ class QueryMediator(BaseQueryMediator):
     )
 
     def register_query(
-        self, query: BaseQuery, query_handler: BaseQueryHandler[QT, QR]
+        self, query: Type[BaseQuery], query_handler: BaseQueryHandler[QT, QR]
     ) -> None:
         self.query_map[query] = query_handler
 
     async def handle_query(self, query: QT) -> QR:
-        if query not in self.query_map:
+        if query.__class__ not in self.query_map:
             raise QueryIsNotRegisteredException(query)
 
-        return await self.query_map[query].handle(query)
+        return await self.query_map[query.__class__].handle(query)

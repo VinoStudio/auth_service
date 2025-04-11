@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from src.infrastructure.db.models.user import User
 from abc import ABC, abstractmethod
-from typing import Iterable
+from typing import Iterable, List
 
 
 @dataclass
@@ -19,7 +19,7 @@ class BaseUserReader(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_users(self, pagination: "Pagination") -> Iterable[User]:
+    async def get_all_users(self, pagination: "Pagination") -> List[User]:
         raise NotImplementedError
 
     @abstractmethod

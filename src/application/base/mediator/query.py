@@ -4,7 +4,7 @@ from dataclasses import (
     dataclass,
     field,
 )
-from typing import Iterable
+from typing import Iterable, Type
 
 from src.application.base.queries.base import BaseQuery
 from src.application.base.queries.query_handler import (
@@ -23,7 +23,7 @@ class BaseQueryMediator(ABC):
 
     @abstractmethod
     def register_query(
-        self, query: BaseQuery, query_handler: BaseQueryHandler[QT, QR]
+        self, query: Type[BaseQuery], query_handler: BaseQueryHandler[QT, QR]
     ) -> None:
         raise NotImplementedError
 

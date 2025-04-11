@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Iterable, Generic
+from typing import Iterable, Generic, Type
 
 from src.application.base.commands import BaseCommand
 from src.application.base.commands import CommandHandler, CT, CR
@@ -16,7 +16,9 @@ class BaseCommandMediator(ABC):
 
     @abstractmethod
     def register_command(
-        self, command: BaseCommand, command_handlers: Iterable[CommandHandler[CT, CR]]
+        self,
+        command: Type[BaseCommand],
+        command_handlers: Iterable[CommandHandler[CT, CR]],
     ) -> None:
         raise NotImplementedError
 
