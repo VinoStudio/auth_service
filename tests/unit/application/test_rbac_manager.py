@@ -137,6 +137,44 @@ async def test_create_new_super_admin_role(di_container, get_security_admin):
             )
 
 
+async def test_create_lower_role_with_high_tier_permissions(
+    di_container, get_security_project_manager
+):
+    async with di_container() as c:
+        rbac_manager: RBACManager = await c.get(RBACManager)
+        uow = await c.get(UnitOfWork)
+
+        new_role_dto = dto.RoleCreation(
+            name="low_security_role",
+            description="Low security role",
+            security_level=8,
+            permissions=["user:view", "role:create", "role:delete", "role:update"],
+        )
+        with pytest.raises(AccessDeniedException):
+            await rbac_manager.create_role(
+                role_dto=new_role_dto, request_from=get_security_project_manager
+            )
+
+
+async def test_create_role_with_permissions_that_requested_dont_have(
+    di_container, get_security_project_manager
+):
+    async with di_container() as c:
+        rbac_manager: RBACManager = await c.get(RBACManager)
+        uow = await c.get(UnitOfWork)
+
+        new_role_dto = dto.RoleCreation(
+            name="low_security_role",
+            description="Low security role",
+            security_level=8,
+            permissions=["audit:view"],
+        )
+        with pytest.raises(AccessDeniedException):
+            await rbac_manager.create_role(
+                role_dto=new_role_dto, request_from=get_security_project_manager
+            )
+
+
 async def test_update_role_by_admin(di_container, get_security_admin):
     async with di_container() as c:
         rbac_manager: RBACManager = await c.get(RBACManager)
@@ -157,6 +195,25 @@ async def test_update_role_by_admin(di_container, get_security_admin):
 
         assert updated_role.description == "Updated description"
         assert updated_role.description != original_description
+
+
+async def test_update_role_with_high_tier_permissions(
+    di_container, get_security_project_manager
+):
+    async with di_container() as c:
+        rbac_manager: RBACManager = await c.get(RBACManager)
+        uow = await c.get(UnitOfWork)
+
+        # First get an existing role
+        role = await rbac_manager.get_role(
+            role_name="user", request_from=get_security_project_manager
+        )
+
+        # cannot interact with roles having higher security level than yours
+        with pytest.raises(AccessDeniedException):
+            await rbac_manager.get_permission(
+                permission_name="role:update", request_from=get_security_project_manager
+            )
 
 
 async def test_delete_role_in_use_by_admin(di_container, get_security_admin):

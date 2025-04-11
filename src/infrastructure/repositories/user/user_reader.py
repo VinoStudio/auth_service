@@ -1,4 +1,4 @@
-from typing import Iterable, Sequence, Set
+from typing import Iterable, Sequence, Set, List
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
@@ -23,7 +23,7 @@ import src.domain as domain
 
 
 class UserReader(SQLAlchemyRepository, BaseUserReader):
-    async def get_user_by_id(self, user_id: str) -> models.User:
+    async def get_user_by_id(self, user_id: str) -> domain.User:
         stmt = self.get_user().where(models.User.id == user_id)
 
         result = await self._session.execute(stmt)
@@ -34,7 +34,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
-    async def get_active_user_by_id(self, user_id: str) -> models.User:
+    async def get_active_user_by_id(self, user_id: str) -> domain.User:
         user: domain.User | None = await self.get_user_by_id(user_id)
 
         if user is None:
@@ -45,11 +45,11 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
-    async def get_user_by_username(self, username: str) -> models.User:
+    async def get_user_by_username(self, username: str) -> domain.User:
         stmt = self.get_user().where(models.User.username == username)
 
         result = await self._session.execute(stmt)
-        user: models.User | None = result.scalars().one()
+        user: models.User | None = result.scalars().one_or_none()
 
         if user is None:
             raise UserWithUsernameDoesNotExistException(username)
@@ -59,7 +59,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
-    async def get_user_by_email(self, email: str) -> models.User:
+    async def get_user_by_email(self, email: str) -> domain.User:
         stmt = self.get_user().where(models.User.email == email)
 
         result = await self._session.execute(stmt)
@@ -94,7 +94,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return dto.UserCredentials(*fetched_user)
 
-    async def get_all_users(self, pagination: Pagination) -> Iterable[models.User]:
+    async def get_all_users(self, pagination: Pagination) -> List[domain.User]:
         stmt = self.get_user().limit(pagination.limit).offset(pagination.offset)
 
         result = await self._session.execute(stmt)
@@ -105,16 +105,34 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
     async def get_all_usernames(self) -> Iterable[str]: ...
 
-    async def get_user_roles_by_id(self, user_id: str) -> Sequence[models.Role]:
-        stmt = self.get_user_roles().where(models.User.id == user_id)
+    async def get_user_roles_by_id(
+        self, user_id: str, pagination: Pagination
+    ) -> Sequence[str]:
+        query = text(
+            """
+            SELECT r.name
+            FROM role r
+            JOIN user_roles ur ON r.id = ur.role_id
+            WHERE ur.user_id = :user_id
+            ORDER BY r.security_level
+            LIMIT :limit 
+            OFFSET :offset
+            """
+        )
 
-        result = await self._session.execute(stmt)
+        result = await self._session.execute(
+            query,
+            {
+                "user_id": user_id,
+                "limit": pagination.limit,
+                "offset": pagination.offset,
+            },
+        )
+        return [row[0] for row in result.fetchall()]
 
-        return [
-            OrmToDomainConverter.role_to_domain(role) for role in result.scalars().all()
-        ]
-
-    async def get_user_permissions(self, user_id: str) -> Set[str]:
+    async def get_user_permissions(
+        self, user_id: str, pagination: Pagination
+    ) -> Set[str]:
         """Get all permission names that a user has through their roles."""
         query = text(
             """
@@ -123,10 +141,20 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
             JOIN role_permissions rp ON p.id = rp.permission_id
             JOIN user_roles ur ON rp.role_id = ur.role_id
             WHERE ur.user_id = :user_id
+            ORDER BY p.name
+            LIMIT :limit 
+            OFFSET :offset
         """
         )
 
-        result = await self._session.execute(query, {"user_id": user_id})
+        result = await self._session.execute(
+            query,
+            {
+                "user_id": user_id,
+                "limit": pagination.limit,
+                "offset": pagination.offset,
+            },
+        )
         return {row[0] for row in result}
 
     @staticmethod

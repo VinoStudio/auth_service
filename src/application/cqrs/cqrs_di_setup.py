@@ -28,6 +28,25 @@ from src.application.cqrs.role.commands import (
     CreateRoleCommand,
 )
 
+from src.application.cqrs.user.queries import (
+    GetUserById,
+    GetUserByIdHandler,
+    GetUserByUsername,
+    GetUserByUsernameHandler,
+    GetCurrentUser,
+    GetCurrentUserHandler,
+    GetCurrentUserRoles,
+    GetCurrentUserRolesHandler,
+    GetCurrentUserPermissions,
+    GetCurrentUserPermissionsHandler,
+    GetUserRoles,
+    GetUserRolesHandler,
+    GetUserPermissions,
+    GetUserPermissionsHandler,
+    GetUsers,
+    GetUsersHandler,
+)
+
 from src.infrastructure.message_broker.events import UserRegistered
 from src.application.cqrs.user.events.internal.user_registered import (
     UserRegisteredEventHandler,
@@ -59,7 +78,7 @@ class MediatorProvider(Provider):
 
 class MediatorConfigProvider(Provider):
     @decorate
-    async def register_commands(
+    async def register_user_commands(
         self,
         command_mediator: BaseCommandMediator,
         register_user: RegisterUserCommandHandler,
@@ -68,6 +87,7 @@ class MediatorConfigProvider(Provider):
         refresh_user_tokens: RefreshUserTokensCommandHandler,
         create_role: CreateRoleCommandHandler,
     ) -> BaseCommandMediator:
+
         command_mediator.register_command(RegisterUserCommand, [register_user])
         command_mediator.register_command(LoginUserCommand, [login_user])
         command_mediator.register_command(LogoutUserCommand, [logout_user])
@@ -99,3 +119,30 @@ class MediatorConfigProvider(Provider):
         event_dispatcher.register_handler(UserCreated, [user_created])
 
         return event_dispatcher
+
+    @decorate
+    async def register_user_queries(
+        self,
+        query_mediator: BaseQueryMediator,
+        get_user_by_id: GetUserByIdHandler,
+        get_user_by_username: GetUserByUsernameHandler,
+        get_current_user: GetCurrentUserHandler,
+        get_current_user_roles: GetCurrentUserRolesHandler,
+        get_current_user_permissions: GetCurrentUserPermissionsHandler,
+        get_user_roles: GetUserRolesHandler,
+        get_user_permissions: GetUserPermissionsHandler,
+        get_users: GetUsersHandler,
+    ) -> BaseQueryMediator:
+
+        query_mediator.register_query(GetUserById, get_user_by_id)
+        query_mediator.register_query(GetUserByUsername, get_user_by_username)
+        query_mediator.register_query(GetCurrentUser, get_current_user)
+        query_mediator.register_query(GetCurrentUserRoles, get_current_user_roles)
+        query_mediator.register_query(
+            GetCurrentUserPermissions, get_current_user_permissions
+        )
+        query_mediator.register_query(GetUserRoles, get_user_roles)
+        query_mediator.register_query(GetUserPermissions, get_user_permissions)
+        query_mediator.register_query(GetUsers, get_users)
+
+        return query_mediator

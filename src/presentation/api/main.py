@@ -5,11 +5,13 @@ from litestar.openapi import OpenAPIConfig
 from src.presentation.api.lifespan import lifespan
 from src.presentation.api.v1.auth.auth_router import AuthController
 from src.presentation.api.v1.roles.rbac_router import RBACController
+from src.presentation.api.v1.users.user_router import UserController
+from src.presentation.api.exception_configuration import get_exception_handlers
 
 
 def create_app() -> Litestar:
     app = Litestar(
-        route_handlers=[AuthController, RBACController],
+        route_handlers=[AuthController, RBACController, UserController],
         lifespan=[lifespan],
         openapi_config=OpenAPIConfig(
             title="Auth Microservice",
@@ -22,6 +24,7 @@ def create_app() -> Litestar:
             allow_headers=["*"],
         ),
         debug=True,
+        exception_handlers=get_exception_handlers(),
     )
 
     return app

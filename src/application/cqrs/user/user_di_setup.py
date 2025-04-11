@@ -8,6 +8,17 @@ from src.application.cqrs.user.commands import (
     RegisterUserCommandHandler,
 )
 
+from src.application.cqrs.user.queries import (
+    GetUserByUsernameHandler,
+    GetCurrentUserHandler,
+    GetUsersHandler,
+    GetCurrentUserPermissionsHandler,
+    GetCurrentUserRolesHandler,
+    GetUserByIdHandler,
+    GetUserRolesHandler,
+    GetUserPermissionsHandler,
+)
+
 from src.application.cqrs.user.events import UserCreatedEventHandler
 from src.application.services.tasks.notification_manager import NotificationManager
 from src.settings.config import Config
@@ -33,3 +44,17 @@ class ExternalEventProvider(Provider):
         notification_manager: NotificationManager,
     ) -> UserCreatedEventHandler:
         return UserCreatedEventHandler(session_factory, notification_manager)
+
+
+class UserQueryProvider(Provider):
+    # Query handlers
+    get_user_by_id = provide(GetUserByIdHandler, scope=Scope.REQUEST)
+    get_user_by_username = provide(GetUserByUsernameHandler, scope=Scope.REQUEST)
+    get_user_roles = provide(GetUserRolesHandler, scope=Scope.REQUEST)
+    get_user_permissions = provide(GetUserPermissionsHandler, scope=Scope.REQUEST)
+    get_current_user = provide(GetCurrentUserHandler, scope=Scope.REQUEST)
+    get_current_user_roles = provide(GetCurrentUserRolesHandler, scope=Scope.REQUEST)
+    get_current_user_permissions = provide(
+        GetCurrentUserPermissionsHandler, scope=Scope.REQUEST
+    )
+    get_users = provide(GetUsersHandler, scope=Scope.REQUEST)
