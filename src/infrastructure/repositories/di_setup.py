@@ -11,6 +11,7 @@ from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.db.uow import SQLAlchemyUoW
 from src.infrastructure.repositories.permission.permission_repo import PermissionRepository
+from src.infrastructure.repositories.role.role_invalidation_repo import RoleInvalidationRepository
 from src.infrastructure.repositories.token.redis_repo import TokenBlackListRepository
 from src.infrastructure.repositories.session.session_repo import SessionRepository
 from src.infrastructure.repositories.user.user_reader import UserReader
@@ -42,6 +43,8 @@ class RepositoryProvider(Provider):
     session_repo = provide(SessionRepository, scope=Scope.REQUEST, provides=BaseSessionRepository)
 
     token_repo = provide(TokenBlackListRepository, scope=Scope.APP, provides=TokenBlackListRepository)
+
+    role_invalidation_repo = provide(RoleInvalidationRepository, scope=Scope.APP, provides=RoleInvalidationRepository)
 
 
 class UnitOfWorkProvider(Provider):

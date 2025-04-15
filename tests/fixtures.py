@@ -7,6 +7,7 @@ from src.application.cqrs.cqrs_di_setup import MediatorProvider, MediatorConfigP
 from src.application.cqrs.user.user_di_setup import (
     UserCommandProvider,
     ExternalEventProvider,
+    UserQueryProvider,
 )
 from src.application.cqrs.role.role_di_setup import RoleCommandProvider
 from src.application.services.session.session_di_setup import SessionManagerProvider
@@ -44,6 +45,7 @@ def init_test_di_container() -> AsyncContainer:
         NotificationManagerProvider(),
         MediatorProvider(),
         UserCommandProvider(),
+        UserQueryProvider(),
         RoleCommandProvider(),
         ExternalEventProvider(),
         MediatorConfigProvider(),

@@ -38,7 +38,7 @@ class TokenBlackListRepository(RedisRepository):
     prefix = "revoked_user: "
 
     async def add_to_blacklist(
-        self, user_id: str, expiration_duration: float | None
+        self, user_id: str, expiration_duration: float | None = None
     ) -> bool:
         """
 

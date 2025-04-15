@@ -16,6 +16,7 @@ from src.presentation.api.v1.auth.response.user import (
 
 class AuthController(Controller):
     path = "/auth"
+    tags = ["Auth"]
     dependencies = {"di_container": Provide(get_container)}
 
     @route(path="/register", http_method=[HttpMethod.POST], sync_to_thread=False)

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from src.infrastructure.exceptions.repository import (
     UserDoesNotExistException,
     UserWithUsernameDoesNotExistException,
+    UserIsDeletedException,
 )
 from src.infrastructure.base.repository.base import SQLAlchemyRepository
 from src.infrastructure.base.repository import BaseUserWriter

@@ -21,6 +21,9 @@ from dataclasses import dataclass
 from jose import JWTError, ExpiredSignatureError
 
 import src.application.dto as dto
+from src.infrastructure.repositories.role.role_invalidation_repo import (
+    RoleInvalidationRepository,
+)
 
 
 @dataclass
@@ -29,6 +32,7 @@ class JWTManager(BaseJWTManager):
     jwt_encoder: BaseJWTEncoder
     cookie_manager: BaseCookieManager
     blacklist_repo: TokenBlackListRepository
+    role_invalidation: RoleInvalidationRepository
 
     def create_token_pair(
         self, security_user: JWTUserInterface, response: ResponseProtocol
@@ -88,6 +92,21 @@ class JWTManager(BaseJWTManager):
 
                 if token_time < blacklist_time:
                     raise TokenRevokedException(token)
+
+            # Check if user role is invalidated
+            for role in token_data.roles:
+                invalidated_at = (
+                    await self.role_invalidation.get_role_invalidation_time(role)
+                )
+
+                if invalidated_at is not None:
+                    invalidated_time = datetime.fromtimestamp(
+                        float(invalidated_at), tz=UTC
+                    )
+                    token_time = datetime.fromtimestamp(token_data.iat, tz=UTC)
+
+                    if token_time < invalidated_time:
+                        raise TokenRevokedException(token)
 
             return token_data
 

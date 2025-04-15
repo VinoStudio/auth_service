@@ -1,0 +1,11 @@
+prometheus.remote_write "prometheus" {
+  endpoint {
+    url = "http://auth_service.prometheus:9090/api/v1/write"
+  }
+}
+
+prometheus.scrape "default" {
+  targets = discovery.docker.containers.targets
+
+  forward_to = [prometheus.remote_write.prometheus.receiver]
+}

@@ -29,10 +29,11 @@ from src.infrastructure.repositories.pagination import Pagination
 
 
 class UserController(Controller):
-    path = "/user"
+    tags = ["Users"]
+    path = "/users"
     dependencies = {"di_container": Provide(get_container)}
 
-    @route(path="/id/{user_id:str}", http_method=[HttpMethod.GET], sync_to_thread=False)
+    @route(path="/{user_id:str}", http_method=[HttpMethod.GET], sync_to_thread=False)
     async def get_user_by_id(
         self,
         user_id: Annotated[
@@ -40,15 +41,12 @@ class UserController(Controller):
         ],
         di_container: AsyncContainer,
     ) -> user_response.GetUserResponseSchema:
-        try:
-            async with di_container() as c:
-                query_mediator = await c.get(BaseQueryMediator)
-                user = await query_mediator.handle_query(GetUserById(user_id=user_id))
 
-                return user_response.GetUserResponseSchema.from_entity(user)
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            user = await query_mediator.handle_query(GetUserById(user_id=user_id))
 
-        except Exception as e:
-            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(e))
+            return user_response.GetUserResponseSchema.from_entity(user)
 
     @route(
         path="/username/{username:str}",
@@ -90,20 +88,17 @@ class UserController(Controller):
             Parameter(description="Set limit", title="Limit", required=False),
         ] = 100,
     ) -> user_response.GetUserRolesResponseSchema:
-        try:
-            async with di_container() as c:
-                query_mediator = await c.get(BaseQueryMediator)
-                roles = await query_mediator.handle_query(
-                    GetUserRoles(
-                        user_id=user_id,
-                        pagination=Pagination(offset=offset, limit=limit),
-                    )
+
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            roles = await query_mediator.handle_query(
+                GetUserRoles(
+                    user_id=user_id,
+                    pagination=Pagination(offset=offset, limit=limit),
                 )
+            )
 
-                return user_response.GetUserRolesResponseSchema(roles=roles)
-
-        except Exception as e:
-            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(e))
+            return user_response.GetUserRolesResponseSchema(roles=roles)
 
     @route(
         path="/{user_id:str}/permissions",
@@ -125,22 +120,19 @@ class UserController(Controller):
             Parameter(description="Set limit", title="Limit", required=False),
         ] = 100,
     ) -> user_response.GetUserPermissionsResponseSchema:
-        try:
-            async with di_container() as c:
-                query_mediator = await c.get(BaseQueryMediator)
-                permissions = await query_mediator.handle_query(
-                    GetUserPermissions(
-                        user_id=user_id,
-                        pagination=Pagination(offset=offset, limit=limit),
-                    )
-                )
 
-                return user_response.GetUserPermissionsResponseSchema(
-                    permissions=permissions
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            permissions = await query_mediator.handle_query(
+                GetUserPermissions(
+                    user_id=user_id,
+                    pagination=Pagination(offset=offset, limit=limit),
                 )
+            )
 
-        except Exception as e:
-            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(e))
+            return user_response.GetUserPermissionsResponseSchema(
+                permissions=permissions
+            )
 
     @route(
         path="/",
@@ -161,17 +153,13 @@ class UserController(Controller):
             Parameter(description="Set limit", title="Limit", required=False),
         ] = 100,
     ) -> List[user_response.GetUserResponseSchema]:
-        try:
-            async with di_container() as c:
-                query_mediator = await c.get(BaseQueryMediator)
-                users = await query_mediator.handle_query(
-                    GetUsers(pagination=Pagination(offset=offset, limit=limit))
-                )
 
-                return [
-                    user_response.GetUserResponseSchema.from_entity(user)
-                    for user in users
-                ]
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            users = await query_mediator.handle_query(
+                GetUsers(pagination=Pagination(offset=offset, limit=limit))
+            )
 
-        except Exception as e:
-            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(e))
+            return [
+                user_response.GetUserResponseSchema.from_entity(user) for user in users
+            ]

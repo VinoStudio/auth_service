@@ -5,10 +5,16 @@ from litestar.status_codes import (
     HTTP_410_GONE,
     HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
 )
 
 from src.application.base.exception import ApplicationException
-from src.application.exceptions import UsernameAlreadyExistsException
+from src.application.exceptions import (
+    UsernameAlreadyExistsException,
+    RBACException,
+    UnauthorizedRBACOperationException,
+)
 from src.domain.base.exceptions.application import AppException
 from src.domain.base.exceptions.domain import DomainException, ValidationException
 from src.infrastructure.base.exception import InfrastructureException
@@ -18,6 +24,11 @@ from src.infrastructure.exceptions import (
     UserWithUsernameDoesNotExistException,
     UserIdAlreadyExistsErrorException,
     UserIsDeletedException,
+)
+from src.application.exceptions import (
+    AuthorizationException,
+    AuthenticationException,
+    AccessRejectedException,
 )
 
 
@@ -179,7 +190,62 @@ def user_deleted_handler(request: Request, exc: UserIsDeletedException) -> Respo
     )
 
 
-# Function to configure and return exception handlers
+def unauthorized_handler(request: Request, exc: AuthenticationException) -> Response:
+    return Response(
+        content={
+            "error": {
+                "message": exc.message,
+                "type": exc.__class__.__name__,
+            }
+        },
+        status_code=HTTP_401_UNAUTHORIZED,
+        media_type=MediaType.JSON,
+    )
+
+
+def forbidden_exception_handler(
+    request: Request, exc: AuthorizationException
+) -> Response:
+    return Response(
+        content={
+            "error": {
+                "message": exc.message,
+                "type": exc.__class__.__name__,
+            }
+        },
+        status_code=HTTP_403_FORBIDDEN,
+        media_type=MediaType.JSON,
+    )
+
+
+def rbac_exception_handler(request: Request, exc: RBACException) -> Response:
+    return Response(
+        content={
+            "error": {
+                "message": exc.message,
+                "type": exc.__class__.__name__,
+            }
+        },
+        status_code=HTTP_409_CONFLICT,
+        media_type=MediaType.JSON,
+    )
+
+
+def rbac_unauthorized_handler(
+    request: Request, exc: UnauthorizedRBACOperationException
+) -> Response:
+    return Response(
+        content={
+            "error": {
+                "message": exc.message,
+                "type": exc.__class__.__name__,
+            }
+        },
+        status_code=HTTP_401_UNAUTHORIZED,
+        media_type=MediaType.JSON,
+    )
+
+
 def get_exception_handlers():
     return {
         # Map exception types to handlers
@@ -194,4 +260,8 @@ def get_exception_handlers():
         UsernameAlreadyExistsException: username_exists_handler,
         UserIdAlreadyExistsErrorException: user_id_exists_handler,
         UserIsDeletedException: user_deleted_handler,
+        AuthenticationException: unauthorized_handler,
+        AuthorizationException: forbidden_exception_handler,
+        RBACException: rbac_exception_handler,
+        UnauthorizedRBACOperationException: rbac_unauthorized_handler,
     }

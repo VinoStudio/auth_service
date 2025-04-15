@@ -1,0 +1,32 @@
+// --------------------------------------------   Receivers/Discovery
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+
+  filter {
+    name = "network"
+    //values = ["alloy.logs.enable=true"]
+  }
+}
+
+discovery.docker "docker_host_metrics" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+// --- You can add label to docker compose file to filter container that alloy will find for logs.
+  //filter {
+  //  name = "label"
+  //  values = ["alloy.metrics.enable=true"]
+  //}
+}
+
+discovery.docker "docker_host_logs" {
+  host = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+
+  //filter {
+  //  name = "label"
+  //  values = ["alloy.logs.enable=true"]
+  //}
+
+}

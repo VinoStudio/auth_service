@@ -1,7 +1,7 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import wraps
-from typing import List, ClassVar, Tuple
+from typing import ClassVar, Tuple
 
 from src.application.base.rbac.base import BaseRBACManager
 from src.application.base.security.jwt_user import JWTUserInterface
@@ -20,6 +20,10 @@ import src.domain as domain
 import src.application.dto as dto
 import structlog
 
+from src.infrastructure.repositories.role.role_invalidation_repo import (
+    RoleInvalidationRepository,
+)
+
 logger = structlog.getLogger(__name__)
 
 
@@ -32,6 +36,7 @@ class RBACManager(BaseRBACManager):
 
     role_repository: BaseRoleRepository
     permission_repository: BasePermissionRepository
+    role_invalidation: RoleInvalidationRepository
     system_roles: ClassVar[Tuple[str]] = ("super_admin", "system_admin")
     protected_permissions: ClassVar[Tuple[str]] = (
         "role:create",
@@ -63,9 +68,8 @@ class RBACManager(BaseRBACManager):
                     raise ValueError("Authorization requires request_from parameter")
 
                 if not self._has_permission(request_from, permission_name):
-                    operation = permission_name.split(":")[0]
                     raise AccessDeniedException(
-                        f"You don't have permission to {operation}"
+                        f"You don't have permission to {permission_name}"
                     )
 
                 return await func(self, *args, **kwargs)
@@ -93,7 +97,7 @@ class RBACManager(BaseRBACManager):
     ) -> domain.Role:
         """Create a new role with specified permissions"""
 
-        self._validate_role_name(role_dto.name)
+        # self._validate_role_name(role_dto.name)
 
         await self._check_if_role_exists(role_dto.name)
 
@@ -298,6 +302,11 @@ class RBACManager(BaseRBACManager):
 
         return user
 
+    # -------------------- Invalidation Methods --------------------
+
+    async def invalidate_role(self, role_name: str) -> None:
+        await self.role_invalidation.invalidate_role(role_name)
+
     # -------------------- Validation Methods --------------------
 
     async def _check_if_role_exists(self, role_name: str) -> None:
@@ -317,20 +326,20 @@ class RBACManager(BaseRBACManager):
         )
 
     # -------------------- Permission Checking --------------------
-
-    def _validate_role_name(self, role_name: str) -> None:
-        """Validate that role name follows naming conventions"""
-        if not re.match(r"^[a-z0-9_]+$", role_name):
-            raise ValidationException(
-                "Role name must be lowercase alphanumeric with underscores"
-            )
-
-        if role_name.startswith(("system_", "admin_")) and not self._is_system_user(
-            request_from
-        ):
-            raise ValidationException(
-                "Role names with 'system_' or 'admin_' prefixes are reserved"
-            )
+    #
+    # def _validate_role_name(self, role_name: str) -> None:
+    #     """Validate that role name follows naming conventions"""
+    #     if not re.match(r"^[a-z0-9_]+$", role_name):
+    #         raise ValidationException(
+    #             "Role name must be lowercase alphanumeric with underscores"
+    #         )
+    #
+    #     if role_name.startswith(("system_", "admin_")) and not self._is_system_user(
+    #         request_from
+    #     ):
+    #         raise ValidationException(
+    #             "Role names with 'system_' or 'admin_' prefixes are reserved"
+    #         )
 
     def _validate_permission_interaction(
         self,

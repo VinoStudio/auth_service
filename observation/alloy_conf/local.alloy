@@ -1,0 +1,10 @@
+local.file_match "local" {
+    path_targets = [{"__path__" = "/var/logs/auth.log"}]
+    sync_period = "10s"
+}
+
+loki.source.file "local" {
+    targets = local.file_match.local.targets
+    tail_from_end = false
+    forward_to = [loki.write.grafana_loki.receiver]
+}

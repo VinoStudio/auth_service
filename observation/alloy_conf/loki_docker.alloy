@@ -1,0 +1,72 @@
+loki.write "grafana_loki" {
+  endpoint {
+    url = "http://auth_service.loki:3100/loki/api/v1/push"
+  }
+}
+
+loki.source.docker "docker_logs" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.docker_host_logs.targets
+  labels     = {
+    "node_name"       = sys.env("HOSTNAME"),
+    "app" = "docker",
+
+  }
+  relabel_rules = loki.relabel.docker_labels.rules
+  forward_to = [loki.write.grafana_loki.receiver]
+}
+
+// Each target includes the following labels:
+//     __meta_docker_container_id: ID of the container.
+//     __meta_docker_container_name: Name of the container.
+//     __meta_docker_container_network_mode: Network mode of the container.
+//     __meta_docker_container_label_<labelname>: Each label from the container.
+//     __meta_docker_network_id: ID of the Docker network the container is in.
+//     __meta_docker_network_name: Name of the Docker network the container is in.
+//     __meta_docker_network_ingress: Set to true if the Docker network is an ingress network.
+//     __meta_docker_network_internal: Set to true if the Docker network is an internal network.
+//     __meta_docker_network_label_<labelname>: Each label from the network the container is in.
+//     __meta_docker_network_scope: The scope of the network the container is in.
+//     __meta_docker_network_ip: The IP of the container in the network.
+//     __meta_docker_port_private: The private port on the container.
+//     __meta_docker_port_public: The publicly exposed port from the container, if a port mapping exists.
+//     __meta_docker_port_public_ip: The public IP of the container, if a port mapping exists.
+
+loki.relabel "docker_labels" {
+  forward_to = []
+
+  rule {
+    action        = "replace"
+    source_labels = ["__meta_docker_container_name"]
+    target_label  = "container_name"
+  }
+
+  rule {
+    action        = "replace"
+    source_labels = ["__meta_docker_network_name"]
+    target_label  = "network_name"
+  }
+
+  rule {
+    action        = "replace"
+    source_labels = ["__meta_docker_network_ip"]
+    target_label  = "network_ip"
+  }
+
+  rule {
+    action        = "replace"
+    source_labels = ["__meta_docker_port_private"]
+    target_label  = "port_private"
+  }
+  rule {
+    action        = "replace"
+    source_labels = ["__meta_docker_port_public"]
+    target_label  = "port_public"
+  }
+  rule {
+    action        = "replace"
+    source_labels = ["__meta_docker_port_public"]
+    target_label  = "port_public"
+  }
+}
+

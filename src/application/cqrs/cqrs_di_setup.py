@@ -24,8 +24,22 @@ from src.application.cqrs.user.commands import (
 )
 
 from src.application.cqrs.role.commands import (
-    CreateRoleCommandHandler,
     CreateRoleCommand,
+    CreateRoleCommandHandler,
+    AssignRoleCommand,
+    AssignRoleCommandHandler,
+    DeleteRoleCommand,
+    DeleteRoleCommandHandler,
+    RemoveRoleCommand,
+    RemoveRoleCommandHandler,
+    UpdateRoleSecurityLvlCommand,
+    UpdateRoleSecurityLvlCommandHandler,
+    UpdateRoleDescriptionCommand,
+    UpdateRoleDescriptionCommandHandler,
+    UpdateRolePermissionsCommand,
+    UpdateRolePermissionsCommandHandler,
+    RemoveRolePermissionsCommand,
+    RemoveRolePermissionsCommandHandler,
 )
 
 from src.application.cqrs.user.queries import (
@@ -94,7 +108,39 @@ class MediatorConfigProvider(Provider):
         command_mediator.register_command(
             RefreshUserTokensCommand, [refresh_user_tokens]
         )
+
+        return command_mediator
+
+    @decorate
+    async def register_role_commands(
+        self,
+        command_mediator: BaseCommandMediator,
+        create_role: CreateRoleCommandHandler,
+        assign_role: AssignRoleCommandHandler,
+        delete_role: DeleteRoleCommandHandler,
+        remove_role: RemoveRoleCommandHandler,
+        update_role_security_lvl: UpdateRoleSecurityLvlCommandHandler,
+        update_role_description: UpdateRoleDescriptionCommandHandler,
+        update_role_permissions: UpdateRolePermissionsCommandHandler,
+        remove_role_permissions: RemoveRolePermissionsCommandHandler,
+    ) -> BaseCommandMediator:
+
         command_mediator.register_command(CreateRoleCommand, [create_role])
+        command_mediator.register_command(AssignRoleCommand, [assign_role])
+        command_mediator.register_command(DeleteRoleCommand, [delete_role])
+        command_mediator.register_command(RemoveRoleCommand, [remove_role])
+        command_mediator.register_command(
+            UpdateRoleSecurityLvlCommand, [update_role_security_lvl]
+        )
+        command_mediator.register_command(
+            UpdateRoleDescriptionCommand, [update_role_description]
+        )
+        command_mediator.register_command(
+            UpdateRolePermissionsCommand, [update_role_permissions]
+        )
+        command_mediator.register_command(
+            RemoveRolePermissionsCommand, [remove_role_permissions]
+        )
 
         return command_mediator
 

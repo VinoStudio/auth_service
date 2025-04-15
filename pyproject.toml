@@ -26,6 +26,7 @@ dependencies = [
     "celery>=5.5.1",
     "aiojobs>=1.4.0",
     "flower>=2.0.1",
+    "prometheus-client>=0.21.1",
 ]
 
 [dependency-groups]
