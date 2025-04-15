@@ -1,0 +1,96 @@
+# version: '3.8'
+services:
+  grafana:
+    profiles: [ "grafana" ]
+    image: grafana/grafana:9.5.2
+    container_name: auth_service.grafana
+    hostname: auth_service.grafana
+    restart: unless-stopped
+    expose:
+      - "3000"
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - auth_service.grafana.network
+    volumes:
+      - auth_service.grafana_data:/var/lib/grafana:rw
+      - ./grafana_conf:/etc/grafana/provisioning:rw
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - VIRTUAL_HOST=auth_service.grafana
+      - NETWORK_ACCESS=internal
+      - VIRTUAL_PORT=3000
+
+  prometheus:
+    profiles: [ "grafana" ]
+    image: prom/prometheus:latest
+    container_name: auth_service.prometheus
+    hostname: auth_service.prometheus
+    restart: unless-stopped
+    user: root
+    expose:
+      - "9090"
+    ports:
+      - "9090:9090"
+    networks:
+      - auth_service.grafana.network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - auth_service.prometheus_data:/prometheus
+    command: --config.file=/etc/prometheus/prometheus.yaml --storage.tsdb.path=/prometheus
+
+
+  loki:
+    profiles: [ "grafana" ]
+    image: grafana/loki:latest
+    container_name: auth_service.loki
+    hostname: auth_service.loki
+    expose:
+      - "3100"
+    volumes:
+      - ./loki_config.yaml:/etc/loki/config.yaml:ro
+      - auth_service.loki_data:/tmp/:rw
+    command: -config.file=/etc/loki/config.yaml
+    restart: unless-stopped
+    networks:
+      - auth_service.grafana.network
+
+  alloy:
+    profiles: [ "grafana" ]
+    image: grafana/alloy:latest
+    container_name: auth_service.alloy
+    restart: unless-stopped
+    ports:
+      - "12345:12345" # Map port 12345
+    networks:
+      - auth_service.grafana.network
+    environment:
+      - HOSTNAME=alloy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./alloy_conf:/etc/alloy
+      - auth_service.alloy_data:/var/lib/alloy/data
+      - /var/log:/var/log:ro
+    command: >
+      run
+      --server.http.listen-addr=0.0.0.0:12345
+      --storage.path=/var/lib/alloy/data
+      /etc/alloy
+    labels:
+      - "alloy.logs.enable=true"
+
+
+
+networks:
+  auth_service.grafana.network:
+    external: True
+    name: auth_service.grafana.network
+
+volumes:
+    auth_service.alloy_data:
+    auth_service.grafana_data:
+    auth_service.loki_data:
+    auth_service.prometheus_data:

@@ -189,12 +189,28 @@ async def test_update_role_by_admin(di_container, get_security_admin):
         original_description = role.description
         role.description = "Updated description"
 
-        updated_role = await rbac_manager.update_role(
-            role=role, request_from=get_security_admin
+        await rbac_manager.update_role(role=role, request_from=get_security_admin)
+
+        await rbac_manager.invalidate_role(role.name.to_raw())
+
+        await uow.commit()
+
+    async with di_container() as c:
+        rbac_manager: RBACManager = await c.get(RBACManager)
+
+        role = await rbac_manager.get_role(
+            role_name="user", request_from=get_security_admin
         )
 
-        assert updated_role.description == "Updated description"
-        assert updated_role.description != original_description
+        assert role.description == "Updated description"
+        assert role.description != original_description
+
+        role_mark = await rbac_manager.role_invalidation.get_role_invalidation_time(
+            role.name.to_raw()
+        )
+
+        assert role_mark is not None
+        assert isinstance(role_mark, str)
 
 
 async def test_update_role_with_high_tier_permissions(
@@ -457,34 +473,3 @@ async def test_remove_nonexistent_role(
 
         # User should remain unchanged
         assert role not in updated_user.roles
-
-
-# async def test_permission_checking_with_mocks(di_container, mocker):
-#     async with di_container() as c:
-#         rbac_manager: RBACManager = await c.get(RBACManager)
-#
-#         # Mock a user with no permissions
-#         mock_user = mocker.Mock(spec=JWTUserInterface)
-#         mock_user.get_permissions.return_value = []
-#         mock_user.get_roles.return_value = ["basic_role"]
-#         mock_user.get_user_identifier.return_value = "mock_user"
-#         mock_user.get_security_level.return_value = 1
-#
-#         # User without permission should be denied
-#         assert not rbac_manager._has_permission(mock_user, "role:view")
-#
-#         with pytest.raises(AccessDeniedException):
-#             await rbac_manager.get_role(role_name="user", request_from=mock_user)
-#
-#         # Now give the user the required permission
-#         mock_user.get_permissions.return_value = ["role:view"]
-#
-#         # Should now have permission
-#         assert rbac_manager._has_permission(mock_user, "role:view")
-#
-#         # Create a system user
-#         system_user = mocker.Mock(spec=JWTUserInterface)
-#         system_user.get_roles.return_value = ["super_admin"]
-#
-#         # System user should have all permissions
-#         assert rbac_manager._has_permission(system_user, "any:permission")

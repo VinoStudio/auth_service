@@ -1,14 +1,13 @@
 from src.application.base.exception import ApplicationException
-from src.application.exceptions.token import TokenExpiredException, TokenRevokedException, TokenValidationError
 from src.application.exceptions.mediator import (
     CommandIsNotRegisteredException,
     QueryIsNotRegisteredException,
-    EventIsNotRegisteredException
+    EventIsNotRegisteredException,
 )
 from src.application.exceptions.user import (
     UsernameAlreadyExistsException,
     EmailAlreadyExistsException,
-    PasswordIsInvalidException
+    PasswordIsInvalidException,
 )
 
 from src.application.exceptions.rbac import (
@@ -21,10 +20,17 @@ from src.application.exceptions.rbac import (
     RoleInUseException,
     AccessDeniedException,
     PermissionAlreadyExistsException,
-    PermissionInUseException
+    PermissionInUseException,
 )
 
-from src.application.exceptions.jwt import AuthenticationException, AccessRejectedException
+from src.application.exceptions.jwt import (
+    AuthenticationException,
+    AuthorizationException,
+    AccessRejectedException,
+    TokenExpiredException,
+    TokenRevokedException,
+    TokenValidationError,
+)
 
 __all__ = (
     "ApplicationException",
@@ -48,5 +54,6 @@ __all__ = (
     "PermissionAlreadyExistsException",
     "PermissionInUseException",
     "AuthenticationException",
+    "AuthorizationException",
     "AccessRejectedException",
 )

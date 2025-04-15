@@ -6,6 +6,8 @@ services:
 
     container_name: auth_service_dev
 
+    hostname: auth_service
+
     ports:
       - "${APP_PORT}:8000"
 
@@ -21,6 +23,7 @@ services:
       - default
       - kafka_network
       - redis_network
+      - auth_service.grafana.network
 
     depends_on:
       postgres_auth:
@@ -29,7 +32,8 @@ services:
         condition: service_healthy
 
     command: "uvicorn --factory src.presentation.api.main:create_app --timeout-graceful-shutdown 2  --use-colors --reload  --log-level debug --host 0.0.0.0 --port 8000"
-
+    labels:
+      - "alloy.logs.enable=true"
 
 networks:
   default:
@@ -42,3 +46,7 @@ networks:
   redis_network:
     external: True
     name: redis_network
+
+  auth_service.grafana.network:
+      external: True
+      name: auth_service.grafana.network

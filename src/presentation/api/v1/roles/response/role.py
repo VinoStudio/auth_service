@@ -19,3 +19,27 @@ class CreatedRoleResponseSchema(BaseModel):
             security_level=role.security_level,
             permissions=[perm.permission_name.to_raw() for perm in role.permission],
         )
+
+
+class RoleDeletedResponseSchema(BaseModel):
+    status: str = "Given role successfully deleted"
+
+
+class RoleAssignedResponseSchema(BaseModel):
+    user_id: str
+    username: str
+    roles: List[str]
+
+    @classmethod
+    def from_entity(cls, user: domain.User):
+        return cls(
+            user_id=user.id.to_raw(),
+            username=user.username.to_raw(),
+            roles=[role.name.to_raw() for role in user.roles],
+        )
+
+
+class RoleRemovedResponseSchema(RoleAssignedResponseSchema): ...
+
+
+class RoleUpdatedResponseSchema(CreatedRoleResponseSchema): ...

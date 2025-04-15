@@ -10,6 +10,9 @@ from src.application.services.security.cookie_manager import CookieManager
 from src.application.services.security.jwt_encoder import JWTEncoder
 from src.application.services.security.jwt_payload_generator import JWTPayloadGenerator
 from src.infrastructure.repositories import TokenBlackListRepository
+from src.infrastructure.repositories.role.role_invalidation_repo import (
+    RoleInvalidationRepository,
+)
 from src.settings.config import Config
 
 
@@ -46,10 +49,12 @@ class JWTProvider(Provider):
         jwt_payload_generator: BaseJWTPayloadGenerator,
         jwt_cookie_manager: BaseCookieManager,
         black_list_repo: TokenBlackListRepository,
+        role_invalidation: RoleInvalidationRepository,
     ) -> BaseJWTManager:
         return JWTManager(
             jwt_encoder=jwt_encoder,
             cookie_manager=jwt_cookie_manager,
             payload_generator=jwt_payload_generator,
             blacklist_repo=black_list_repo,
+            role_invalidation=role_invalidation,
         )

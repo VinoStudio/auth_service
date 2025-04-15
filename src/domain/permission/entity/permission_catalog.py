@@ -27,6 +27,12 @@ class PermissionEnum(Enum):
     ASSIGN_ROLE = Permission(PermissionName("role:assign"))
     REMOVE_ROLE = Permission(PermissionName("role:remove"))
 
+    # Permission Management
+    CREATE_PERMISSION = Permission(PermissionName("permission:create"))
+    UPDATE_PERMISSION = Permission(PermissionName("permission:update"))
+    DELETE_PERMISSION = Permission(PermissionName("permission:delete"))
+    VIEW_PERMISSION = Permission(PermissionName("permission:view"))
+
     # Project Management
     CREATE_PROJECT = Permission(PermissionName("project:create"))
     UPDATE_PROJECT = Permission(PermissionName("project:update"))
