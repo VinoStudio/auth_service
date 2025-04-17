@@ -8,6 +8,8 @@ from src.application.exceptions.user import (
     UsernameAlreadyExistsException,
     EmailAlreadyExistsException,
     PasswordIsInvalidException,
+    UserNotFoundException,
+    PasswordTokenExpiredException,
 )
 
 from src.application.exceptions.rbac import (
@@ -41,8 +43,10 @@ __all__ = (
     "QueryIsNotRegisteredException",
     "EventIsNotRegisteredException",
     "UsernameAlreadyExistsException",
+    "UserNotFoundException",
     "EmailAlreadyExistsException",
     "PasswordIsInvalidException",
+    "PasswordTokenExpiredException",
     "RBACException",
     "UnauthorizedRBACOperationException",
     "RoleNotFoundException",

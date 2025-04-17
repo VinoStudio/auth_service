@@ -30,9 +30,7 @@ class DeviceIdentifier:
         # Create device info JSON
         device_info = {
             "browser_family": ua.browser.family,
-            "browser_version": ua.browser.version_string,
             "os_family": ua.os.family,
-            "os_version": ua.os.version_string,
             "device": ua.get_device(),
             "accept_lang": headers.get("accept-language", ""),
             "accept_encoding": headers.get("accept-encoding", ""),

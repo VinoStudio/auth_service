@@ -26,10 +26,10 @@ logger = structlog.getLogger(__name__)
 
 @dataclass(frozen=True)
 class RegisterUserCommand(BaseCommand):
+    request: Optional[RequestProtocol]
     username: str
     email: str
     password: str
-    request: Optional[RequestProtocol]
     first_name: str
     last_name: str
     middle_name: str | None = field(default=None)
@@ -78,8 +78,8 @@ class RegisterUserCommandHandler(CommandHandler[RegisterUserCommand, domain.User
             created_at=user.created_at,
         )
 
-        await self._event_publisher.handle_event(event)
+        # await self._event_publisher.handle_event(event)
 
-        logger.info("Event created", event_type=event.event_type)
+        # logger.info("Event created", event_type=event.event_type)
 
         return user

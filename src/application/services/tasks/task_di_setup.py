@@ -9,7 +9,4 @@ class NotificationManagerProvider(Provider):
     async def get_notification_manager(self, config: Config) -> NotificationManager:
         return NotificationManager(
             username=config.smtp.user,
-            password=config.smtp.password,
-            server=config.smtp.host,
-            port=config.smtp.port,
         )

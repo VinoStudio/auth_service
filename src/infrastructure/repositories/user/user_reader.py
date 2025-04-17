@@ -63,7 +63,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         stmt = self.get_user().where(models.User.email == email)
 
         result = await self._session.execute(stmt)
-        user: models.User | None = result.scalars().one()
+        user: models.User | None = result.scalars().one_or_none()
 
         if user is None:
             raise UserWithEmailDoesNotExistException(email)
@@ -104,6 +104,27 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         ]
 
     async def get_all_usernames(self) -> Iterable[str]: ...
+
+    async def check_field_exists(self, field_name: str, value: str) -> bool:
+        result = await self._session.execute(
+            text(
+                f"""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM "user"
+                    WHERE {field_name} = :{field_name}
+                )
+                """
+            ),
+            {field_name: value},
+        )
+        return result.scalar()
+
+    async def check_username_exists(self, username: str) -> bool:
+        return await self.check_field_exists("username", username)
+
+    async def check_email_exists(self, email: str) -> bool:
+        return await self.check_field_exists("email", email)
 
     async def get_user_roles_by_id(
         self, user_id: str, pagination: Pagination

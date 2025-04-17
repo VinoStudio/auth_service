@@ -119,10 +119,8 @@ class User(AggregateRoot):
             self.email = email
             self._version_upgrade()
 
-    def set_password(self, old_pass: str, new_pass: str) -> None:
+    def set_password(self, new_pass: str) -> None:
         self._is_not_deleted()
-        self._pass_is_match(password=old_pass)
-
         self.password = Password.create(new_pass)
 
     def delete(self) -> None:

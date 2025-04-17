@@ -1,5 +1,4 @@
 from dishka import Scope, provide, Provider, decorate
-from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.application.base.event_publisher.event_dispatcher import BaseEventDispatcher
 from src.application.base.event_publisher.event_publisher import BaseEventPublisher
@@ -13,14 +12,20 @@ from src.application.mediator.query_mediator import QueryMediator
 from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 
 from src.application.cqrs.user.commands import (
-    LoginUserCommand,
     RegisterUserCommand,
-    RefreshUserTokensCommand,
-    LogoutUserCommand,
-    LoginUserCommandHandler,
     RegisterUserCommandHandler,
-    RefreshUserTokensCommandHandler,
+    LoginUserCommand,
+    LoginUserCommandHandler,
+    OAuthLoginUserCommand,
+    OAuthLoginUserCommandHandler,
+    LogoutUserCommand,
     LogoutUserCommandHandler,
+    RefreshUserTokensCommand,
+    RefreshUserTokensCommandHandler,
+    ResetPasswordRequestCommand,
+    ResetPasswordRequestCommandHandler,
+    ResetUserPasswordCommand,
+    ResetUserPasswordCommandHandler,
 )
 
 from src.application.cqrs.role.commands import (
@@ -84,9 +89,7 @@ class MediatorProvider(Provider):
         return EventPublisher(_message_broker=message_broker)
 
     @provide(scope=Scope.APP)
-    async def get_event_dispatcher(
-        self, session_factory: async_sessionmaker
-    ) -> BaseEventDispatcher:
+    async def get_event_dispatcher(self) -> BaseEventDispatcher:
         return EventDispatcher()
 
 
@@ -97,16 +100,25 @@ class MediatorConfigProvider(Provider):
         command_mediator: BaseCommandMediator,
         register_user: RegisterUserCommandHandler,
         login_user: LoginUserCommandHandler,
+        oauth_login: OAuthLoginUserCommandHandler,
         logout_user: LogoutUserCommandHandler,
         refresh_user_tokens: RefreshUserTokensCommandHandler,
-        create_role: CreateRoleCommandHandler,
+        reset_user_password_request: ResetPasswordRequestCommandHandler,
+        reset_user_password: ResetUserPasswordCommandHandler,
     ) -> BaseCommandMediator:
 
         command_mediator.register_command(RegisterUserCommand, [register_user])
         command_mediator.register_command(LoginUserCommand, [login_user])
+        command_mediator.register_command(OAuthLoginUserCommand, [oauth_login])
         command_mediator.register_command(LogoutUserCommand, [logout_user])
         command_mediator.register_command(
             RefreshUserTokensCommand, [refresh_user_tokens]
+        )
+        command_mediator.register_command(
+            ResetPasswordRequestCommand, [reset_user_password_request]
+        )
+        command_mediator.register_command(
+            ResetUserPasswordCommand, [reset_user_password]
         )
 
         return command_mediator

@@ -9,6 +9,10 @@ from src.application.services.security.jwt_manager import JWTManager
 from src.application.services.security.cookie_manager import CookieManager
 from src.application.services.security.jwt_encoder import JWTEncoder
 from src.application.services.security.jwt_payload_generator import JWTPayloadGenerator
+from src.application.services.security.oauth_manager import (
+    OAuthProviderFactory,
+    OAuthManager,
+)
 from src.infrastructure.repositories import TokenBlackListRepository
 from src.infrastructure.repositories.role.role_invalidation_repo import (
     RoleInvalidationRepository,
@@ -58,3 +62,9 @@ class JWTProvider(Provider):
             blacklist_repo=black_list_repo,
             role_invalidation=role_invalidation,
         )
+
+    @provide(scope=Scope.APP)
+    async def get_oauth_providers(self, config: Config) -> OAuthProviderFactory:
+        return OAuthProviderFactory(providers={"google": config.google_oauth})
+
+    oauth_provider = provide(OAuthManager, scope=Scope.REQUEST)

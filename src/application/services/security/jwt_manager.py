@@ -35,7 +35,8 @@ class JWTManager(BaseJWTManager):
     role_invalidation: RoleInvalidationRepository
 
     def create_token_pair(
-        self, security_user: JWTUserInterface, response: ResponseProtocol
+        self,
+        security_user: JWTUserInterface,
     ) -> dto.TokenPair:
 
         access_payload = self.payload_generator.generate(
@@ -48,11 +49,21 @@ class JWTManager(BaseJWTManager):
         access_token = self.jwt_encoder.encode(access_payload)
         refresh_token = self.jwt_encoder.encode(refresh_payload)
 
-        self.set_token_in_cookie(response, refresh_token)
-
         return dto.TokenPair(access_token=access_token, refresh_token=refresh_token)
 
     def get_token_from_cookie(self, request: RequestProtocol) -> str:
+        """
+        Extract and return the refresh token from the request's cookie.
+
+        Args:
+            request: The HTTP request object (Litestar request)
+
+        Returns:
+            str: The refresh token
+
+        Raises:
+            AccessRejectedException: If the token is missing.
+        """
 
         token = self.cookie_manager.get_cookie(request, "refresh_token")
 
@@ -67,6 +78,39 @@ class JWTManager(BaseJWTManager):
             token=token,
             key="refresh_token",
         )
+
+    @staticmethod
+    def get_access_token_from_request(request) -> str:
+        """
+        Extract and return the access token from the request's Authorization header.
+
+        Args:
+            request: The HTTP request object (Litestar request)
+
+        Returns:
+            str: The access token
+
+        Raises:
+            AccessRejectedException: If the token is missing or wrongly formatted.
+        """
+
+        # Check if Authorization header exists
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            raise AccessRejectedException("Missing Authorization header")
+
+        # Check if it's a Bearer token
+        parts = auth_header.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            raise AccessRejectedException(
+                "Invalid Authorization header format. Must be 'Bearer {token}'"
+            )
+
+        token = parts[1]
+        if not token:
+            raise AccessRejectedException("Empty token provided")
+
+        return token
 
     async def validate_token(self, token: str) -> dto.Token:
         """
@@ -138,9 +182,12 @@ class JWTManager(BaseJWTManager):
             if not security_user:
                 raise ValueError("Invalid session: missing subject")
 
-            return self.create_token_pair(
-                security_user=security_user, response=response
+            new_token_pair: dto.TokenPair = self.create_token_pair(
+                security_user=security_user
             )
+            self.set_token_in_cookie(response, new_token_pair.refresh_token)
+
+            return new_token_pair
 
         except ValueError as e:
             raise ValueError(f"Token refresh failed: {str(e)}")
