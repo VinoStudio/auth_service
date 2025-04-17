@@ -7,9 +7,7 @@ import orjson
 @dataclass(frozen=True)
 class DeviceInfo(BaseValueObject):
     browser_family: str
-    browser_version: str
     os_family: str
-    os_version: str
     device: str
     accept_lang: str
     accept_encoding: str
@@ -24,4 +22,4 @@ class DeviceInfo(BaseValueObject):
     def _validate(self): ...
 
     def __str__(self) -> str:
-        return f"{self.browser_family} {self.browser_version} on {self.os_family} {self.os_version} - {self.device}"
+        return f"{self.browser_family} on {self.os_family}- {self.device}"

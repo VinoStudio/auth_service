@@ -79,20 +79,20 @@ async def dispose_engine():
 
 @asynccontextmanager
 async def lifespan(app: Litestar):
-    create_topic_with_partitions()
+    #create_topic_with_partitions()
     configure_logging()
 
     await create_tables()
     await seed_roles_and_permissions()
-    await init_message_broker()
-    await start_kafka_consumers()
+    #await init_message_broker()
+    #await start_kafka_consumers()
 
-    container = get_container()
-    scheduler = await container.get(Scheduler)
-    job = await scheduler.spawn(consume_in_background())
+    #container = get_container()
+    #scheduler = await container.get(Scheduler)
+    #job = await scheduler.spawn(consume_in_background())
 
     yield
-    await job.close()
-    await close_message_broker()
-    await stop_kafka_consumers()
+    #await job.close()
+    #await close_message_broker()
+    #await stop_kafka_consumers()
     await dispose_engine()

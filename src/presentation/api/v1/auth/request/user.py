@@ -30,3 +30,9 @@ class UserLogin(BaseModel):
 class UserLogout(BaseModel):
     refresh_token: str
 
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordReset(BaseModel):
+    token: str
+    new_password: str

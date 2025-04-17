@@ -25,10 +25,9 @@ class LogoutUserCommandHandler(CommandHandler[LogoutUserCommand, None]):
 
     async def handle(self, command: LogoutUserCommand) -> None:
 
-        refresh_token: str = await self._jwt_manager.get_token_from_cookie(
-            command.request
-        )
+        refresh_token: str = self._jwt_manager.get_token_from_cookie(command.request)
 
+        # if user banned, roles changed, it will lead to exception while logout. To be done.
         token_data: dto.Token = await self._jwt_manager.validate_token(refresh_token)
 
         security_user: SecurityUser = SecurityUser.create_from_token_dto(token_data)
@@ -39,3 +38,4 @@ class LogoutUserCommandHandler(CommandHandler[LogoutUserCommand, None]):
             user_id=security_user.get_user_identifier(),
             device_id=security_user.get_device_id(),
         )
+        await self._uow.commit()

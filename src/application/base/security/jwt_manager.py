@@ -10,7 +10,7 @@ from src.application.base.interface.response import ResponseProtocol
 @dataclass
 class BaseJWTManager(ABC):
     @abstractmethod
-    def create_token_pair(self, security_user: Any, response: ResponseProtocol) -> Any:
+    def create_token_pair(self, security_user: Any) -> Any:
         raise NotImplementedError
 
     @abstractmethod

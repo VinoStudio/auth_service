@@ -3,9 +3,12 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.application.cqrs.user.commands import (
     LoginUserCommandHandler,
+    OAuthLoginUserCommandHandler,
     LogoutUserCommandHandler,
     RefreshUserTokensCommandHandler,
+    ResetPasswordRequestCommandHandler,
     RegisterUserCommandHandler,
+    ResetUserPasswordCommandHandler,
 )
 
 from src.application.cqrs.user.queries import (
@@ -28,8 +31,13 @@ class UserCommandProvider(Provider):
 
     register_user = provide(RegisterUserCommandHandler, scope=Scope.REQUEST)
     login_user = provide(LoginUserCommandHandler, scope=Scope.REQUEST)
+    oauth_login = provide(OAuthLoginUserCommandHandler, scope=Scope.REQUEST)
     logout_user = provide(LogoutUserCommandHandler, scope=Scope.REQUEST)
     refresh_user_tokens = provide(RefreshUserTokensCommandHandler, scope=Scope.APP)
+    reset_user_password_request = provide(
+        ResetPasswordRequestCommandHandler, scope=Scope.REQUEST
+    )
+    reset_user_password = provide(ResetUserPasswordCommandHandler, scope=Scope.REQUEST)
 
 
 # class UserEventProvider(Provider):

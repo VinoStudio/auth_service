@@ -10,10 +10,3 @@ class RoleCreation(DTO):
     description: str
     security_level: int
     permissions: List[str]
-
-# class RoleUpdate(DTO):
-#     role_name: str
-#     new_role_name: str | None = None
-#     new_security_level: int | None = None
-#     new_description: str | None = None
-#     new_permissions: List[str] | None = None

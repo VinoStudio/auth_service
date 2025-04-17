@@ -36,6 +36,7 @@ class RedisRepository(BaseMemoryRepository):
 
 class TokenBlackListRepository(RedisRepository):
     prefix = "revoked_user: "
+    password_reset_token_prefix = "reset_password_token: "
 
     async def add_to_blacklist(
         self, user_id: str, expiration_duration: float | None = None
@@ -60,3 +61,18 @@ class TokenBlackListRepository(RedisRepository):
         key = f"{self.prefix}{user_id}"
 
         return await self.get(key=key)
+
+    async def add_reset_password_token(self, user_id: str, token: str) -> bool:
+        key = f"{self.password_reset_token_prefix}{token}"
+
+        return await self.set(key=key, value=user_id, expire=60 * 15)
+
+    async def get_reset_password_token(self, token: str) -> str | None:
+        key = f"{self.password_reset_token_prefix}{token}"
+
+        return await self.get(key=key)
+
+    async def invalidate_reset_password_token(self, token: str) -> bool:
+        key = f"{self.password_reset_token_prefix}{token}"
+        await self.delete(key=key)
+        return True

@@ -27,6 +27,7 @@ dependencies = [
     "aiojobs>=1.4.0",
     "flower>=2.0.1",
     "prometheus-client>=0.21.1",
+    "requests>=2.32.3",
 ]
 
 [dependency-groups]

@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from functools import lru_cache
 from pathlib import Path
 
@@ -5,6 +6,34 @@ from pydantic_settings import BaseSettings
 from dataclasses import dataclass
 from pydantic import Field, EmailStr
 from dishka import provide, Scope, Provider
+
+
+@dataclass
+class OAuthProvider(ABC):
+    @abstractmethod
+    def get_auth_url(self) -> str:
+        raise NotImplementedError
+
+
+class OAuthGoogle(BaseSettings, OAuthProvider):
+    client_id: str = Field(default="", alias="GOOGLE_CLIENT_ID")
+    client_secret: str = Field(default="", alias="GOOGLE_CLIENT_SECRET")
+    redirect_uri: str = Field(
+        default="https://accounts.google.com/o/oauth2/token",
+        alias="GOOGLE_REDIRECT_URI",
+    )
+    token_url: str = Field(
+        default="https://accounts.google.com/o/oauth2/token", alias="GOOGLE_TOKEN_URI"
+    )
+    userinfo_url: str = Field(
+        default="https://openidconnect.googleapis.com/v1/userinfo",
+        alias="GOOGLE_USER_INFO_URI",
+    )
+    # auth_url: str
+    # scope: str
+
+    def get_auth_url(self) -> str:
+        return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&scope=openid%20profile%20email&access_type=offline&prompt=consent"
 
 
 class JWTSettings(BaseSettings):
@@ -15,7 +44,7 @@ class JWTSettings(BaseSettings):
     algorithm: str = "HS256"
     httponly: bool = True
     secure: bool = True
-    samesite: str = "Lax"
+    samesite: str = "strict"
     cookie_path: str = "/"
 
 
@@ -95,6 +124,7 @@ class Config:
     jwt = JWTSettings()
     logging = LoggingSettings()
     smtp = SMTPSettings()
+    google_oauth = OAuthGoogle()
 
 
 @lru_cache(maxsize=1)

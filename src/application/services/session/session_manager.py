@@ -26,14 +26,9 @@ class SessionManager(BaseSessionManager):
         )
 
         # Try to find existing session for this user+device
-        existing_session = await self.session_repo.get_active_session_by_device_id(
-            user_id=user_id,
-            device_id=device_data.device_id,
-        )
-
-        if existing_session:
-            # Update last activity and return existing session
-            await self.update_session_activity(session_id=existing_session.id)
+        if existing_session := await self.get_user_session(
+            user_id=user_id, device_id=device_data.device_id
+        ):
             return existing_session
 
         # No existing session found
@@ -47,6 +42,22 @@ class SessionManager(BaseSessionManager):
         await self.session_repo.create_session(session=session)
 
         return session
+
+    async def get_user_session(
+        self, user_id: str, device_id: str
+    ) -> Optional[domain.Session]:
+        # Try to find existing session for this user+device
+        active_session = await self.session_repo.get_active_session_by_device_id(
+            user_id=user_id,
+            device_id=device_id,
+        )
+
+        if active_session:
+            # Update last activity and return existing session
+            await self.update_session_activity(session_id=active_session.id)
+            return active_session
+
+        return active_session
 
     async def deactivate_user_session(self, user_id: str, device_id: str) -> None:
         await self.session_repo.deactivate_user_session(
