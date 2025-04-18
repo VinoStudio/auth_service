@@ -14,6 +14,8 @@ from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 from src.application.cqrs.user.commands import (
     RegisterUserCommand,
     RegisterUserCommandHandler,
+    RegisterOAuthUserCommand,
+    RegisterOAuthUserCommandHandler,
     LoginUserCommand,
     LoginUserCommandHandler,
     OAuthLoginUserCommand,
@@ -99,6 +101,7 @@ class MediatorConfigProvider(Provider):
         self,
         command_mediator: BaseCommandMediator,
         register_user: RegisterUserCommandHandler,
+        register_oauth_user: RegisterOAuthUserCommandHandler,
         login_user: LoginUserCommandHandler,
         oauth_login: OAuthLoginUserCommandHandler,
         logout_user: LogoutUserCommandHandler,
@@ -108,6 +111,9 @@ class MediatorConfigProvider(Provider):
     ) -> BaseCommandMediator:
 
         command_mediator.register_command(RegisterUserCommand, [register_user])
+        command_mediator.register_command(
+            RegisterOAuthUserCommand, [register_oauth_user]
+        )
         command_mediator.register_command(LoginUserCommand, [login_user])
         command_mediator.register_command(OAuthLoginUserCommand, [oauth_login])
         command_mediator.register_command(LogoutUserCommand, [logout_user])

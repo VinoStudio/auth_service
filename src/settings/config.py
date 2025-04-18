@@ -16,10 +16,11 @@ class OAuthProvider(ABC):
 
 
 class OAuthGoogle(BaseSettings, OAuthProvider):
+    name: str = Field(default="google")
     client_id: str = Field(default="", alias="GOOGLE_CLIENT_ID")
     client_secret: str = Field(default="", alias="GOOGLE_CLIENT_SECRET")
     redirect_uri: str = Field(
-        default="https://accounts.google.com/o/oauth2/token",
+        default="http://localhost:8002/oauth/callback/google",
         alias="GOOGLE_REDIRECT_URI",
     )
     token_url: str = Field(
@@ -29,11 +30,28 @@ class OAuthGoogle(BaseSettings, OAuthProvider):
         default="https://openidconnect.googleapis.com/v1/userinfo",
         alias="GOOGLE_USER_INFO_URI",
     )
-    # auth_url: str
-    # scope: str
 
     def get_auth_url(self) -> str:
-        return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&scope=openid%20profile%20email&access_type=offline&prompt=consent"
+        return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&scope=openid%20profile%20email&access_type=offline"
+
+
+class OAuthYandex(BaseSettings, OAuthProvider):
+    name: str = Field(default="yandex")
+    client_id: str = Field(default="", alias="YANDEX_CLIENT_ID")
+    client_secret: str = Field(default="", alias="YANDEX_CLIENT_SECRET")
+    redirect_uri: str = Field(
+        default="http://localhost:8002/oauth/callback/yandex",
+        alias="YANDEX_REDIRECT_URI",
+    )
+    token_url: str = Field(
+        default="https://oauth.yandex.ru/token", alias="YANDEX_TOKEN_URI"
+    )
+    userinfo_url: str = Field(
+        default="https://login.yandex.ru/info", alias="YANDEX_USER_INFO_URI"
+    )
+
+    def get_auth_url(self) -> str:
+        return f"https://oauth.yandex.ru/authorize?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}"
 
 
 class JWTSettings(BaseSettings):
@@ -125,6 +143,7 @@ class Config:
     logging = LoggingSettings()
     smtp = SMTPSettings()
     google_oauth = OAuthGoogle()
+    yandex_oauth = OAuthYandex()
 
 
 @lru_cache(maxsize=1)

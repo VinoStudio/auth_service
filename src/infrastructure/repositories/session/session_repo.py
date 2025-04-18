@@ -87,18 +87,6 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
             dict(is_active=False, session_id=session_id),
         )
 
-    async def activate_user_session(self, user_id: str, device_id: str):
-        await self._session.execute(
-            text(
-                """
-                UPDATE usersession
-                SET is_active = :is_active
-                WHERE user_id = :user_id AND device_id = :device_id
-                """
-            ),
-            dict(is_active=True, user_id=user_id, device_id=device_id),
-        )
-
     async def deactivate_user_session(self, user_id: str, device_id: str):
         await self._session.execute(
             text(

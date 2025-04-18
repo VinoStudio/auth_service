@@ -19,6 +19,7 @@ from src.application.base.mediator.command import BaseCommandMediator
 from src.application.cqrs.user.commands import (
     RegisterUserCommand,
     OAuthLoginUserCommand,
+    RegisterOAuthUserCommand,
 )
 from src.application.dependency_injector.di import get_container
 from src.application.services.security.oauth_manager import OAuthManager
@@ -70,50 +71,43 @@ class OAuthController(Controller):
         """
         Handle OAuth callback and create user session and register user if it needs to
         """
-        try:
-            async with di_container() as c:
-                oauth_manager = await c.get(OAuthManager)
-                command_handler = await c.get(BaseCommandMediator)
-                response = Response(content="")
+        async with di_container() as c:
+            oauth_manager = await c.get(OAuthManager)
+            command_handler = await c.get(BaseCommandMediator)
+            response = Response(content="")
 
-                user: dto.OauthUserCredentials | domain.User = (
-                    await oauth_manager.handle_oauth_callback(
-                        provider_name=provider,
-                        code=code,
-                        response=response,
-                    )
-                )
-                if isinstance(user, dto.OauthUserCredentials):
-                    register_command = RegisterUserCommand(
-                        email=user.email,
-                        username=user.username,
-                        password=user.password,
-                        request=request,
-                        first_name=user.first_name,
-                        last_name=user.last_name,
-                        middle_name=user.middle_name,
-                    )
-
-                    user, *_ = await command_handler.handle_command(register_command)
-
-                oauth_login_command = OAuthLoginUserCommand(
-                    user_id=user.id.to_raw(),
-                    jwt_data=user.jwt_data,
-                    request=request,
-                    response=response,
-                )
-
-                tokens, *_ = await command_handler.handle_command(oauth_login_command)
-
-                response.content = {"access_token": tokens.access_token}
-
-                return response
-
-        except Exception as e:
-            raise HTTPException(
-                status_code=HTTP_401_UNAUTHORIZED,
-                detail=f"OAuth authentication failed: {str(e)}",
+            oauth_data = await oauth_manager.handle_oauth_callback(
+                provider_name=provider,
+                code=code,
             )
+
+            user_id = None
+            jwt_data = None
+
+            # Handle registration if needed
+            if isinstance(oauth_data, dto.OauthUserCredentials):
+                register_command = RegisterOAuthUserCommand(
+                    oauth_info=oauth_data,
+                )
+                user, *_ = await command_handler.handle_command(register_command)
+                user_id = user.id.to_raw()
+                jwt_data = user.jwt_data
+            else:
+                # User already exists, use the identity info
+                user_id = oauth_data.user_id
+                jwt_data = oauth_data.jwt_data
+
+            # Login the user
+            login_command = OAuthLoginUserCommand(
+                user_id=user_id,
+                jwt_data=jwt_data,
+                request=request,
+                response=response,
+            )
+
+            tokens, *_ = await command_handler.handle_command(login_command)
+            response.content = {"access_token": tokens.access_token}
+            return response
 
     @route(path="/providers", http_method=[HttpMethod.GET])
     async def get_providers(

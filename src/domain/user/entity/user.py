@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, UTC
 from src.domain.base.entity.aggregate import AggregateRoot
 from src.domain.session.entity.session import Session
+from src.domain.oauth_account.entity.oauth_account import OAuthAccount
 from src.domain.user.values import Password, Email, UserId, Username
 from typing import Set, Self
-from src.domain.role.entity.role import Role
 from src.domain.user.exceptions import (
     UserIsDeletedException,
     PasswordDoesNotMatchException,
@@ -22,9 +22,9 @@ class User(AggregateRoot):
     password: Password
     jwt_data: bytes | None = field(default=None)
     deleted_at: datetime | None = field(default=None)
-    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     _roles: Set[Role] = field(default_factory=set)
     _sessions: Set[Session] = field(default_factory=set)
+    _oauth_accounts: Set[OAuthAccount] = field(default_factory=set)
     version: int = field(default=0, kw_only=True)
 
     @classmethod
@@ -105,6 +105,20 @@ class User(AggregateRoot):
             self._sessions.remove(session)
             self._version_upgrade()
 
+    def add_oauth_account(self, oauth_account: OAuthAccount) -> None:
+        self._is_not_deleted()
+
+        if oauth_account not in self._oauth_accounts:
+            self._oauth_accounts.add(oauth_account)
+            self._version_upgrade()
+
+    def remove_oauth_account(self, oauth_account: OAuthAccount) -> None:
+        self._is_not_deleted()
+
+        if oauth_account in self._oauth_accounts:
+            self._oauth_accounts.remove(oauth_account)
+            self._version_upgrade()
+
     def set_username(self, username: Username) -> None:
         self._is_not_deleted()
 
@@ -164,3 +178,7 @@ class User(AggregateRoot):
     @property
     def sessions(self):
         return frozenset(self._sessions)
+
+    @property
+    def oauth_accounts(self):
+        return frozenset(self._oauth_accounts)

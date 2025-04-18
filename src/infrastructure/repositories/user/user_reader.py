@@ -1,4 +1,5 @@
 from typing import Iterable, Sequence, Set, List
+from dataclasses import dataclass
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import text
@@ -10,6 +11,7 @@ from src.infrastructure.exceptions.repository import (
     UserWithUsernameDoesNotExistException,
     UserWithEmailDoesNotExistException,
     UserIsDeletedException,
+    OAuthUserDoesNotExistException,
 )
 from src.infrastructure.base.repository.base import SQLAlchemyRepository
 from src.infrastructure.base.repository import BaseUserReader
@@ -22,6 +24,7 @@ import src.application.dto as dto
 import src.domain as domain
 
 
+@dataclass
 class UserReader(SQLAlchemyRepository, BaseUserReader):
     async def get_user_by_id(self, user_id: str) -> domain.User:
         stmt = self.get_user().where(models.User.id == user_id)
@@ -73,6 +76,26 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
+    async def get_user_by_oauth_provider_and_id(
+        self, provider: str, provider_user_id: str
+    ) -> domain.User:
+
+        stmt = self.get_user().where(
+            models.OAuthAccount.provider == provider,
+            models.OAuthAccount.provider_user_id == provider_user_id,
+            models.OAuthAccount.is_active == True,
+        )
+
+        result = await self._session.execute(stmt)
+        user = result.scalars().one_or_none()
+
+        if user is None:
+            raise OAuthUserDoesNotExistException(
+                f"provider: {provider} and id: {provider_user_id}"
+            )
+
+        return OrmToDomainConverter.user_to_domain(user)
+
     async def get_user_credentials_by_email_or_username(
         self, email_or_username: str
     ) -> dto.UserCredentials:
@@ -93,6 +116,37 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
             raise UserDoesNotExistException(email_or_username)
 
         return dto.UserCredentials(*fetched_user)
+
+    async def get_user_credentials_by_oauth_provider(
+        self, provider_name: str, provider_user_id: str
+    ) -> dto.OAuthUserIdentity:
+        result = await self._session.execute(
+            text(
+                """
+                SELECT u.id, u.jwt_data
+                FROM "user" u
+                JOIN oauthaccount oa ON u.id = oa.user_id
+                WHERE oa.provider = :provider_name 
+                  AND oa.provider_user_id = :provider_user_id
+                  AND u.deleted_at IS NULL
+                  AND oa.is_active IS TRUE
+                """
+            ),
+            {"provider_name": provider_name, "provider_user_id": provider_user_id},
+        )
+
+        fetched_user = result.fetchone()
+
+        if fetched_user is None:
+            raise OAuthUserDoesNotExistException(
+                f"provider: {provider_name} and id: {provider_user_id}"
+            )
+
+        return dto.OAuthUserIdentity(
+            *fetched_user,
+            provider_user_id=provider_user_id,
+            provider_name=provider_name,
+        )
 
     async def get_all_users(self, pagination: Pagination) -> List[domain.User]:
         stmt = self.get_user().limit(pagination.limit).offset(pagination.offset)
@@ -184,6 +238,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         return select(models.User).options(
             selectinload(models.User.roles).selectinload(models.Role.permissions),
             selectinload(models.User.sessions),
+            selectinload(models.User.oauth_accounts),
         )
 
     @staticmethod

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from src.infrastructure.db.models import BaseModel, UserMixin
+from src.infrastructure.db.models import BaseModel, UserMixin, TimedBaseModel
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Boolean, String, func, ForeignKey
 from uuid6 import uuid7
@@ -26,7 +26,7 @@ class RolePermissions(BaseModel):
     )
 
 
-class Permission(BaseModel):
+class Permission(TimedBaseModel):
     _back_populates_field = "permission"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=str(uuid7()))
     name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)

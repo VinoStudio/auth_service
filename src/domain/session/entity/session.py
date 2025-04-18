@@ -14,7 +14,7 @@ class Session(BaseEntity):
     device_info: DeviceInfo
     device_id: str
     last_activity: datetime = field(default_factory=lambda: datetime.now(UTC))
-    is_active: bool = True
+    is_active: bool = field(default=True)
 
     def update_activity(self) -> None:
         """Record user activity, extending session life"""

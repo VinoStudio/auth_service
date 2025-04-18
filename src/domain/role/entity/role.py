@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+from datetime import datetime, UTC
+
 from src.domain.base.entity.base import BaseEntity
 from src.domain.permission.entity.permission import Permission
 from src.domain.role.values.role_name import RoleName
