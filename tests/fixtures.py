@@ -20,11 +20,11 @@ from src.infrastructure.db.di_setup import (
     SessionProvider,
     TestDatabaseProvider,
 )
-from src.infrastructure.message_broker.di_setup import (
+from src.infrastructure.message_broker.message_broker_di_setup import (
     MessageBrokerProvider,
     KafkaConsumerManagerProvider,
 )
-from src.infrastructure.repositories.di_setup import (
+from src.infrastructure.repositories.repo_di_setup import (
     RepositoryProvider,
     UnitOfWorkProvider,
 )

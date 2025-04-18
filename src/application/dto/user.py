@@ -11,9 +11,19 @@ class UserCredentials(DTO):
 
 @dataclass(frozen=True)
 class OauthUserCredentials(DTO):
-    email: str
+    provider_email: str
     username: str
     password: str
     first_name: str | None
     last_name: str | None
     middle_name: str | None
+    provider_name: str
+    provider_user_id: str
+
+
+@dataclass
+class OAuthUserIdentity(DTO):
+    user_id: str
+    jwt_data: bytes
+    provider_name: str
+    provider_user_id: str

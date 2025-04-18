@@ -32,6 +32,11 @@ from src.application.cqrs.user.commands.reset_user_password import (
     ResetUserPasswordCommandHandler,
 )
 
+from src.application.cqrs.user.commands.register_oauth_user import (
+    RegisterOAuthUserCommand,
+    RegisterOAuthUserCommandHandler,
+)
+
 __all__ = (
     "LoginUserCommand",
     "LoginUserCommandHandler",
@@ -41,6 +46,8 @@ __all__ = (
     "LogoutUserCommandHandler",
     "RegisterUserCommand",
     "RegisterUserCommandHandler",
+    "RegisterOAuthUserCommand",
+    "RegisterOAuthUserCommandHandler",
     "RefreshUserTokensCommand",
     "RefreshUserTokensCommandHandler",
     "ResetPasswordRequestCommand",

@@ -11,3 +11,6 @@ class BaseEntity(ABC):
         default_factory=lambda: datetime.now(UTC),
         kw_only=True,
     )
+    updated_at: datetime = field(
+        default_factory=lambda: datetime.now(UTC), kw_only=True
+    )

@@ -26,6 +26,24 @@ class UserDoesNotExistException(RepositoryException):
 
 
 @dataclass(frozen=True)
+class OAuthUserDoesNotExistException(RepositoryException):
+    value: str
+
+    @property
+    def message(self) -> str:
+        return f'A user with "{self.value}" does not exist'
+
+
+@dataclass(frozen=True)
+class OAuthAccountDoesNotExistException(RepositoryException):
+    value: str
+
+    @property
+    def message(self) -> str:
+        return f'An account with "{self.value}" does not exist'
+
+
+@dataclass(frozen=True)
 class UserWithUsernameDoesNotExistException(RepositoryException):
     value: str
 

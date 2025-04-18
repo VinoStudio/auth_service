@@ -1,4 +1,4 @@
-from src.infrastructure.db.models import UserMixin, BaseModel
+from src.infrastructure.db.models import UserMixin, BaseModel, TimedBaseModel
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, PrimaryKeyConstraint, func, text
 from typing import TYPE_CHECKING
@@ -26,7 +26,7 @@ class UserRoles(BaseModel):
     )
 
 
-class Role(BaseModel):
+class Role(TimedBaseModel):
     id: Mapped[str] = mapped_column(primary_key=True, unique=True, default=str(uuid7()))
     name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(256))

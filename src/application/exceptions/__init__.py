@@ -32,6 +32,7 @@ from src.application.exceptions.jwt import (
     TokenExpiredException,
     TokenRevokedException,
     TokenValidationError,
+    MappingProviderException,
 )
 
 __all__ = (
@@ -60,4 +61,5 @@ __all__ = (
     "AuthenticationException",
     "AuthorizationException",
     "AccessRejectedException",
+    "MappingProviderException",
 )

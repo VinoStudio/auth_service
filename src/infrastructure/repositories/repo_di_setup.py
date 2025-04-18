@@ -10,6 +10,7 @@ from src.infrastructure.base.repository.user_writer import BaseUserWriter
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.db.uow import SQLAlchemyUoW
+from src.infrastructure.repositories.oauth.oauth_repo import OAuthAccountRepository
 from src.infrastructure.repositories.permission.permission_repo import PermissionRepository
 from src.infrastructure.repositories.role.role_invalidation_repo import RoleInvalidationRepository
 from src.infrastructure.repositories.token.redis_repo import TokenBlackListRepository
@@ -41,6 +42,8 @@ class RepositoryProvider(Provider):
     permission_repo = provide(PermissionRepository, scope=Scope.REQUEST, provides=BasePermissionRepository)
 
     session_repo = provide(SessionRepository, scope=Scope.REQUEST, provides=BaseSessionRepository)
+
+    oauth_account_repo = provide(OAuthAccountRepository, scope=Scope.REQUEST, provides=OAuthAccountRepository)
 
     token_repo = provide(TokenBlackListRepository, scope=Scope.APP, provides=TokenBlackListRepository)
 

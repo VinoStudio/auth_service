@@ -49,3 +49,12 @@ class TokenValidationError(AuthorizationException):
     @property
     def message(self):
         return f"Given token is invalid"
+
+
+@dataclass(frozen=True)
+class MappingProviderException(AuthorizationException):
+    value: str
+
+    @property
+    def message(self):
+        return f"Unknown OAuth provider: {self.value}"

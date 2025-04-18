@@ -8,6 +8,7 @@ from src.application.cqrs.user.commands import (
     RefreshUserTokensCommandHandler,
     ResetPasswordRequestCommandHandler,
     RegisterUserCommandHandler,
+    RegisterOAuthUserCommandHandler,
     ResetUserPasswordCommandHandler,
 )
 
@@ -30,6 +31,7 @@ from src.settings.config import Config
 class UserCommandProvider(Provider):
 
     register_user = provide(RegisterUserCommandHandler, scope=Scope.REQUEST)
+    register_oauth_user = provide(RegisterOAuthUserCommandHandler, scope=Scope.REQUEST)
     login_user = provide(LoginUserCommandHandler, scope=Scope.REQUEST)
     oauth_login = provide(OAuthLoginUserCommandHandler, scope=Scope.REQUEST)
     logout_user = provide(LogoutUserCommandHandler, scope=Scope.REQUEST)
