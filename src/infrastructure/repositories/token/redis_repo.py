@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, UTC
+from enum import Enum
 
 from redis.asyncio import Redis
 
@@ -34,6 +35,23 @@ class RedisRepository(BaseMemoryRepository):
             return await client.exists(key) > 0
 
 
+class TokenType(Enum):
+    PASSWORD_RESET = {
+        "token_type": "reset_password_token:",
+        "expire": 60 * 15,
+    }
+
+    EMAIL_CHANGE = {
+        "token_type": "email_change_token:",
+        "expire": 60 * 60 * 24,
+    }
+
+    OAUTH_CONNECT = {
+        "token_type": "oauth_connect_state:",
+        "expire": 60 * 10,
+    }
+
+
 class TokenBlackListRepository(RedisRepository):
     prefix = "revoked_user: "
     password_reset_token_prefix = "reset_password_token: "
@@ -62,17 +80,22 @@ class TokenBlackListRepository(RedisRepository):
 
         return await self.get(key=key)
 
-    async def add_reset_password_token(self, user_id: str, token: str) -> bool:
-        key = f"{self.password_reset_token_prefix}{token}"
+    async def add_reset_token(
+        self, user_id: str, token: str, token_type: TokenType
+    ) -> bool:
+        token_settings = token_type.value
+        key = f"{token_settings['token_type']}{token}"
+        return await self.set(key=key, value=user_id, expire=token_settings["expire"])
 
-        return await self.set(key=key, value=user_id, expire=60 * 15)
+    async def get_reset_token(self, token: str, token_type: TokenType) -> str | None:
+        token_settings = token_type.value
 
-    async def get_reset_password_token(self, token: str) -> str | None:
-        key = f"{self.password_reset_token_prefix}{token}"
-
+        key = f"{token_settings['token_type']}{token}"
         return await self.get(key=key)
 
-    async def invalidate_reset_password_token(self, token: str) -> bool:
-        key = f"{self.password_reset_token_prefix}{token}"
+    async def invalidate_reset_token(self, token: str, token_type: TokenType) -> bool:
+        token_settings = token_type.value
+
+        key = f"{token_settings['token_type']}{token}"
         await self.delete(key=key)
         return True

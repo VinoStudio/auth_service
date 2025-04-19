@@ -18,24 +18,5 @@ services:
       retries: 5
 
 
-#  postgres_migration:
-#    profiles: [ "migration" ]
-#    container_name: user_service.postgres_migration
-#    build:
-#      context: .
-#    restart: on-failure
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#    networks:
-#      - user_service.postgres.network
-#    volumes:
-#      - ./config:/app/config:ro
-#      - ./alembic.ini:/app/alembic.ini:ro
-#      - ./src/infrastructure/db/migrations:/app/src/infrastructure/db/migrations:ro
-#
-#    command: [ "python", "-m", "alembic", "upgrade", "head" ]
-#
-
 volumes:
   postgres_auth_service_data:

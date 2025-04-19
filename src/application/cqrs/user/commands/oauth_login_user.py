@@ -1,23 +1,17 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from uuid6 import uuid7
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
 from src.application.base.session.session_manager import BaseSessionManager
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security import BaseJWTManager
 from src.application.dto.token import TokenPair
 from src.application.base.commands import BaseCommand, CommandHandler
-from src.application.exceptions import PasswordIsInvalidException
-from src.application.services.security.oauth_manager import OAuthManager
-from src.application.services.security.security_user import SecurityUser
-from src.infrastructure.base.repository import BaseUserReader, BaseUserWriter
-from src.infrastructure.base.repository.role_repo import BaseRoleRepository
-from src.infrastructure.base.uow import UnitOfWork
-from src.infrastructure.message_broker.events import UserRegistered
 
-from src.domain.user.values import Password, UserId, Username, Email
+from src.application.services.security.security_user import SecurityUser
+from src.infrastructure.base.repository import BaseUserReader
+from src.infrastructure.base.uow import UnitOfWork
+
 
 import src.domain as domain
 import src.application.dto as dto

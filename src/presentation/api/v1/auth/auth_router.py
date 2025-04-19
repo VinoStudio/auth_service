@@ -13,6 +13,8 @@ from src.application.cqrs.user.commands import (
     LogoutUserCommand,
     ResetPasswordRequestCommand,
     ResetUserPasswordCommand,
+    ChangeEmailRequestCommand,
+    ChangeUserEmailCommand,
 )
 from src.application.dependency_injector.di import get_container
 
@@ -161,5 +163,48 @@ class AuthController(Controller):
             await command_handler.handle_command(command)
 
             response.content = {"message": "Password successfully has been reset"}
+
+            return response
+
+    @route(path="/email-change/request", http_method=[HttpMethod.POST])
+    async def change_email(
+        self,
+        di_container: AsyncContainer,
+        data: user_requests.EmailChangeRequest = Body(
+            description="Request to change user email", title="Change Email"
+        ),
+    ) -> Response:
+        async with di_container() as c:
+            response: Response = Response(content=None)
+            command_handler = await c.get(BaseCommandMediator)
+
+            command = ChangeEmailRequestCommand(email=data.email)
+
+            await command_handler.handle_command(command)
+
+            response.content = {"message": "Notification of email change has been sent"}
+
+            return response
+
+    @route(path="/email-change/confirm", http_method=[HttpMethod.POST])
+    async def confirm_email_change(
+        self,
+        di_container: AsyncContainer,
+        data: user_requests.EmailChange = Body(
+            description="Confirm email change", title="Email Change"
+        ),
+    ) -> Response:
+        async with di_container() as c:
+            response: Response = Response(content=None)
+            command_handler = await c.get(BaseCommandMediator)
+
+            command = ChangeUserEmailCommand(
+                token=data.token,
+                new_email=data.new_email,
+            )
+
+            await command_handler.handle_command(command)
+
+            response.content = {"message": "Email successfully has been changed"}
 
             return response

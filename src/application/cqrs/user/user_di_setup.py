@@ -4,12 +4,16 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from src.application.cqrs.user.commands import (
     LoginUserCommandHandler,
     OAuthLoginUserCommandHandler,
+    AddOAuthAccountRequestCommandHandler,
+    AddOAuthAccountToCurrentUserCommandHandler,
     LogoutUserCommandHandler,
     RefreshUserTokensCommandHandler,
     ResetPasswordRequestCommandHandler,
     RegisterUserCommandHandler,
     RegisterOAuthUserCommandHandler,
     ResetUserPasswordCommandHandler,
+    ChangeEmailRequestCommandHandler,
+    ChangeUserEmailCommandHandler,
 )
 
 from src.application.cqrs.user.queries import (
@@ -32,6 +36,12 @@ class UserCommandProvider(Provider):
 
     register_user = provide(RegisterUserCommandHandler, scope=Scope.REQUEST)
     register_oauth_user = provide(RegisterOAuthUserCommandHandler, scope=Scope.REQUEST)
+    add_oauth_account_request = provide(
+        AddOAuthAccountRequestCommandHandler, scope=Scope.REQUEST
+    )
+    add_oauth_account = provide(
+        AddOAuthAccountToCurrentUserCommandHandler, scope=Scope.REQUEST
+    )
     login_user = provide(LoginUserCommandHandler, scope=Scope.REQUEST)
     oauth_login = provide(OAuthLoginUserCommandHandler, scope=Scope.REQUEST)
     logout_user = provide(LogoutUserCommandHandler, scope=Scope.REQUEST)
@@ -40,6 +50,10 @@ class UserCommandProvider(Provider):
         ResetPasswordRequestCommandHandler, scope=Scope.REQUEST
     )
     reset_user_password = provide(ResetUserPasswordCommandHandler, scope=Scope.REQUEST)
+    change_email_request = provide(
+        ChangeEmailRequestCommandHandler, scope=Scope.REQUEST
+    )
+    change_user_email = provide(ChangeUserEmailCommandHandler, scope=Scope.REQUEST)
 
 
 # class UserEventProvider(Provider):

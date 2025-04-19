@@ -10,6 +10,7 @@ from src.application.exceptions.user import (
     PasswordIsInvalidException,
     UserNotFoundException,
     PasswordTokenExpiredException,
+    EmailTokenExpiredException,
 )
 
 from src.application.exceptions.rbac import (
@@ -48,6 +49,7 @@ __all__ = (
     "EmailAlreadyExistsException",
     "PasswordIsInvalidException",
     "PasswordTokenExpiredException",
+    "EmailTokenExpiredException",
     "RBACException",
     "UnauthorizedRBACOperationException",
     "RoleNotFoundException",

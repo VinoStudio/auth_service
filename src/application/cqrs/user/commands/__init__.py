@@ -37,11 +37,35 @@ from src.application.cqrs.user.commands.register_oauth_user import (
     RegisterOAuthUserCommandHandler,
 )
 
+from src.application.cqrs.user.commands.change_email_request import (
+    ChangeEmailRequestCommand,
+    ChangeEmailRequestCommandHandler,
+)
+
+from src.application.cqrs.user.commands.change_user_email import (
+    ChangeUserEmailCommand,
+    ChangeUserEmailCommandHandler,
+)
+
+from src.application.cqrs.user.commands.add_oauth_account_to_current_user import (
+    AddOAuthAccountToCurrentUserCommand,
+    AddOAuthAccountToCurrentUserCommandHandler,
+)
+
+from src.application.cqrs.user.commands.add_oauth_account_request import (
+    AddOAuthAccountRequestCommand,
+    AddOAuthAccountRequestCommandHandler,
+)
+
 __all__ = (
     "LoginUserCommand",
     "LoginUserCommandHandler",
     "OAuthLoginUserCommand",
     "OAuthLoginUserCommandHandler",
+    "AddOAuthAccountRequestCommand",
+    "AddOAuthAccountRequestCommandHandler",
+    "AddOAuthAccountToCurrentUserCommand",
+    "AddOAuthAccountToCurrentUserCommandHandler",
     "LogoutUserCommand",
     "LogoutUserCommandHandler",
     "RegisterUserCommand",
@@ -54,4 +78,8 @@ __all__ = (
     "ResetPasswordRequestCommandHandler",
     "ResetUserPasswordCommand",
     "ResetUserPasswordCommandHandler",
+    "ChangeEmailRequestCommand",
+    "ChangeEmailRequestCommandHandler",
+    "ChangeUserEmailCommand",
+    "ChangeUserEmailCommandHandler",
 )

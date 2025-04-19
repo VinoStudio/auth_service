@@ -30,6 +30,8 @@ services:
         condition: service_healthy
       postgres_test_auth:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
 
     command: "uvicorn --factory src.presentation.api.main:create_app --timeout-graceful-shutdown 2  --use-colors --reload  --log-level debug --host 0.0.0.0 --port 8000"
     labels:

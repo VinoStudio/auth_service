@@ -51,8 +51,6 @@ def send_user_registration_notification(self, msg: bytes):
             server.login(config.smtp.user, config.smtp.password)
             server.send_message(msg)
 
-        logger.info("Registration notification sent", email=msg["To"])
-
     except (ConnectionError, smtplib.SMTPException) as exc:
         logger.error("Failed to send email", email=msg["To"], error=str(exc))
         # Retry task with exponential backoff
@@ -60,14 +58,14 @@ def send_user_registration_notification(self, msg: bytes):
 
 
 @celery.task(
-    name="notifications.send_reset_password_email",
+    name="notifications.send_notification_email",
     autoretry_for=(
         smtplib.SMTPException,
         ConnectionError,
     ),
     **common_email_task,
 )
-def send_password_reset_notification(self, msg: bytes):
+def send_notification_email(self, msg: bytes):
     """Send HTML notification for password reset"""
     msg = pickle.loads(msg)
 
@@ -76,8 +74,6 @@ def send_password_reset_notification(self, msg: bytes):
             server.starttls(context=ssl.create_default_context())
             server.login(self.app.conf.smtp_user, self.app.conf.smtp_password)
             server.send_message(msg)
-
-        logger.info("Reset Password message sent", email=msg["To"])
 
     except (ConnectionError, smtplib.SMTPException) as exc:
         logger.error("Failed to send email", email=msg["To"], error=str(exc))

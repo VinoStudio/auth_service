@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 def generate_registration_html(user_data):
     """Generate HTML content for registration email"""
     return f"""
@@ -28,15 +31,32 @@ def generate_registration_html(user_data):
     """
 
 
-def generate_reset_password_html(email: str, reset_url: str) -> str:
-    """Generate stylish HTML for password reset email"""
+def generate_notification_html(
+    email: str,
+    verification_url: str | None,
+    username: str | None,
+    title: str,
+    heading: str,
+    message: str,
+    button_text: str | None,
+    expiration_note: str,
+    security_note: str,
+) -> str:
+    """Generate stylish HTML for any notification email"""
+
+    button_html = ""
+    if verification_url and button_text:
+        button_html = (
+            f'<a href="{verification_url}" class="reset-button">{button_text}</a>'
+        )
+
     return f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reset Your Password</title>
+        <title>{title}</title>
         <style>
             body {{
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -104,17 +124,16 @@ def generate_reset_password_html(email: str, reset_url: str) -> str:
     <body>
         <div class="container">
             <div class="header">
-                <h1>Password Reset Request</h1>
+                <h1>{heading}</h1>
             </div>
             <div class="content">
-                <p>Hello,</p>
-                <p>We received a request to reset the password for your account: <strong>{email}</strong></p>
-                <p>To reset your password, click on the button below:</p>
-                <a href="{reset_url}" class="reset-button">Reset Password</a>
-                <p>This link will expire in 30 minutes.</p>
+                <p>Hello, {username}</p>
+                <p>{message}</p>
+                {button_html}
+                {f'<p>{expiration_note}</p>' if expiration_note else ''}
 
                 <div class="security-note">
-                    <p><strong>Security Note:</strong> If you didn't request a password reset, please ignore this email or contact support if you have concerns about your account security.</p>
+                    <p><strong>Security Note:</strong> {security_note}</p>
                 </div>
             </div>
             <div class="footer">
@@ -125,3 +144,77 @@ def generate_reset_password_html(email: str, reset_url: str) -> str:
     </body>
     </html>
     """
+
+
+# Example for password reset
+def generate_reset_password_html(
+    email: str, reset_url: str, username: str | None
+) -> str:
+    return generate_notification_html(
+        email=email,
+        verification_url=reset_url,
+        username=username,
+        title="Reset Your Password",
+        heading="Password Reset Request",
+        message=f"We received a request to reset the password for your account: <strong>{email}</strong>",
+        button_text="Reset Password",
+        expiration_note="This link will expire in 15 minutes.",
+        security_note="If you didn't request a password reset, please ignore this email or contact support if you have concerns about your account security.",
+    )
+
+
+# Example for email change
+def generate_email_change_html(
+    email: str, verification_url: str, username: str | None
+) -> str:
+    return generate_notification_html(
+        email=email,
+        verification_url=verification_url,
+        username=username,
+        title="Verify Your New Email Address",
+        heading="Email Change Verification",
+        message=f"We received a request to change your email address to: <strong>{email}</strong>",
+        button_text="Verify Email Address",
+        expiration_note="This link will expire in 24 hours.",
+        security_note="If you didn't request this email change, please contact support immediately as someone may be attempting to access your account.",
+    )
+
+
+def generate_password_changed_html(
+    email: str,
+    username: str | None = None,
+    timestamp: str | None = None,
+) -> str:
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return generate_notification_html(
+        email=email,
+        verification_url=None,
+        username=username,
+        title="Password Changed",
+        heading="Your Password Has Been Changed",
+        message=f"The password for your account (<strong>{email}</strong>) was changed on {timestamp}.",
+        button_text=None,
+        expiration_note="",
+        security_note="If you did not change your password, please contact our support team immediately or reset your password as your account may have been compromised.",
+    )
+
+
+def generate_email_changed_html(
+    email: str,
+    username: str | None = None,
+    timestamp: str | None = None,
+) -> str:
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return generate_notification_html(
+        email=email,
+        verification_url=None,
+        username=username,
+        title="Email Changed",
+        heading="Your Email Has Been Changed",
+        message=f"The email address of your account (<strong>{email}</strong>) was changed on {timestamp}.",
+        button_text=None,
+        expiration_note="",
+        security_note="If you did not change your email address, please contact our support team immediately or reset your password as your account may have been compromised.",
+    )
