@@ -34,3 +34,10 @@ class PasswordTokenExpiredException(ApplicationException):
     @property
     def message(self):
         return f"Password token expired. Send reset password request again"
+
+
+class EmailTokenExpiredException(ApplicationException):
+
+    @property
+    def message(self):
+        return f"Email token expired. Send reset password request again"

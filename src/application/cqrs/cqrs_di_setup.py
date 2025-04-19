@@ -16,6 +16,10 @@ from src.application.cqrs.user.commands import (
     RegisterUserCommandHandler,
     RegisterOAuthUserCommand,
     RegisterOAuthUserCommandHandler,
+    AddOAuthAccountRequestCommand,
+    AddOAuthAccountRequestCommandHandler,
+    AddOAuthAccountToCurrentUserCommand,
+    AddOAuthAccountToCurrentUserCommandHandler,
     LoginUserCommand,
     LoginUserCommandHandler,
     OAuthLoginUserCommand,
@@ -28,6 +32,10 @@ from src.application.cqrs.user.commands import (
     ResetPasswordRequestCommandHandler,
     ResetUserPasswordCommand,
     ResetUserPasswordCommandHandler,
+    ChangeEmailRequestCommand,
+    ChangeEmailRequestCommandHandler,
+    ChangeUserEmailCommand,
+    ChangeUserEmailCommandHandler,
 )
 
 from src.application.cqrs.role.commands import (
@@ -108,11 +116,21 @@ class MediatorConfigProvider(Provider):
         refresh_user_tokens: RefreshUserTokensCommandHandler,
         reset_user_password_request: ResetPasswordRequestCommandHandler,
         reset_user_password: ResetUserPasswordCommandHandler,
+        change_email_request: ChangeEmailRequestCommandHandler,
+        change_user_email: ChangeUserEmailCommandHandler,
+        add_oauth_account: AddOAuthAccountToCurrentUserCommandHandler,
+        add_oauth_account_request: AddOAuthAccountRequestCommandHandler,
     ) -> BaseCommandMediator:
 
         command_mediator.register_command(RegisterUserCommand, [register_user])
         command_mediator.register_command(
             RegisterOAuthUserCommand, [register_oauth_user]
+        )
+        command_mediator.register_command(
+            AddOAuthAccountRequestCommand, [add_oauth_account_request]
+        )
+        command_mediator.register_command(
+            AddOAuthAccountToCurrentUserCommand, [add_oauth_account]
         )
         command_mediator.register_command(LoginUserCommand, [login_user])
         command_mediator.register_command(OAuthLoginUserCommand, [oauth_login])
@@ -126,6 +144,10 @@ class MediatorConfigProvider(Provider):
         command_mediator.register_command(
             ResetUserPasswordCommand, [reset_user_password]
         )
+        command_mediator.register_command(
+            ChangeEmailRequestCommand, [change_email_request]
+        )
+        command_mediator.register_command(ChangeUserEmailCommand, [change_user_email])
 
         return command_mediator
 

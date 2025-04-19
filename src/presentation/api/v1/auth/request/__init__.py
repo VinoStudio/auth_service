@@ -4,6 +4,8 @@ from src.presentation.api.v1.auth.request.user import (
     UserLogout,
     PasswordReset,
     PasswordResetRequest,
+    EmailChange,
+    EmailChangeRequest
 )
 
 __all__ = (
@@ -12,4 +14,6 @@ __all__ = (
     "UserLogout",
     "PasswordReset",
     "PasswordResetRequest",
+    "EmailChange",
+    "EmailChangeRequest"
 )

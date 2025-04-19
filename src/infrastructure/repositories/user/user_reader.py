@@ -102,7 +102,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         result = await self._session.execute(
             text(
                 """
-                SELECT u.id, u.jwt_data, u.hashed_password
+                SELECT u.id, u.username, u.jwt_data, u.hashed_password
                 FROM "user" u
                 WHERE (u.email = :email_or_username OR u.username = :email_or_username) and u.deleted_at is null
                 """

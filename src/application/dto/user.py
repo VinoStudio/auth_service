@@ -5,6 +5,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class UserCredentials(DTO):
     user_id: str
+    username: str
     jwt_data: bytes
     hashed_password: bytes
 

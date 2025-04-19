@@ -8,6 +8,7 @@ from uuid6 import uuid7
 
 class OAuthAccount(TimedBaseModel, UserMixin):
     _back_populates_field = "oauth_accounts"
+    _unique_field: bool = False
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=str(uuid7()))
     provider: Mapped[str] = mapped_column(String(64), nullable=False)
     provider_user_id: Mapped[str] = mapped_column(String(64), nullable=False)

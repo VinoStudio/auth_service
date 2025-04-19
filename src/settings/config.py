@@ -10,8 +10,19 @@ from dishka import provide, Scope, Provider
 
 @dataclass
 class OAuthProvider(ABC):
+    name: str
+    client_id: str
+    client_secret: str
+    redirect_uri: str
+    token_url: str
+    userinfo_url: str
+
     @abstractmethod
     def get_auth_url(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_connect_url(self) -> str:
         raise NotImplementedError
 
 
@@ -22,6 +33,10 @@ class OAuthGoogle(BaseSettings, OAuthProvider):
     redirect_uri: str = Field(
         default="http://localhost:8002/oauth/callback/google",
         alias="GOOGLE_REDIRECT_URI",
+    )
+    connect_url: str = Field(
+        default="http://localhost:8002/oauth/connect-callback/google",
+        alias="GOOGLE_CONNECT_URI",
     )
     token_url: str = Field(
         default="https://accounts.google.com/o/oauth2/token", alias="GOOGLE_TOKEN_URI"
@@ -34,6 +49,9 @@ class OAuthGoogle(BaseSettings, OAuthProvider):
     def get_auth_url(self) -> str:
         return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&scope=openid%20profile%20email&access_type=offline"
 
+    def get_connect_url(self):
+        return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.connect_url}&scope=openid%20profile%20email&access_type=offline"
+
 
 class OAuthYandex(BaseSettings, OAuthProvider):
     name: str = Field(default="yandex")
@@ -42,6 +60,10 @@ class OAuthYandex(BaseSettings, OAuthProvider):
     redirect_uri: str = Field(
         default="http://localhost:8002/oauth/callback/yandex",
         alias="YANDEX_REDIRECT_URI",
+    )
+    connect_url: str = Field(
+        "http://localhost:8002/oauth/connect-callback/yandex",
+        alias="YANDEX_CONNECT_URI",
     )
     token_url: str = Field(
         default="https://oauth.yandex.ru/token", alias="YANDEX_TOKEN_URI"
@@ -52,6 +74,9 @@ class OAuthYandex(BaseSettings, OAuthProvider):
 
     def get_auth_url(self) -> str:
         return f"https://oauth.yandex.ru/authorize?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}"
+
+    def get_connect_url(self) -> str:
+        return f"https://oauth.yandex.ru/authorize?response_type=code&client_id={self.client_id}&redirect_uri={self.connect_url}"
 
 
 class JWTSettings(BaseSettings):

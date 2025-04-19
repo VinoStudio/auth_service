@@ -40,13 +40,20 @@ class OAuthManager:
     # -------------------- Oauth Operations --------------------
 
     async def handle_oauth_callback(
-        self, provider_name: str, code: str
+        self,
+        provider_name: str,
+        code: str,
+        state: str,
     ) -> dto.OauthUserCredentials | dto.OAuthUserIdentity:
         """Process OAuth callback, create user if needed, and return tokens"""
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
         # Exchange code for tokens
-        oauth_tokens = self._convert_callback_to_token(provider, code)
+        oauth_tokens = self._convert_callback_to_token(
+            provider,
+            code,
+            state=state,
+        )
 
         logger.info("Received tokens: ", tokens=oauth_tokens)
 
@@ -61,7 +68,11 @@ class OAuthManager:
         return result
 
     async def associate_oauth_with_existing_user(
-        self, user_id: str, provider_name: str, code: str
+        self,
+        user_id: str,
+        provider_name: str,
+        code: str,
+        state: str,
     ) -> None:
         """Associate a new OAuth provider with an existing user account
 
@@ -74,16 +85,15 @@ class OAuthManager:
             ValueError: If the OAuth account is already associated with another user
             UserNotFoundException: If the user does not exist
         """
-        # Verify user exists
-        user = await self.user_reader.get_user_by_id(user_id)
-        if not user:
-            raise UserNotFoundException(user_id)
-
         # Get the provider
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
         # Exchange code for tokens
-        oauth_tokens = self._convert_callback_to_token(provider, code)
+        oauth_tokens = self._convert_connect_callback_to_token(
+            provider,
+            code,
+            state=state,
+        )
 
         logger.info("Received tokens for association: ", tokens=oauth_tokens)
 
@@ -92,27 +102,21 @@ class OAuthManager:
 
         logger.info("Received user_data for association: ", user_data=user_info)
 
-        # Extract provider user ID
-        provider_user_id = user_info.get("sub") or user_info.get("id")
-
-        if not provider_user_id:
-            raise ValueError("Provider user ID not provided by OAuth provider")
+        provider_parsed_info = self._parse_oauth_user_info(provider_name, user_info)
 
         # Check if this OAuth account is already associated with any user
         existing_user = await self._find_account_by_oauth_data(
-            provider_name, provider_user_id
+            provider_name, provider_parsed_info["provider_user_id"]
         )
 
         if existing_user:
-            raise ValueError(
-                f"OAuth account is already associated with user {existing_user.id.to_raw()}"
-            )
+            raise ValueError(f"OAuth account is already associated with user {user_id}")
 
         associated_account = domain.OAuthAccount(
             user_id=user_id,
             provider=provider_name,
-            provider_user_id=provider_user_id,
-            provider_email=user_info.get("email", ""),
+            provider_user_id=provider_parsed_info["provider_user_id"],
+            provider_email=provider_parsed_info["email"].lower(),
         )
         # Create the OAuth account association
         await self.oauth_repo.create_oauth_account(associated_account)
@@ -124,26 +128,58 @@ class OAuthManager:
     def get_oauth_login_url(self, provider_name: str, state: str) -> str:
         """Generate URL for redirecting user to OAuth provider login page"""
         provider = self.oauth_provider_factory.get_provider(provider_name)
-        url = provider.get_auth_url()  # + "&" + state
+        url = provider.get_auth_url() + f"&state={state}"
         logger.info("provides redirect url", url=url)
+        return url
+
+    def get_oauth_connect_url(self, provider_name: str, state: str) -> str:
+        """Generate URL for redirecting user to OAuth provider login page"""
+        provider = self.oauth_provider_factory.get_provider(provider_name)
+        url = provider.get_connect_url() + f"&state={state}"
+        logger.info("provides connect url", url=url)
         return url
 
     # -------------------- Callback Helpers --------------------
 
     @staticmethod
     def _convert_callback_to_token(
-        provider: OAuthProvider, code: str
+        provider: OAuthProvider,
+        code: str,
+        state: str,
     ) -> Dict[str, str]:
         """Exchange authorization code for OAuth tokens"""
         data = {
             "client_id": provider.client_id,
             "client_secret": provider.client_secret,
             "code": code,
+            "state": state,
             "grant_type": "authorization_code",
         }
 
         if provider.name == "google":
             data["redirect_uri"] = provider.redirect_uri
+
+        response = requests.post(provider.token_url, data=data)
+
+        return response.json()
+
+    @staticmethod
+    def _convert_connect_callback_to_token(
+        provider: OAuthProvider,
+        code: str,
+        state: str,
+    ) -> Dict[str, str]:
+        """Exchange authorization code for OAuth tokens"""
+        data = {
+            "client_id": provider.client_id,
+            "client_secret": provider.client_secret,
+            "code": code,
+            "state": state,
+            "grant_type": "authorization_code",
+        }
+
+        if provider.name == "google":
+            data["redirect_uri"] = provider.connect_url
 
         response = requests.post(provider.token_url, data=data)
 
@@ -199,7 +235,7 @@ class OAuthManager:
 
         return dto.OauthUserCredentials(
             username=username,
-            provider_email=user_info["email"],
+            provider_email=user_info["email"].lower(),
             password=self.generate_secure_password(),
             first_name=user_info["first_name"],
             last_name=user_info["last_name"],

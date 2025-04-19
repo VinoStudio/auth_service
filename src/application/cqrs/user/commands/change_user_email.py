@@ -3,9 +3,7 @@ from dataclasses import dataclass
 
 
 from src.application.base.event_publisher.event_publisher import BaseEventPublisher
-from src.application.exceptions import (
-    PasswordTokenExpiredException,
-)
+from src.application.exceptions import EmailTokenExpiredException
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.services.tasks.notification_manager import (
     NotificationManager,
@@ -23,14 +21,14 @@ logger = structlog.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class ResetUserPasswordCommand(BaseCommand):
+class ChangeUserEmailCommand(BaseCommand):
     token: str
-    new_password: str
+    new_email: str
 
 
 @dataclass(frozen=True)
-class ResetUserPasswordCommandHandler(
-    CommandHandler[ResetUserPasswordCommand, domain.User]
+class ChangeUserEmailCommandHandler(
+    CommandHandler[ChangeUserEmailCommand, domain.User]
 ):
     _user_writer: BaseUserWriter
     _user_reader: BaseUserReader
@@ -38,32 +36,32 @@ class ResetUserPasswordCommandHandler(
     _notification_manager: NotificationManager
     _uow: UnitOfWork
 
-    async def handle(self, command: ResetUserPasswordCommand) -> domain.User:
+    async def handle(self, command: ChangeUserEmailCommand) -> domain.User:
         user_token = await self._token_repo.get_reset_token(
-            command.token, TokenType.PASSWORD_RESET
+            command.token, TokenType.EMAIL_CHANGE
         )
         if not user_token:
-            raise PasswordTokenExpiredException("")
+            raise EmailTokenExpiredException("")
 
         user: domain.User = await self._user_reader.get_user_by_id(user_token)
 
         old_email = user.email.to_raw()
 
-        user.set_password(new_pass=command.new_password)
+        user.set_email(email=Email(command.new_email))
         await self._token_repo.invalidate_reset_token(
-            command.token, TokenType.PASSWORD_RESET
+            command.token, TokenType.EMAIL_CHANGE
         )
 
         await self._user_writer.update_user(user)
         await self._uow.commit()
 
         await self._notification_manager.send_notification(
-            notification_type=NotificationType.PASSWORD_CHANGED,
+            notification_type=NotificationType.EMAIL_CHANGED,
             username=user.username.to_raw(),
             email=old_email,
             token=None,
         )
 
-        logger.info("User password reset", user_id=user_token)
+        logger.info("User email has been changed", user_id=user_token)
 
         return user
