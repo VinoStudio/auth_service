@@ -28,7 +28,7 @@ class BasePermissionRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_permissions(self) -> Any:
+    async def get_all_permissions(self, pagination: Any) -> Any:
         raise NotImplementedError
 
     @abstractmethod

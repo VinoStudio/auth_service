@@ -39,6 +39,16 @@ class RoleAssignedResponseSchema(BaseModel):
         )
 
 
+class GetRolesResponseSchema(BaseModel):
+    roles: List[CreatedRoleResponseSchema]
+
+    @classmethod
+    def from_entity(cls, roles: List[domain.Role]):
+        return cls(
+            roles=[CreatedRoleResponseSchema.from_entity(role) for role in roles]
+        )
+
+
 class RoleRemovedResponseSchema(RoleAssignedResponseSchema): ...
 
 

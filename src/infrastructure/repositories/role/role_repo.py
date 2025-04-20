@@ -65,8 +65,8 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
         return role_domain
 
-    async def get_all_roles(self) -> Iterable[domain.Role]:
-        query = self.get_role()
+    async def get_all_roles(self, pagination: Pagination) -> Iterable[domain.Role]:
+        query = self.get_role().limit(pagination.limit).offset(pagination.offset)
 
         result = await self._session.execute(query)
 

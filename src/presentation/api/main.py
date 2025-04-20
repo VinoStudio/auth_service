@@ -7,7 +7,11 @@ from litestar.plugins.prometheus import PrometheusConfig, PrometheusController
 from src.presentation.api.lifespan import lifespan
 from src.presentation.api.v1.auth.auth_router import AuthController
 from src.presentation.api.v1.auth.oauth_router import OAuthController
-from src.presentation.api.v1.roles.rbac_router import RBACController, UserRoleController
+from src.presentation.api.v1.roles.rbac_router import (
+    RoleController,
+    PermissionController,
+    UserRoleController,
+)
 from src.presentation.api.v1.users.user_router import UserController
 from src.presentation.api.exception_configuration import get_exception_handlers
 
@@ -18,7 +22,8 @@ def create_app() -> Litestar:
         route_handlers=[
             AuthController,
             OAuthController,
-            RBACController,
+            RoleController,
+            PermissionController,
             UserController,
             UserRoleController,
             PrometheusController,

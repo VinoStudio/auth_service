@@ -10,6 +10,7 @@ from src.application.cqrs.role.commands import (
     UpdateRolePermissionsCommandHandler,
     RemoveRolePermissionsCommandHandler,
 )
+from src.application.cqrs.role.queries import GetAllRolesHandler
 from src.settings.config import Config
 
 
@@ -38,3 +39,7 @@ class RoleCommandProvider(Provider):
     remove_role_permissions = provide(
         RemoveRolePermissionsCommandHandler, scope=Scope.REQUEST
     )
+
+
+class RoleQueryProvider(Provider):
+    get_roles = provide(GetAllRolesHandler, scope=Scope.REQUEST)

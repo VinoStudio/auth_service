@@ -15,7 +15,7 @@ from src.application.services.security.jwt_di_setup import JWTProvider
 from src.application.services.rbac.rbac_di_setup import RBACProvider
 from src.application.services.tasks.task_di_setup import NotificationManagerProvider
 
-from src.infrastructure.db.di_setup import (
+from src.infrastructure.db.database_di_setup import (
     DatabaseProvider,
     SessionProvider,
     TestDatabaseProvider,

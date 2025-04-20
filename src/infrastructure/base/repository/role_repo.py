@@ -23,7 +23,7 @@ class BaseRoleRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_roles(self) -> Any:
+    async def get_all_roles(self, pagination: "Pagination") -> Any:
         raise NotImplementedError
 
     @abstractmethod
@@ -41,12 +41,6 @@ class BaseRoleRepository(ABC):
     @abstractmethod
     async def get_role_permissions(self, role_id: str) -> Any:
         raise NotImplementedError
-
-    # @abstractmethod
-    # async def set_role_permissions(
-    #     self, role_id: str, permission_ids: List[str]
-    # ) -> Any:
-    #     raise NotImplementedError
 
     async def get_existing_roles(self) -> Any:
         raise NotImplementedError

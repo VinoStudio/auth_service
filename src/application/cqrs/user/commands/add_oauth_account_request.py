@@ -25,7 +25,6 @@ class AddOAuthAccountRequestCommand(BaseCommand):
 class AddOAuthAccountRequestCommandHandler(
     CommandHandler[AddOAuthAccountRequestCommand, str]
 ):
-    _user_reader: BaseUserReader
     _token_repo: TokenBlackListRepository
     _oauth_manager: OAuthManager
     _jwt_manager: BaseJWTManager

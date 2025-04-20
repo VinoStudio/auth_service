@@ -4,6 +4,12 @@ from src.presentation.api.v1.roles.response.role import (
     RoleAssignedResponseSchema,
     RoleRemovedResponseSchema,
     RoleUpdatedResponseSchema,
+    GetRolesResponseSchema,
+)
+
+from src.presentation.api.v1.roles.response.permission import (
+    GetPermissionsResponseSchema,
+    CreatedPermissionResponseSchema,
 )
 
 __all__ = (
@@ -12,4 +18,7 @@ __all__ = (
     "RoleAssignedResponseSchema",
     "RoleRemovedResponseSchema",
     "RoleUpdatedResponseSchema",
+    "GetRolesResponseSchema",
+    "GetPermissionsResponseSchema",
+    "CreatedPermissionResponseSchema",
 )

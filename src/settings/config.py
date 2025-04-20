@@ -79,6 +79,33 @@ class OAuthYandex(BaseSettings, OAuthProvider):
         return f"https://oauth.yandex.ru/authorize?response_type=code&client_id={self.client_id}&redirect_uri={self.connect_url}"
 
 
+class OAuthGithub(BaseSettings, OAuthProvider):
+    name: str = Field(default="github")
+    client_id: str = Field(default="", alias="GITHUB_CLIENT_ID")
+    client_secret: str = Field(default="", alias="GITHUB_CLIENT_SECRET")
+    redirect_uri: str = Field(
+        default="http://localhost:8002/oauth/callback/github",
+        alias="GITHUB_REDIRECT_URI",
+    )
+    connect_url: str = Field(
+        default="http://localhost:8002/oauth/connect-callback/github",
+        alias="GITHUB_CONNECT_URI",
+    )
+    token_url: str = Field(
+        default="https://github.com/login/oauth/access_token", alias="GITHUB_TOKEN_URI"
+    )
+    userinfo_url: str = Field(
+        default="https://api.github.com/user",
+        alias="GITHUB_USER_INFO_URI",
+    )
+
+    def get_auth_url(self) -> str:
+        return f"https://github.com/login/oauth/authorize?client_id={self.client_id}&redirect_uri={self.redirect_uri}&scope=read:user,user:email"
+
+    def get_connect_url(self) -> str:
+        return f"https://github.com/login/oauth/authorize?client_id={self.client_id}&redirect_uri={self.connect_url}&scope=read:user,user:email"
+
+
 class JWTSettings(BaseSettings):
     secret_key: str = Field(default="secret_key", alias="JWT_SECRET_KEY")
     access_token_expire_minutes: int = 60 * 24
@@ -169,6 +196,7 @@ class Config:
     smtp = SMTPSettings()
     google_oauth = OAuthGoogle()
     yandex_oauth = OAuthYandex()
+    github_oauth = OAuthGithub()
 
 
 @lru_cache(maxsize=1)
@@ -176,6 +204,7 @@ def get_config() -> Config:
     return Config()
 
 
+# --------------Dependency injection---------------------------
 class ConfigProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_config(self) -> Config:

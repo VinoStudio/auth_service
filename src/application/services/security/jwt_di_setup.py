@@ -66,7 +66,11 @@ class JWTProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_oauth_providers(self, config: Config) -> OAuthProviderFactory:
         return OAuthProviderFactory(
-            providers=dict(google=config.google_oauth, yandex=config.yandex_oauth)
+            providers=dict(
+                google=config.google_oauth,
+                yandex=config.yandex_oauth,
+                github=config.github_oauth,
+            )
         )
 
     oauth_provider = provide(OAuthManager, scope=Scope.REQUEST)
