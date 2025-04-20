@@ -57,6 +57,13 @@ from src.application.cqrs.role.commands import (
     RemoveRolePermissionsCommandHandler,
 )
 
+from src.application.cqrs.permission.commands import (
+    CreatePermissionCommand,
+    CreatePermissionCommandHandler,
+    DeletePermissionCommand,
+    DeletePermissionCommandHandler,
+)
+
 from src.application.cqrs.user.queries import (
     GetUserById,
     GetUserByIdHandler,
@@ -74,6 +81,16 @@ from src.application.cqrs.user.queries import (
     GetUserPermissionsHandler,
     GetUsers,
     GetUsersHandler,
+)
+
+from src.application.cqrs.role.queries import (
+    GetAllRolesQuery,
+    GetAllRolesHandler,
+)
+
+from src.application.cqrs.permission.queries import (
+    GetAllPermissionsQuery,
+    GetAllPermissionsHandler,
 )
 
 from src.infrastructure.message_broker.events import UserRegistered
@@ -185,6 +202,18 @@ class MediatorConfigProvider(Provider):
         return command_mediator
 
     @decorate
+    async def register_permission_commands(
+        self,
+        command_mediator: BaseCommandMediator,
+        create_permission: CreatePermissionCommandHandler,
+        delete_permission: DeletePermissionCommandHandler,
+    ) -> BaseCommandMediator:
+        command_mediator.register_command(CreatePermissionCommand, [create_permission])
+        command_mediator.register_command(DeletePermissionCommand, [delete_permission])
+
+        return command_mediator
+
+    @decorate
     async def register_events(
         self,
         event_publisher: BaseEventPublisher,
@@ -230,5 +259,27 @@ class MediatorConfigProvider(Provider):
         query_mediator.register_query(GetUserRoles, get_user_roles)
         query_mediator.register_query(GetUserPermissions, get_user_permissions)
         query_mediator.register_query(GetUsers, get_users)
+
+        return query_mediator
+
+    @decorate
+    async def register_role_queries(
+        self,
+        query_mediator: BaseQueryMediator,
+        get_roles: GetAllRolesHandler,
+    ) -> BaseQueryMediator:
+
+        query_mediator.register_query(GetAllRolesQuery, get_roles)
+
+        return query_mediator
+
+    @decorate
+    async def register_permission_queries(
+        self,
+        query_mediator: BaseQueryMediator,
+        get_permissions: GetAllPermissionsHandler,
+    ) -> BaseQueryMediator:
+
+        query_mediator.register_query(GetAllPermissionsQuery, get_permissions)
 
         return query_mediator

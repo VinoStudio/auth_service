@@ -9,13 +9,20 @@ from src.application.cqrs.user.user_di_setup import (
     ExternalEventProvider,
     UserQueryProvider,
 )
-from src.application.cqrs.role.role_di_setup import RoleCommandProvider
+from src.application.cqrs.role.role_di_setup import (
+    RoleCommandProvider,
+    RoleQueryProvider,
+)
+from src.application.cqrs.permission.permission_di_setup import (
+    PermissionCommandProvider,
+    PermissionQueryProvider,
+)
 from src.application.services.session.session_di_setup import SessionManagerProvider
 from src.application.services.security.jwt_di_setup import JWTProvider
 from src.application.services.rbac.rbac_di_setup import RBACProvider
 from src.application.services.tasks.task_di_setup import NotificationManagerProvider
 
-from src.infrastructure.db.di_setup import DatabaseProvider, SessionProvider
+from src.infrastructure.db.database_di_setup import DatabaseProvider, SessionProvider
 from src.infrastructure.message_broker.message_broker_di_setup import (
     MessageBrokerProvider,
     KafkaConsumerManagerProvider,
@@ -44,6 +51,9 @@ def get_container() -> AsyncContainer:
         UserCommandProvider(),
         UserQueryProvider(),
         RoleCommandProvider(),
+        RoleQueryProvider(),
+        PermissionCommandProvider(),
+        PermissionQueryProvider(),
         ExternalEventProvider(),
         MediatorConfigProvider(),
         KafkaConsumerManagerProvider(),

@@ -9,6 +9,7 @@ import src.domain as domain
 import src.infrastructure.db.models as models
 from src.infrastructure.exceptions import PermissionDoesNotExistException
 from src.infrastructure.repositories.converters import OrmToDomainConverter
+from src.infrastructure.repositories.pagination import Pagination
 
 
 @dataclass
@@ -73,8 +74,10 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
 
         return result.scalars().all()
 
-    async def get_all_permissions(self) -> Iterable[domain.Permission]:
-        query = self.get_permission()
+    async def get_all_permissions(
+        self, pagination: Pagination
+    ) -> Iterable[domain.Permission]:
+        query = self.get_permission().limit(pagination.limit).offset(pagination.offset)
 
         result = await self._session.execute(query)
 

@@ -11,7 +11,6 @@ from typing import Dict, Any, Optional
 
 from src.application.exceptions import (
     EmailAlreadyExistsException,
-    UserNotFoundException,
     MappingProviderException,
 )
 from src.infrastructure.base.repository import BaseUserReader
@@ -45,7 +44,17 @@ class OAuthManager:
         code: str,
         state: str,
     ) -> dto.OauthUserCredentials | dto.OAuthUserIdentity:
-        """Process OAuth callback, create user if needed, and return tokens"""
+        """Associate a new OAuth provider with an existing user account
+
+        Args:
+            provider_name: The name of the OAuth provider
+            code: The authorization code from the OAuth callback
+            state: Parameter to protect from XSRF.
+
+        Raises:
+            ValueError: If the OAuth account is already associated with another user
+            UserNotFoundException: If the user does not exist
+        """
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
         # Exchange code for tokens
@@ -80,6 +89,7 @@ class OAuthManager:
             user_id: The ID of the user to associate with
             provider_name: The name of the OAuth provider
             code: The authorization code from the OAuth callback
+            state: Parameter to protect from XSRF. Also using as redis key for oauth account connection.
 
         Raises:
             ValueError: If the OAuth account is already associated with another user
@@ -89,10 +99,11 @@ class OAuthManager:
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
         # Exchange code for tokens
-        oauth_tokens = self._convert_connect_callback_to_token(
+        oauth_tokens = self._convert_callback_to_token(
             provider,
             code,
             state=state,
+            is_connect=True,
         )
 
         logger.info("Received tokens for association: ", tokens=oauth_tokens)
@@ -146,8 +157,16 @@ class OAuthManager:
         provider: OAuthProvider,
         code: str,
         state: str,
+        is_connect: bool = False,
     ) -> Dict[str, str]:
-        """Exchange authorization code for OAuth tokens"""
+        """Exchange authorization code for OAuth tokens
+
+        Args:
+            provider: OAuth provider configuration
+            code: Authorization code from callback
+            state: State token for security validation
+            is_connect: If True, uses connect_url, otherwise uses redirect_uri
+        """
         data = {
             "client_id": provider.client_id,
             "client_secret": provider.client_secret,
@@ -156,32 +175,17 @@ class OAuthManager:
             "grant_type": "authorization_code",
         }
 
-        if provider.name == "google":
-            data["redirect_uri"] = provider.redirect_uri
+        if provider.name in ("google", "github"):
+            # Use the appropriate URL based on the is_connect parameter
+            data["redirect_uri"] = (
+                provider.connect_url if is_connect else provider.redirect_uri
+            )
 
-        response = requests.post(provider.token_url, data=data)
+        headers = {}
+        if provider.name == "github":
+            headers = {"Accept": "application/json"}
 
-        return response.json()
-
-    @staticmethod
-    def _convert_connect_callback_to_token(
-        provider: OAuthProvider,
-        code: str,
-        state: str,
-    ) -> Dict[str, str]:
-        """Exchange authorization code for OAuth tokens"""
-        data = {
-            "client_id": provider.client_id,
-            "client_secret": provider.client_secret,
-            "code": code,
-            "state": state,
-            "grant_type": "authorization_code",
-        }
-
-        if provider.name == "google":
-            data["redirect_uri"] = provider.connect_url
-
-        response = requests.post(provider.token_url, data=data)
+        response = requests.post(provider.token_url, data=data, headers=headers)
 
         return response.json()
 
@@ -189,12 +193,56 @@ class OAuthManager:
         self, provider: OAuthProvider, access_token: str
     ) -> Dict[str, Any]:
         """Get user information from OAuth provider"""
+        if provider.name == "github":
+            return self._get_github_user_info(provider, access_token)
+        else:
+            headers = self._get_headers(provider, access_token)
+            response = requests.post(provider.userinfo_url, headers=headers)
+            return response.json()
 
+    def _get_github_user_info(
+        self, provider: OAuthProvider, access_token: str
+    ) -> Dict[str, Any]:
+        """Get GitHub user information including email"""
         headers = self._get_headers(provider, access_token)
 
-        response = requests.post(provider.userinfo_url, headers=headers)
+        # Get basic user profile
+        response = requests.get(provider.userinfo_url, headers=headers)
+        user_data = response.json()
 
-        return response.json()
+        # Enrich with email information
+        email = self._get_github_user_email(headers)
+        if email:
+            user_data["email"] = email
+
+        return user_data
+
+    @staticmethod
+    def _get_github_user_email(headers: Dict[str, str]) -> Optional[str]:
+        """Extract primary or first email from GitHub emails endpoint"""
+        emails_response = requests.get(
+            "https://api.github.com/user/emails", headers=headers
+        )
+
+        if not emails_response.ok:
+            logger.warning(
+                "Failed to fetch GitHub emails", status=emails_response.status_code
+            )
+            return None
+
+        emails = emails_response.json()
+        logger.info("Received emails from GitHub", count=len(emails))
+
+        # First try to find primary email
+        for email_data in emails:
+            if email_data.get("primary"):
+                return email_data.get("email")
+
+        # If no primary found, take the first one
+        if emails:
+            return emails[0].get("email")
+
+        return None
 
     # -------------------- User Methods --------------------
 
@@ -210,8 +258,6 @@ class OAuthManager:
         provider_email = parsed_info["email"]
         provider_user_id = parsed_info["provider_user_id"]
 
-        await self._check_if_email_exists(provider_email)
-
         # Try to find user by provider info
         existing_user = await self._find_account_by_oauth_data(
             provider_name, provider_user_id
@@ -221,6 +267,9 @@ class OAuthManager:
             return await self._get_user_oauth_credentials(
                 provider_name, provider_user_id
             )
+
+        # Check if email already exists
+        await self._check_if_email_exists(provider_email)
 
         # Create new user with the parsed info
         return await self._create_user_from_oauth(parsed_info, provider_name)
@@ -277,7 +326,10 @@ class OAuthManager:
             case "google":
                 headers = {"Authorization": f"Bearer {access_token}"}
             case "github":
-                headers = {"Authorization": f"Bearer {access_token}"}
+                headers = {
+                    "Authorization": f"Bearer {access_token}",
+                    "Accept": "application/vnd.github+json",
+                }
             case _:
                 raise MappingProviderException(provider.name)
 

@@ -1,4 +1,4 @@
-from blib2to3.pgen2.parse import Optional
+from typing import Optional
 from pydantic import BaseModel, Field
 from typing import List
 
