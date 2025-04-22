@@ -33,6 +33,16 @@ from src.application.cqrs.user.queries.get_user_permissions import (
     GetUserPermissionsHandler,
 )
 
+from src.application.cqrs.user.queries.get_current_user_session import (
+    GetCurrentUserSession,
+    GetCurrentUserSessionHandler,
+)
+
+from src.application.cqrs.user.queries.get_all_user_sessions import (
+    GetCurrentUserSessions,
+    GetCurrentUserSessionsHandler,
+)
+
 __all__ = (
     "GetUserById",
     "GetUserByIdHandler",
@@ -44,10 +54,14 @@ __all__ = (
     "GetUserPermissionsHandler",
     "GetCurrentUser",
     "GetCurrentUserHandler",
+    "GetCurrentUserSession",
+    "GetCurrentUserSessionHandler",
     "GetCurrentUserRoles",
     "GetCurrentUserRolesHandler",
     "GetCurrentUserPermissions",
     "GetCurrentUserPermissionsHandler",
+    "GetCurrentUserSessions",
+    "GetCurrentUserSessionsHandler",
     "GetUsers",
     "GetUsersHandler",
 )

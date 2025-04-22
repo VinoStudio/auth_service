@@ -16,6 +16,8 @@ from src.application.cqrs.user.queries import (
     GetCurrentUser,
     GetCurrentUserRoles,
     GetCurrentUserPermissions,
+    GetCurrentUserSession,
+    GetCurrentUserSessions,
     GetUserById,
     GetUserPermissions,
 )
@@ -33,7 +35,11 @@ class UserController(Controller):
     path = "/users"
     dependencies = {"di_container": Provide(get_container)}
 
-    @route(path="/{user_id:str}", http_method=[HttpMethod.GET], sync_to_thread=False)
+    @route(
+        path="/{user_id:str}",
+        http_method=[HttpMethod.GET],
+        description="Get user by ID",
+    )
     async def get_user_by_id(
         self,
         user_id: Annotated[
@@ -51,7 +57,6 @@ class UserController(Controller):
     @route(
         path="/username/{username:str}",
         http_method=[HttpMethod.GET],
-        sync_to_thread=False,
         description="Get user by username",
     )
     async def get_user_by_username(
@@ -69,9 +74,87 @@ class UserController(Controller):
             return user_response.GetUserResponseSchema.from_entity(user)
 
     @route(
+        path="/me",
+        http_method=[HttpMethod.GET],
+    )
+    async def get_current_user(
+        self, di_container: AsyncContainer, request: Request
+    ) -> user_response.GetUserResponseSchema:
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            user = await query_mediator.handle_query(GetCurrentUser(request=request))
+
+            return user_response.GetUserResponseSchema.from_entity(user)
+
+    @route(
+        path="/me/roles",
+        http_method=[HttpMethod.GET],
+    )
+    async def get_current_user_roles(
+        self, di_container: AsyncContainer, request: Request
+    ) -> user_response.GetUserRolesResponseSchema:
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            roles = await query_mediator.handle_query(
+                GetCurrentUserRoles(request=request)
+            )
+
+            return user_response.GetUserRolesResponseSchema(roles=roles)
+
+    @route(
+        path="/me/permissions",
+        http_method=[HttpMethod.GET],
+    )
+    async def get_current_user_permissions(
+        self, di_container: AsyncContainer, request: Request
+    ) -> user_response.GetUserPermissionsResponseSchema:
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            permissions = await query_mediator.handle_query(
+                GetCurrentUserPermissions(request=request)
+            )
+
+        return user_response.GetUserPermissionsResponseSchema(permissions=permissions)
+
+    @route(
+        path="/me/session",
+        http_method=[HttpMethod.GET],
+    )
+    async def get_current_user_session(
+        self,
+        di_container: AsyncContainer,
+        request: Request,
+    ) -> user_response.GetUserSessionResponseSchema:
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            session = await query_mediator.handle_query(
+                GetCurrentUserSession(request=request)
+            )
+
+        return user_response.GetUserSessionResponseSchema.from_entity(session=session)
+
+    @route(
+        path="/me/sessions",
+        http_method=[HttpMethod.GET],
+    )
+    async def get_current_user_sessions(
+        self,
+        di_container: AsyncContainer,
+        request: Request,
+    ) -> user_response.GetUserSessionsResponseSchema:
+        async with di_container() as c:
+            query_mediator = await c.get(BaseQueryMediator)
+            sessions = await query_mediator.handle_query(
+                GetCurrentUserSessions(request=request)
+            )
+
+        return user_response.GetUserSessionsResponseSchema.from_entity(
+            sessions=sessions
+        )
+
+    @route(
         path="/{user_id:str}/roles",
         http_method=[HttpMethod.GET],
-        sync_to_thread=False,
         description="Get user roles",
     )
     async def get_user_roles(
@@ -103,7 +186,6 @@ class UserController(Controller):
     @route(
         path="/{user_id:str}/permissions",
         http_method=[HttpMethod.GET],
-        sync_to_thread=False,
         description="Get user permissions",
     )
     async def get_user_permissions(
@@ -137,7 +219,6 @@ class UserController(Controller):
     @route(
         path="/",
         http_method=[HttpMethod.GET],
-        sync_to_thread=False,
         description="Get all users",
     )
     async def get_all_users(

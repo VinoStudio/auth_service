@@ -1,6 +1,7 @@
 from litestar import Litestar
 from litestar.config.cors import CORSConfig
 from litestar.openapi import OpenAPIConfig
+from litestar.openapi.spec import Tag, SecurityScheme, Components
 from litestar.openapi.plugins import ScalarRenderPlugin, SwaggerRenderPlugin
 from litestar.plugins.prometheus import PrometheusConfig, PrometheusController
 
@@ -35,6 +36,10 @@ def create_app() -> Litestar:
             version="0.0.1",
             description="Authentication and authorization service with JWT and OAuth",
             path="/docs",
+            tags=[
+                Tag(name="public", description="This endpoint is for external users"),
+                Tag(name="internal", description="This endpoint is for internal users"),
+            ],
             render_plugins=[ScalarRenderPlugin(), SwaggerRenderPlugin()],
         ),
         cors_config=CORSConfig(

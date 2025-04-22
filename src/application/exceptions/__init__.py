@@ -24,6 +24,7 @@ from src.application.exceptions.rbac import (
     AccessDeniedException,
     PermissionAlreadyExistsException,
     PermissionInUseException,
+    ValidationException,
 )
 
 from src.application.exceptions.jwt import (
@@ -51,6 +52,7 @@ __all__ = (
     "PasswordTokenExpiredException",
     "EmailTokenExpiredException",
     "RBACException",
+    "ValidationException",
     "UnauthorizedRBACOperationException",
     "RoleNotFoundException",
     "RoleAlreadyExistsException",

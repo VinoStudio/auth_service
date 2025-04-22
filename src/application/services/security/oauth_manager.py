@@ -32,6 +32,20 @@ class OAuthProviderFactory:
 
 @dataclass
 class OAuthManager:
+    """
+    Manages OAuth authentication flows, user association, and account creation.
+
+    This class handles the OAuth 2.0 authentication process including generating
+    authorization URLs, processing callbacks, exchanging authorization codes for tokens,
+    retrieving user information from providers, and associating OAuth accounts with
+    application users.
+
+    Attributes:
+        oauth_provider_factory: Factory that contains a dictionary of existing OAuth provider instances
+        oauth_repo: Repository for OAuth account storage and retrieval
+        user_reader: Service for reading user information
+    """
+
     oauth_provider_factory: OAuthProviderFactory
     oauth_repo: OAuthAccountRepository
     user_reader: BaseUserReader
@@ -44,17 +58,27 @@ class OAuthManager:
         code: str,
         state: str,
     ) -> dto.OauthUserCredentials | dto.OAuthUserIdentity:
-        """Associate a new OAuth provider with an existing user account
+        """
+        Process OAuth callback and authenticate or create a user.
+
+        Handles the OAuth callback flow by exchanging the authorization code for tokens,
+        retrieving user information from the provider, and either finding an existing
+        user account or preparing data for a new user registration.
 
         Args:
-            provider_name: The name of the OAuth provider
+            provider_name: The name of the OAuth provider (e.g., "Google", "GitHub", "Yandex".)
             code: The authorization code from the OAuth callback
-            state: Parameter to protect from XSRF.
+            state: Parameter to protect from XSRF attacks and validate the request
+
+        Returns:
+            Either credentials for a new user to be created or identity for an existing user
 
         Raises:
             ValueError: If the OAuth account is already associated with another user
             UserNotFoundException: If the user does not exist
+            EmailAlreadyExistsException: If user not found, but OAuth email already taken
         """
+
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
         # Exchange code for tokens
@@ -83,18 +107,23 @@ class OAuthManager:
         code: str,
         state: str,
     ) -> None:
-        """Associate a new OAuth provider with an existing user account
+        """
+        Associate a new OAuth provider with an existing user account.
+
+        Links an OAuth identity from a third-party provider to a user that already exists
+        in the system. This enables the user to login using the associated provider in the future.
 
         Args:
             user_id: The ID of the user to associate with
-            provider_name: The name of the OAuth provider
+            provider_name: The name of the OAuth provider (e.g., "Google", "GitHub", "Yandex".)
             code: The authorization code from the OAuth callback
-            state: Parameter to protect from XSRF. Also using as redis key for oauth account connection.
+            state: Parameter to protect from XSRF. Also used as redis key for oauth account connection
 
         Raises:
             ValueError: If the OAuth account is already associated with another user
-            UserNotFoundException: If the user does not exist
+            UserNotFoundException: If the specified user does not exist
         """
+
         # Get the provider
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
@@ -136,18 +165,32 @@ class OAuthManager:
             f"Successfully associated {provider_name} account with user {user_id}"
         )
 
-    def get_oauth_login_url(self, provider_name: str, state: str) -> str:
-        """Generate URL for redirecting user to OAuth provider login page"""
+    def get_oauth_url(
+        self, provider_name: str, state: str, is_connect: bool = False
+    ) -> str:
+        """
+        Generate URL for redirecting user to OAuth provider login page.
+
+        Creates the authorization URL that the user will be redirected to in order
+        to authenticate with the OAuth provider.
+
+        Args:
+            provider_name: The name of the OAuth provider (e.g., "Google", "GitHub", "Yandex".)
+            state: Unique state parameter for CSRF protection
+            is_connect: If True, generates URL for connecting an account rather than logging in
+
+        Returns:
+            The fully formed authorization URL for the specified provider
+        """
+
         provider = self.oauth_provider_factory.get_provider(provider_name)
+        if is_connect:
+            url = provider.get_connect_url() + f"&state={state}"
+            logger.info("provides connect url", url=url)
+            return url
+
         url = provider.get_auth_url() + f"&state={state}"
         logger.info("provides redirect url", url=url)
-        return url
-
-    def get_oauth_connect_url(self, provider_name: str, state: str) -> str:
-        """Generate URL for redirecting user to OAuth provider login page"""
-        provider = self.oauth_provider_factory.get_provider(provider_name)
-        url = provider.get_connect_url() + f"&state={state}"
-        logger.info("provides connect url", url=url)
         return url
 
     # -------------------- Callback Helpers --------------------
@@ -159,14 +202,22 @@ class OAuthManager:
         state: str,
         is_connect: bool = False,
     ) -> Dict[str, str]:
-        """Exchange authorization code for OAuth tokens
+        """
+        Exchange authorization code for OAuth tokens.
+
+        Makes a request to the provider's token endpoint to exchange the authorization
+        code for access (and possibly refresh) tokens.
 
         Args:
-            provider: OAuth provider configuration
-            code: Authorization code from callback
+            provider: OAuth provider configuration object
+            code: Authorization code received from the callback
             state: State token for security validation
             is_connect: If True, uses connect_url, otherwise uses redirect_uri
+
+        Returns:
+            Dictionary containing tokens (typically access_token, refresh_token, etc.)
         """
+
         data = {
             "client_id": provider.client_id,
             "client_secret": provider.client_secret,
@@ -181,9 +232,7 @@ class OAuthManager:
                 provider.connect_url if is_connect else provider.redirect_uri
             )
 
-        headers = {}
-        if provider.name == "github":
-            headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json"}
 
         response = requests.post(provider.token_url, data=data, headers=headers)
 
@@ -192,7 +241,19 @@ class OAuthManager:
     def _get_provider_user_info(
         self, provider: OAuthProvider, access_token: str
     ) -> Dict[str, Any]:
-        """Get user information from OAuth provider"""
+        """
+        Get user information from OAuth provider.
+
+        Retrieves profile information about the user from the OAuth provider's
+        user info endpoint using the access token.
+
+        Args:
+            provider: The OAuth provider configuration object
+            access_token: The access token received from the token exchange
+
+        Returns:
+            Dictionary containing user profile information
+        """
         if provider.name == "github":
             return self._get_github_user_info(provider, access_token)
         else:
@@ -203,7 +264,20 @@ class OAuthManager:
     def _get_github_user_info(
         self, provider: OAuthProvider, access_token: str
     ) -> Dict[str, Any]:
-        """Get GitHub user information including email"""
+        """
+        Get GitHub user information including email.
+
+        GitHub requires a separate API call to retrieve email information,
+        so this method handles the special case for GitHub providers.
+
+        Args:
+            provider: The GitHub OAuth provider configuration
+            access_token: The access token received from the token exchange
+
+        Returns:
+            Dictionary containing user profile information with email added
+        """
+
         headers = self._get_headers(provider, access_token)
 
         # Get basic user profile
@@ -219,7 +293,19 @@ class OAuthManager:
 
     @staticmethod
     def _get_github_user_email(headers: Dict[str, str]) -> Optional[str]:
-        """Extract primary or first email from GitHub emails endpoint"""
+        """
+        Extract primary or first email from GitHub emails endpoint.
+
+        GitHub requires a separate API call to get user emails. This method
+        fetches the emails and returns the primary one if available.
+
+        Args:
+            headers: HTTP headers including the authorization token
+
+        Returns:
+            Primary email address or first available one, None if unavailable
+        """
+
         emails_response = requests.get(
             "https://api.github.com/user/emails", headers=headers
         )
@@ -251,7 +337,23 @@ class OAuthManager:
         provider_name: str,
         user_info: Dict[str, Any],
     ) -> dto.OAuthUserIdentity | dto.OauthUserCredentials:
-        """Find existing user or create new one based on OAuth data"""
+        """
+        Find existing user or create new one based on OAuth data.
+
+        Determines if a user already exists based on OAuth provider data or email.
+        If found, returns user identity; otherwise, prepares data for user creation.
+
+        Args:
+            provider_name: The name of the OAuth provider
+            user_info: User information retrieved from the provider
+
+        Returns:
+            Either credentials for a new user or identity information for an existing user
+
+        Raises:
+            EmailAlreadyExistsException: If user not found by OAuth but email exists
+        """
+
         # Parse and normalize user info
         parsed_info = self._parse_oauth_user_info(provider_name, user_info)
 
@@ -279,13 +381,26 @@ class OAuthManager:
         user_info: Dict[str, Any],
         provider_name: str,
     ) -> dto.OauthUserCredentials:
-        """Create new user from OAuth data"""
+        """
+        Create new user from OAuth data.
+
+        Prepares the data needed to create a new user account based on
+        information retrieved from the OAuth provider.
+
+        Args:
+            user_info: Parsed and normalized user information from provider
+            provider_name: The name of the OAuth provider
+
+        Returns:
+            DTO containing user credentials and OAuth information for account creation
+        """
+
         username = await self._generate_username(user_info)
 
         return dto.OauthUserCredentials(
             username=username,
-            provider_email=user_info["email"].lower(),
-            password=self.generate_secure_password(),
+            provider_email=user_info["email"],
+            password=self._generate_secure_password(),
             first_name=user_info["first_name"],
             last_name=user_info["last_name"],
             middle_name=user_info["middle_name"],
@@ -295,7 +410,21 @@ class OAuthManager:
 
     @staticmethod
     def _extract_name_parts(user_info: Dict[str, Any]) -> Dict[str, str]:
-        """Extract name parts from user info"""
+        """
+        Extract first, middle, and last name from a full name string.
+
+        Parses a full name into its component parts using a simple heuristic:
+        - First word becomes first name
+        - Last word becomes last name
+        - Any words in between become middle name
+
+        Args:
+            user_info: Dictionary containing a 'name' key with full name
+
+        Returns:
+            Dictionary with 'first_name', 'middle_name', and 'last_name' keys
+        """
+
         first_name = ""
         middle_name = ""
         last_name = ""
@@ -320,6 +449,23 @@ class OAuthManager:
 
     @staticmethod
     def _get_headers(provider: OAuthProvider, access_token: str) -> Dict[str, str]:
+        """
+        Create appropriate HTTP headers for OAuth provider API requests.
+
+        Constructs authorization headers based on the specific requirements
+        of different OAuth providers (Yandex, Google, GitHub, etc.).
+
+        Args:
+            provider: The OAuth provider configuration object
+            access_token: The access token to use for authorization
+
+        Returns:
+            Dictionary of HTTP headers required for API requests
+
+        Raises:
+            MappingProviderException: If the provider is not supported
+        """
+
         match provider.name:
             case "yandex":
                 headers = {"Authorization": f"OAuth {access_token}"}
@@ -341,8 +487,21 @@ class OAuthManager:
         """
         Parse and normalize OAuth user information from different providers.
 
-        Returns a standardized user profile with consistent fields across providers.
+        Creates a standardized user profile with consistent fields regardless of
+        which OAuth provider the data comes from. Handles the different data
+        structures and field names used by various providers.
+
+        Args:
+            provider_name: The name of the OAuth provider
+            user_info: Raw user information from the provider
+
+        Returns:
+            Standardized dictionary with normalized user information
+
+        Raises:
+            ValueError: If required fields cannot be extracted from the provider data
         """
+
         # Initialize with default empty structure
         parsed_profile = {
             "provider_user_id": None,
@@ -456,20 +615,50 @@ class OAuthManager:
         if not profile["last_name"]:
             profile["last_name"] = name_parts["last_name"]
 
-    def _validate_parsed_profile(
-        self, provider_name: str, profile: Dict[str, Any]
-    ) -> None:
+    @staticmethod
+    def _validate_parsed_profile(provider_name: str, profile: Dict[str, Any]) -> None:
+        """
+        Ensure all required fields are present in the parsed profile.
+
+        Validates that essential information like provider user ID and email
+        were successfully extracted from the provider data.
+
+        Args:
+            provider_name: The name of the OAuth provider
+            profile: Parsed user profile to validate
+
+        Raises:
+            ValueError: If required fields are missing or invalid
+        """
+
         """Ensure all required fields are present in the parsed profile."""
         if not profile["provider_user_id"]:
             raise ValueError(
                 f"Could not extract provider user ID from {provider_name} data"
             )
 
-        if not profile["email"]:
+        # Lowercase email if it exists
+        if "email" in profile and profile["email"]:
+            profile["email"] = profile["email"].lower()
+        else:
             raise ValueError(f"Could not extract email from {provider_name} data")
 
     async def _generate_username(self, user_info: Dict[str, Any]) -> str:
-        """Generate beautiful unique username from OAuth user info"""
+        """
+        Generate a unique username based on OAuth user information.
+
+        Creates a username using the following strategy:
+        1. Try using the email prefix
+        2. If not available, use the full name without spaces
+        3. If username exists, add random adjective
+        4. As a last resort, use timestamp-based username
+
+        Args:
+            user_info: Parsed user information from OAuth provider
+
+        Returns:
+            A unique username string that doesn't exist in the system
+        """
 
         username = "user"
 
@@ -495,7 +684,23 @@ class OAuthManager:
         return f"user_{datetime.now(UTC).timestamp()}"
 
     @staticmethod
-    def generate_secure_password(length=12):
+    def _generate_secure_password(length=12):
+        """
+        Generate a cryptographically secure random password.
+
+        Creates a password that meets common security requirements:
+        - At least one uppercase letter
+        - At least one lowercase letter
+        - At least one digit
+        - Minimum length of 8 characters
+
+        Args:
+            length: Desired password length (minimum 8)
+
+        Returns:
+            A secure random password string
+        """
+
         # Make sure length is at least 8
         length = max(length, 8)
 
@@ -515,6 +720,8 @@ class OAuthManager:
         random.shuffle(password)
 
         return "".join(password)
+
+    # -------------------- Validators --------------------
 
     async def _get_user_oauth_credentials(
         self, provider: str, provider_user_id: str

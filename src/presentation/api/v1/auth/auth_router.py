@@ -3,7 +3,9 @@ from litestar.di import Provide
 from litestar.params import Body
 from litestar.exceptions import HTTPException
 from litestar.status_codes import HTTP_400_BAD_REQUEST
+from litestar.openapi.datastructures import ResponseSpec
 from dishka import AsyncContainer
+
 
 from src.application.base.mediator.command import BaseCommandMediator
 from src.application.cqrs.user.commands import (
@@ -23,6 +25,7 @@ from src.presentation.api.v1.auth.response.user import (
 )
 
 import src.presentation.api.v1.auth.request.user as user_requests
+import litestar.status_codes as status
 
 
 class AuthController(Controller):
@@ -30,34 +33,65 @@ class AuthController(Controller):
     tags = ["Auth"]
     dependencies = {"di_container": Provide(get_container)}
 
-    @route(path="/register", http_method=[HttpMethod.POST])
+    @route(
+        path="/register",
+        http_method=[HttpMethod.POST],
+        tags=["public"],
+        summary="Register a new user account in the API.",
+        description="Creates a new user with the provided credentials and future profile information. "
+        "Username and email must be unique. "
+        "Password has to be at least 8 characters long and contain at least one number, one lowercase letter and one uppercase letter. "
+        "Fullname detail should be provided for user service communication.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="User successfully registered",
+                data_container=CreateUserResponseSchema,
+            ),
+        },
+    )
     async def register(
         self,
         di_container: AsyncContainer,
         request: Request,
         data: user_requests.UserCreate = Body(),
     ) -> CreateUserResponseSchema:
+        """
+        Raises:
+            400 Bad Request:
+                - "Email already in use": Another account exists with this email
+                - "Username already taken": Another account exists with this username
+                - "Password too weak": Password doesn't meet complexity requirements
 
-        try:
-            async with di_container() as c:
-                command_handler = await c.get(BaseCommandMediator)
-                command = RegisterUserCommand(
-                    email=data.email,
-                    password=data.password,
-                    username=data.username,
-                    request=request,
-                    first_name=data.first_name,
-                    last_name=data.last_name,
-                    middle_name=data.middle_name,
-                )
+            422 Unprocessable Entity:
+                - Validation errors for required or malformed fields
 
-                user, *_ = await command_handler.handle_command(command)
+        Notes:
+            - Triggers a welcome email to the user's email address
+            - Password is stored securely using bcrypt hashing
+        """
 
-                return CreateUserResponseSchema.from_entity(user)
-        except Exception as e:
-            raise HTTPException(status_code=HTTP_400_BAD_REQUEST, detail=str(e))
+        async with di_container() as c:
+            command_handler = await c.get(BaseCommandMediator)
+            command = RegisterUserCommand(
+                email=data.email,
+                password=data.password,
+                username=data.username,
+                request=request,
+                first_name=data.first_name,
+                last_name=data.last_name,
+                middle_name=data.middle_name,
+            )
 
-    @route(path="/login", http_method=[HttpMethod.POST])
+            user, *_ = await command_handler.handle_command(command)
+
+            return CreateUserResponseSchema.from_entity(user)
+
+    @route(
+        path="/login",
+        http_method=[HttpMethod.POST],
+        tags=["public"],
+        security=[{"BearerToken": []}],
+    )
     async def login(
         self,
         di_container: AsyncContainer,

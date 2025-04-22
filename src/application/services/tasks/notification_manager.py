@@ -27,6 +27,21 @@ logger = structlog.getLogger(__name__)
 
 
 class NotificationType(Enum):
+    """
+    Enumeration of notification types with their configuration.
+
+    Each notification type defines a complete configuration for sending
+    a specific type of system notification including email subject,
+    template function, delivery method, and security requirements.
+
+    Each enum value contains a dictionary with these keys:
+        - subject: Email subject line
+        - url_path: (optional) Path for verification links
+        - template_func: Function that generates HTML content
+        - celery_task: Async task for sending the notification
+        - needs_token: Whether a security token is required for confirmation of operation
+    """
+
     RESET_PASSWORD = {
         "subject": "Reset Your Password",
         "url_path": "auth/reset-password/confirm",
@@ -60,12 +75,37 @@ class NotificationType(Enum):
 
 @dataclass(eq=False)
 class NotificationManager:
-    """Manages sending HTML notifications via email"""
+    """
+    Manages sending HTML notifications via email.
+
+    This service handles the creation and dispatch of various system notifications
+    to users, including welcome emails, security alerts, and verification messages.
+    It uses async task processing for delivery.
+
+    Attributes:
+        username: SMTP Email address used as the sender for notifications
+    """
 
     username: str
 
     async def send_registration_notification(self, user_data: Dict[str, str]):
-        """Send HTML welcome email to newly registered user"""
+        """
+        Send HTML welcome email to newly registered user.
+
+        Creates and queues a welcome notification for a newly registered user
+        with customized content based on the user's information.
+
+        Args:
+            user_data: Dictionary containing user information
+                      Must include 'email' key and may include other profile data
+
+        Returns:
+            bool: True if notification was successfully queued, False otherwise
+
+        Note:
+            This method queues the notification for asynchronous delivery via celery
+            and doesn't guarantee the email was actually delivered.
+        """
         try:
             # Create email message
             msg = MIMEMultipart("alternative")
@@ -102,13 +142,24 @@ class NotificationManager:
         username: str | None,
     ):
         """
-        Universal method to send various types of notifications
+        Universal method to send various types of notifications.
+
+        Creates and queues a notification based on the specified type with
+        appropriate subject, content, and security features.
 
         Args:
-            notification_type: Type of notification to send
-            email: Recipient email
-            token: Security token for verification
-            username: Optional. Recipient username
+            notification_type: Type of notification to send (from NotificationType enum)
+            email: Recipient email address
+            token: Security token for verification links (required for some notification types)
+            username: Optional recipient username for personalization
+
+        Returns:
+            bool: True if notification was successfully queued, False otherwise
+
+        Note:
+            - For notifications that require tokens (needs_token=True), the token parameter is mandatory
+            - Verification URLs are generated for notifications with url_path defined
+            - All notifications are queued for asynchronous delivery via celery
         """
         try:
             notification_schema = notification_type.value

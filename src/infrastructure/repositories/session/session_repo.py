@@ -46,11 +46,10 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
         """Find existing session by user ID and device ID"""
 
         result = await self._session.execute(
-            select(models.UserSession)
-            .where(models.UserSession.user_id == user_id)
-            .where(models.UserSession.device_id == device_id)
-            .order_by(models.UserSession.last_activity.desc())
-            .limit(1)
+            select(models.UserSession).where(
+                models.UserSession.user_id == user_id,
+                models.UserSession.device_id == device_id,
+            )
         )
 
         user_session: models.UserSession = result.scalars().first()
@@ -63,7 +62,7 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
     async def get_user_active_sessions(self, user_id: str) -> List[domain.Session]:
         """Get all active sessions for a user"""
         result = await self._session.execute(
-            select(models.UserSession).filter(
+            select(models.UserSession).where(
                 models.UserSession.user_id == user_id,
                 models.UserSession.is_active == True,
             )

@@ -9,7 +9,7 @@ services:
     expose:
       - "3000"
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     networks:
       - auth_service.grafana.network
     volumes:
@@ -64,7 +64,7 @@ services:
     container_name: auth_service.alloy
     restart: unless-stopped
     ports:
-      - "12345:12345" # Map port 12345
+      - "12345:12345"
     networks:
       - auth_service.grafana.network
     environment:
@@ -79,8 +79,8 @@ services:
       --server.http.listen-addr=0.0.0.0:12345
       --storage.path=/var/lib/alloy/data
       /etc/alloy
-    labels:
-      - "alloy.logs.enable=true"
+#    labels:
+#      - "alloy.logs.enable=true"
 
 
 

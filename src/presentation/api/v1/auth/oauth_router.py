@@ -58,7 +58,7 @@ class OAuthController(Controller):
                 state = secrets.token_urlsafe(32)
 
                 # Get OAuth login URL
-                login_url = oauth_manager.get_oauth_login_url(provider, state)
+                login_url = oauth_manager.get_oauth_url(provider, state)
 
                 # Create redirect response
                 response = Redirect(

@@ -13,13 +13,25 @@ import src.application.dto as dto
 
 @dataclass
 class SessionManager(BaseSessionManager):
+    """
+    Implementation of BaseSessionManager
+
+    This class handles session lifecycle including creation, retrieval, updates,
+    and deactivation. It tracks user activity across multiple devices and provides
+    methods to manage session state.
+
+    Attributes:
+        session_repo: Repository for persistent storage of session data
+        device_identifier: Service to generate and identify unique devices
+    """
+
     session_repo: BaseSessionRepository
     device_identifier: DeviceIdentifier
 
     async def get_or_create_session(
         self, user_id: str, request: RequestProtocol
     ) -> Optional[domain.Session]:
-        """Get existing session or create a new one if needed"""
+
         # Generate device identification
         device_data: dto.DeviceInformation = (
             self.device_identifier.generate_device_info(request)
