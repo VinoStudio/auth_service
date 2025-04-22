@@ -75,6 +75,10 @@ from src.application.cqrs.user.queries import (
     GetCurrentUserRolesHandler,
     GetCurrentUserPermissions,
     GetCurrentUserPermissionsHandler,
+    GetCurrentUserSession,
+    GetCurrentUserSessionHandler,
+    GetCurrentUserSessions,
+    GetCurrentUserSessionsHandler,
     GetUserRoles,
     GetUserRolesHandler,
     GetUserPermissions,
@@ -246,6 +250,8 @@ class MediatorConfigProvider(Provider):
         get_current_user_permissions: GetCurrentUserPermissionsHandler,
         get_user_roles: GetUserRolesHandler,
         get_user_permissions: GetUserPermissionsHandler,
+        get_current_user_session: GetCurrentUserSessionHandler,
+        get_current_user_sessions: GetCurrentUserSessionsHandler,
         get_users: GetUsersHandler,
     ) -> BaseQueryMediator:
 
@@ -256,6 +262,8 @@ class MediatorConfigProvider(Provider):
         query_mediator.register_query(
             GetCurrentUserPermissions, get_current_user_permissions
         )
+        query_mediator.register_query(GetCurrentUserSession, get_current_user_session)
+        query_mediator.register_query(GetCurrentUserSessions, get_current_user_sessions)
         query_mediator.register_query(GetUserRoles, get_user_roles)
         query_mediator.register_query(GetUserPermissions, get_user_permissions)
         query_mediator.register_query(GetUsers, get_users)

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.queries import BaseQuery, BaseQueryHandler
@@ -16,19 +16,15 @@ class GetCurrentUserRoles(BaseQuery):
 
 
 @dataclass(frozen=True)
-class GetCurrentUserRolesHandler(
-    BaseQueryHandler[GetCurrentUserRoles, JWTUserInterface]
-):
+class GetCurrentUserRolesHandler(BaseQueryHandler[GetCurrentUserRoles, List[str]]):
     _jwt_manager: BaseJWTManager
 
-    async def handle(self, query: GetCurrentUserRoles) -> JWTUserInterface:
+    async def handle(self, query: GetCurrentUserRoles) -> List[str]:
 
-        refresh_token: str = await self._jwt_manager.get_token_from_cookie(
-            query.request
-        )
+        refresh_token: str = self._jwt_manager.get_token_from_cookie(query.request)
 
         token_data: dto.Token = await self._jwt_manager.validate_token(refresh_token)
 
         security_user: SecurityUser = SecurityUser.create_from_token_dto(token_data)
 
-        return security_user
+        return security_user.get_roles()

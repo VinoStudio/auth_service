@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from src.domain.base.values.base import ValueObject
 from src.domain.role.exceptions.role import WrongRoleNameFormatException
 
-ROLE_NAME_PATTER_REGEX = re.compile(r"^[a-z][a-z0-9_]{2,30}$")
+ROLE_NAME_PATTER_REGEX = re.compile(r"^[a-z0-9_]{2,30}$")
 
 
 @dataclass(frozen=True)

@@ -25,6 +25,8 @@ from src.application.cqrs.user.queries import (
     GetUserByIdHandler,
     GetUserRolesHandler,
     GetUserPermissionsHandler,
+    GetCurrentUserSessionHandler,
+    GetCurrentUserSessionsHandler,
 )
 
 from src.application.cqrs.user.events import UserCreatedEventHandler
@@ -80,5 +82,11 @@ class UserQueryProvider(Provider):
     get_current_user_roles = provide(GetCurrentUserRolesHandler, scope=Scope.REQUEST)
     get_current_user_permissions = provide(
         GetCurrentUserPermissionsHandler, scope=Scope.REQUEST
+    )
+    get_current_user_session = provide(
+        GetCurrentUserSessionHandler, scope=Scope.REQUEST
+    )
+    get_current_user_sessions = provide(
+        GetCurrentUserSessionsHandler, scope=Scope.REQUEST
     )
     get_users = provide(GetUsersHandler, scope=Scope.REQUEST)

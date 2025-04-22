@@ -10,6 +10,21 @@ from src.application.dto.token import Token
 
 @dataclass
 class SecurityUser(JWTUserInterface):
+    """
+    Implementation of the JWTUserInterface that represents an authenticated user.
+
+    This class stores the essential security information about a user including their
+    identity, roles, permissions, and security level. It's used for JWT token generation
+    and validation throughout the authentication flow.
+
+    Attributes:
+        id: Unique identifier for the user
+        roles: List of role names assigned to the user
+        permissions: List of permission names granted to the user
+        security_level: Numeric security clearance level of the user (optional)
+        device_id: Identifier for the user's device (optional)
+    """
+
     id: str
     roles: List[str]
     permissions: List[str]

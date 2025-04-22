@@ -28,6 +28,20 @@ from src.infrastructure.repositories.role.role_invalidation_repo import (
 
 @dataclass
 class JWTManager(BaseJWTManager):
+    """
+    The implementation of the JWTManager interface.
+
+    This class handles token creation, refresh operations, cookie management,
+    and maintains a token blacklist for revoked access.
+
+    Attributes:
+        payload_generator: Component that generates JWT payloads
+        jwt_encoder: Component that encodes and decodes JWT tokens
+        cookie_manager: Component that manages HTTP cookies
+        blacklist_repo: Repository to store and retrieve blacklisted tokens
+        role_invalidation: Repository to track invalidated roles
+    """
+
     payload_generator: BaseJWTPayloadGenerator
     jwt_encoder: BaseJWTEncoder
     cookie_manager: BaseCookieManager
@@ -52,18 +66,6 @@ class JWTManager(BaseJWTManager):
         return dto.TokenPair(access_token=access_token, refresh_token=refresh_token)
 
     def get_token_from_cookie(self, request: RequestProtocol) -> str:
-        """
-        Extract and return the refresh token from the request's cookie.
-
-        Args:
-            request: The HTTP request object (Litestar request)
-
-        Returns:
-            str: The refresh token
-
-        Raises:
-            AccessRejectedException: If the token is missing.
-        """
 
         token = self.cookie_manager.get_cookie(request, "refresh_token")
 
@@ -73,6 +75,7 @@ class JWTManager(BaseJWTManager):
         return token
 
     def set_token_in_cookie(self, response: ResponseProtocol, token: str) -> None:
+
         self.cookie_manager.set_cookie(
             response=response,
             token=token,
@@ -81,19 +84,6 @@ class JWTManager(BaseJWTManager):
 
     @staticmethod
     def get_access_token_from_request(request) -> str:
-        """
-        Extract and return the access token from the request's Authorization header.
-
-        Args:
-            request: The HTTP request object (Litestar request)
-
-        Returns:
-            str: The access token
-
-        Raises:
-            AccessRejectedException: If the token is missing or wrongly formatted.
-        """
-
         # Check if Authorization header exists
         auth_header = request.headers.get("Authorization")
         if not auth_header:
@@ -113,15 +103,6 @@ class JWTManager(BaseJWTManager):
         return token
 
     async def validate_token(self, token: str) -> dto.Token:
-        """
-
-        If user logout/banned/deleted our command/event should've store user_id in blacklist with timestamp.
-        So we check if current token iat is less than blacklist timestamp we raise TokenRevokedException that leads
-        to 403 exception from application and tells front-end he should re-login.
-
-        Point is use connection to database less often.
-
-        """
 
         try:
             payload = self.jwt_encoder.decode(token)
@@ -163,13 +144,6 @@ class JWTManager(BaseJWTManager):
     async def refresh_tokens(
         self, request: RequestProtocol, response: ResponseProtocol
     ) -> dto.TokenPair:
-        """
-
-        I do not see a reason to validate user using database, because it will be the same that using session based
-        authentication. Just store user_id in memory storage when user: banned/deleted/permissions-role changed etc...
-
-        """
-
         try:
             refresh_token = self.get_token_from_cookie(request)
 
@@ -178,9 +152,6 @@ class JWTManager(BaseJWTManager):
             security_user: JWTUserInterface = SecurityUser.create_from_token_dto(
                 token_data
             )
-
-            if not security_user:
-                raise ValueError("Invalid session: missing subject")
 
             new_token_pair: dto.TokenPair = self.create_token_pair(
                 security_user=security_user
@@ -193,7 +164,6 @@ class JWTManager(BaseJWTManager):
             raise ValueError(f"Token refresh failed: {str(e)}")
 
     async def revoke_token(self, response: ResponseProtocol, token: str) -> None:
-
         # Clear the refresh token cookie
         self.cookie_manager.delete_cookie(response, "refresh_token")
 

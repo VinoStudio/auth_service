@@ -6,7 +6,7 @@ discovery.docker "containers" {
 
   filter {
     name = "network"
-    //values = ["alloy.logs.enable=true"]
+    values = ["alloy.logs.enable=true"]
   }
 }
 

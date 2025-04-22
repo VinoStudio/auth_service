@@ -40,4 +40,6 @@ class AddOAuthAccountRequestCommandHandler(
         await self._token_repo.add_reset_token(user_id, state, TokenType.OAUTH_CONNECT)
 
         # Get OAuth login URL
-        return self._oauth_manager.get_oauth_connect_url(command.provider, state)
+        return self._oauth_manager.get_oauth_url(
+            command.provider, state, is_connect=True
+        )

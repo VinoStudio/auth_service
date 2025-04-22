@@ -11,9 +11,11 @@ from src.application.exceptions import (
     RoleInUseException,
     PermissionAlreadyExistsException,
     PermissionInUseException,
+    ValidationException,
 )
 from src.domain.permission.values import PermissionName
 from src.domain.role.values.role_name import RoleName
+from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.base.repository.permission_repo import BasePermissionRepository
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 import src.domain as domain
@@ -35,6 +37,7 @@ class RBACManager(BaseRBACManager):
     """
 
     role_repository: BaseRoleRepository
+    user_writer: BaseUserWriter
     permission_repository: BasePermissionRepository
     role_invalidation: RoleInvalidationRepository
     system_roles: ClassVar[Tuple[str]] = ("super_admin", "system_admin")
@@ -85,7 +88,20 @@ class RBACManager(BaseRBACManager):
         role_name: str,
         request_from: JWTUserInterface,
     ) -> domain.Role:
-        """Get a role by name"""
+        """
+        Retrieve a role by its name.
+
+        Args:
+            role_name: The name of the role to retrieve
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.Role: The requested role object
+
+        Raises:
+            AccessDeniedException: If user do not have required permission for view roles
+            RoleDoesNotExistException(InfrastructureException): If the role does not exist
+        """
 
         return await self.role_repository.get_role_by_name(role_name)
 
@@ -95,9 +111,30 @@ class RBACManager(BaseRBACManager):
         role_dto: dto.RoleCreation,
         request_from: JWTUserInterface,
     ) -> domain.Role:
-        """Create a new role with specified permissions"""
+        """
+        Create a new role with specified permissions.
 
-        # self._validate_role_name(role_dto.name)
+        Args:
+            role_dto: Data transfer object containing role creation information
+                - name: Unique name for the role
+                - description: Optional description of the role's purpose
+                - security_level: Numeric security level for the role. Less = more secure
+                - permissions: List of permission names to assign to this role
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.Role: The newly created role
+
+        Raises:
+            ValidationException: If the role name format is invalid
+            RoleAlreadyExistsException: If a role with the given name already exists
+            WrongRoleNameFormatException(DomainException): If the business role name format is invalid
+            AccessDeniedException: If the user lacks required permission or sufficient security level
+            or interact with protected permissions without system status
+            PermissionDoesNotExistException(InfrastructureException): If any of the specified permissions don't exist
+        """
+
+        self._validate_role_name(request_from=request_from, role_name=role_dto.name)
 
         await self._check_if_role_exists(role_dto.name)
 
@@ -138,7 +175,20 @@ class RBACManager(BaseRBACManager):
         role: domain.Role,
         request_from: JWTUserInterface,
     ) -> domain.Role:
-        """Update an existing given role"""
+        """
+        Update an existing role's properties.
+
+        Args:
+            role: The domain.Role object with updated properties
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.Role: The updated role
+
+        Raises:
+            AccessDeniedException: If the user lacks required permission or sufficient security level
+            or interact with protected permissions without system status
+        """
 
         # Security checks
         self._can_modify_system_roles(request_from, role)
@@ -162,7 +212,18 @@ class RBACManager(BaseRBACManager):
         role: domain.Role,
         request_from: JWTUserInterface,
     ) -> None:
-        """Delete an existing role"""
+        """
+        Delete an existing role if it's not assigned to any users.
+
+        Args:
+            role: The domain.Role object of the role to delete
+            request_from: The authenticated user making the request
+
+        Raises:
+            AccessDeniedException: If the user lacks required permission or sufficient security level
+            or interact with protected permissions without system status
+            RoleInUseException: If the role is still assigned to users
+        """
 
         # Security checks
         self._can_modify_system_roles(request_from, role)
@@ -192,7 +253,21 @@ class RBACManager(BaseRBACManager):
     async def get_permission(
         self, permission_name: str, request_from: JWTUserInterface
     ) -> domain.Permission:
-        """Get a permission by name"""
+        """
+        Retrieve a permission by its name.
+
+        Args:
+            permission_name: The name of the permission to retrieve
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.Permission: The requested permission object
+
+        Raises:
+            AccessDeniedException: If the user tries to interact with a protected system permission
+            or lacks required permission to view permissions
+            PermissionDoesNotExistException(InfrastructureException): If the permission does not exist
+        """
 
         self._validate_permission_interaction(
             permission_name=permission_name,
@@ -213,7 +288,22 @@ class RBACManager(BaseRBACManager):
         permission_dto: dto.PermissionCreation,
         request_from: JWTUserInterface,
     ) -> domain.Permission:
-        """Create a new permission"""
+        """
+        Create a new permission in the system.
+
+        Args:
+            permission_dto: Data transfer object containing permission creation information
+                - name: Unique permission identifier in format 'resource:action'
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.Permission: The newly created permission
+
+        Raises:
+            AccessDeniedException: If the user lacks required permission to create a permissions
+            PermissionAlreadyExistsException: If the permission already exists
+            WrongPermissionNameFormatException: If the permission name format is invalid
+        """
         # Check if permission exists
         await self._check_if_permission_exists(permission_dto.name)
 
@@ -235,7 +325,17 @@ class RBACManager(BaseRBACManager):
         permission: domain.Permission,
         request_from: JWTUserInterface,
     ) -> None:
-        """Delete an existing permission"""
+        """
+        Delete an existing permission if it's not assigned to any roles.
+
+        Args:
+            permission: The domain.Permission object of the permission to delete
+            request_from: The authenticated user making the request
+
+        Raises:
+            AccessDeniedException: If the user lacks required permission to create a permissions
+            PermissionInUseException: If the permission is assigned to any roles
+        """
         roles_in_use = await self._count_roles_with_permission(
             permission_name=permission.permission_name.to_raw()
         )
@@ -261,7 +361,20 @@ class RBACManager(BaseRBACManager):
         role: domain.Role,
         request_from: JWTUserInterface,
     ) -> domain.User:
-        """Assign a role to a user"""
+        """
+        Assign a specific role to a user.
+
+        Args:
+            user: The domain.User object of the user to receive the role
+            role: The domain.Role object of the role to assign
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.User: The updated user object
+
+        Raises:
+            AccessDeniedException: If the user lacks required permission or sufficient security level
+        """
         # Security check
         self._check_security_level(
             user_level=request_from.get_security_level(), role_level=role.security_level
@@ -271,6 +384,8 @@ class RBACManager(BaseRBACManager):
             return user
 
         user.add_role(role)
+
+        await self.user_writer.update_user(user=user)
 
         logger.info(
             f"Role '{role.name.to_raw()}' assigned to user '{user.username.to_raw()}' by {request_from.get_user_identifier()}"
@@ -285,7 +400,20 @@ class RBACManager(BaseRBACManager):
         role: domain.Role,
         request_from: JWTUserInterface,
     ) -> domain.User:
-        """Remove a role from a user"""
+        """
+        Remove a specific role from a user
+
+        Args:
+            user: The domain.User object of the user to receive the role
+            role: The domain.Role object of the role to assign
+            request_from: The authenticated user making the request
+
+        Returns:
+            domain.User: The updated user object
+
+        Raises:
+            AccessDeniedException: If the user lacks required permission or sufficient security level
+        """
         # Security check
         self._check_security_level(
             user_level=request_from.get_security_level(), role_level=role.security_level
@@ -295,6 +423,8 @@ class RBACManager(BaseRBACManager):
             return user
 
         user.remove_role(role)
+
+        await self.user_writer.update_user(user=user)
 
         logger.info(
             f"Role '{role.name.to_raw()}' removed from user '{user.username.to_raw()}' by {request_from.get_user_identifier()}"
@@ -327,19 +457,19 @@ class RBACManager(BaseRBACManager):
 
     # -------------------- Permission Checking --------------------
     #
-    # def _validate_role_name(self, role_name: str) -> None:
-    #     """Validate that role name follows naming conventions"""
-    #     if not re.match(r"^[a-z0-9_]+$", role_name):
-    #         raise ValidationException(
-    #             "Role name must be lowercase alphanumeric with underscores"
-    #         )
-    #
-    #     if role_name.startswith(("system_", "admin_")) and not self._is_system_user(
-    #         request_from
-    #     ):
-    #         raise ValidationException(
-    #             "Role names with 'system_' or 'admin_' prefixes are reserved"
-    #         )
+    def _validate_role_name(
+        self, request_from: JWTUserInterface, role_name: str
+    ) -> None:
+        """Validate that role name follows naming conventions"""
+        if len(role_name) > 24 or len(role_name) < 3:
+            raise ValidationException("Role name must be between 3 and 30 characters")
+
+        if role_name.startswith(("system_", "admin_")) and not self._is_system_user(
+            request_from
+        ):
+            raise ValidationException(
+                "Role names with 'system_' or 'admin_' prefixes are reserved"
+            )
 
     def _validate_permission_interaction(
         self,

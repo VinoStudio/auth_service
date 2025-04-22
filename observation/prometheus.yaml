@@ -20,26 +20,5 @@ scrape_configs:
   # Scrape your auth service directly (if it exposes Prometheus metrics)
   - job_name: "auth_service"
     static_configs:
-      - targets: ["auth_service_dev:8000", "172.27.0.2:8000"]
+      - targets: ["auth_service_dev:8000"]
     metrics_path: /metrics
-
-  # Docker auto-discovery (to find containers automatically)
-  - job_name: "docker"
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        refresh_interval: 15s
-    relabel_configs:
-      # Only keep containers that have a specific label
-      - source_labels: [__meta_docker_container_label_prometheus_scrape]
-        regex: "true"
-        action: keep
-      # Use the container name as the instance label
-      - source_labels: [__meta_docker_container_name]
-        target_label: instance
-        regex: "/(.*)"
-        replacement: "$1"
-      # Get metrics path from label if specified
-      - source_labels: [__meta_docker_container_label_prometheus_metrics_path]
-        regex: "(.+)"
-        target_label: __metrics_path__
-        replacement: "$1"

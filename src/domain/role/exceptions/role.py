@@ -9,4 +9,4 @@ class WrongRoleNameFormatException(ValidationException):
 
     @property
     def message(self):
-        return f"Given {self.value} has wrong format!"
+        return f"Given {self.value} has wrong format! Role name must be lowercase alphanumeric with underscores"

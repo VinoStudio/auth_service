@@ -1,18 +1,17 @@
+from src.settings.config import get_config
 from celery import Celery
 from typing import Dict
 from email.message import Message
+
 import smtplib
 import ssl
 import pickle
 import structlog
 
-from src.settings.config import get_config
-
 logger = structlog.getLogger(__name__)
-
 config = get_config()
-
 celery = Celery(__name__, broker=config.redis.redis_url)
+
 
 celery.conf.update(
     result_expires=60 * 60 * 24,  # 24 hours

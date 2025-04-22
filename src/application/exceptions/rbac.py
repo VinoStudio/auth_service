@@ -106,3 +106,14 @@ class RoleCreationAccessDeniedException(UnauthorizedRBACOperationException):
     @property
     def message(self):
         return f"You cannot create role higher than yours"
+
+
+@dataclass(frozen=True)
+class ValidationException(RBACException):
+    """Raises when given data is not valid"""
+
+    value: str
+
+    @property
+    def message(self):
+        return self.value

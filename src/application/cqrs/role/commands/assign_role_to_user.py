@@ -26,7 +26,6 @@ class AssignRoleCommandHandler(CommandHandler[AssignRoleCommand, domain.User]):
     _jwt_manager: BaseJWTManager
     _rbac_manager: RBACManager
     _user_reader: BaseUserReader
-    _user_writer: BaseUserWriter
     _blacklist_repo: TokenBlackListRepository
     _uow: UnitOfWork
 
@@ -50,7 +49,6 @@ class AssignRoleCommandHandler(CommandHandler[AssignRoleCommand, domain.User]):
             request_from=security_user,
         )
 
-        await self._user_writer.update_user(user=updated_user)
         await self._uow.commit()
 
         await self._blacklist_repo.add_to_blacklist(
