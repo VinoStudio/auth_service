@@ -6,6 +6,7 @@ from src.application.cqrs.user.commands import (
     OAuthLoginUserCommandHandler,
     AddOAuthAccountRequestCommandHandler,
     AddOAuthAccountToCurrentUserCommandHandler,
+    DeactivateUsersOAuthAccountCommandHandler,
     LogoutUserCommandHandler,
     RefreshUserTokensCommandHandler,
     ResetPasswordRequestCommandHandler,
@@ -27,6 +28,7 @@ from src.application.cqrs.user.queries import (
     GetUserPermissionsHandler,
     GetCurrentUserSessionHandler,
     GetCurrentUserSessionsHandler,
+    GetCurrentUserConnectedAccountsHandler,
 )
 
 from src.application.cqrs.user.events import UserCreatedEventHandler
@@ -43,6 +45,9 @@ class UserCommandProvider(Provider):
     )
     add_oauth_account = provide(
         AddOAuthAccountToCurrentUserCommandHandler, scope=Scope.REQUEST
+    )
+    deactivate_users_oauth_account = provide(
+        DeactivateUsersOAuthAccountCommandHandler, scope=Scope.REQUEST
     )
     login_user = provide(LoginUserCommandHandler, scope=Scope.REQUEST)
     oauth_login = provide(OAuthLoginUserCommandHandler, scope=Scope.REQUEST)
@@ -88,5 +93,8 @@ class UserQueryProvider(Provider):
     )
     get_current_user_sessions = provide(
         GetCurrentUserSessionsHandler, scope=Scope.REQUEST
+    )
+    get_current_user_connected_accounts = provide(
+        GetCurrentUserConnectedAccountsHandler, scope=Scope.REQUEST
     )
     get_users = provide(GetUsersHandler, scope=Scope.REQUEST)

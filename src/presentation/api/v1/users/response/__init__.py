@@ -4,6 +4,8 @@ from src.presentation.api.v1.users.response.user import (
     GetUserPermissionsResponseSchema,
     GetUserSessionResponseSchema,
     GetUserSessionsResponseSchema,
+    GetUserConnectedAccountsResponseSchema,
+    GetUserConnectedAccountResponseSchema,
 )
 
 __all__ = (
@@ -12,4 +14,6 @@ __all__ = (
     "GetUserPermissionsResponseSchema",
     "GetUserSessionResponseSchema",
     "GetUserSessionsResponseSchema",
+    "GetUserConnectedAccountsResponseSchema",
+    "GetUserConnectedAccountResponseSchema",
 )

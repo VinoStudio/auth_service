@@ -7,6 +7,7 @@ from src.infrastructure.exceptions.repository import (
 )
 from src.infrastructure.base.repository.base import SQLAlchemyRepository
 from src.infrastructure.base.repository import BaseUserWriter
+from src.infrastructure.repositories.helpers import repository_exception_handler
 from src.infrastructure.repositories.pagination import Pagination
 from sqlalchemy import text
 from sqlalchemy.orm import selectinload
@@ -22,6 +23,7 @@ import src.infrastructure.db.models as models
 
 @dataclass
 class UserWriter(SQLAlchemyRepository, BaseUserWriter):
+    @repository_exception_handler
     async def create_user(self, user: domain.User) -> None:
         """Inserts user and all connected roles, sessions and permissions"""
 
@@ -32,12 +34,14 @@ class UserWriter(SQLAlchemyRepository, BaseUserWriter):
 
         await self.update_user(user)
 
+    @repository_exception_handler
     async def update_user(self, user: domain.User) -> None:
         """Updates from aggregate user, means user and all connected roles, sessions and permissions will be updated"""
         user_model = DomainToOrmConverter.domain_to_active_user(user)
 
         await self._session.merge(user_model)
 
+    @repository_exception_handler
     async def set_user_roles(
         self, user_id: str, role: Optional[Iterable[domain.Role] | domain.Role] = None
     ) -> None:
@@ -57,6 +61,7 @@ class UserWriter(SQLAlchemyRepository, BaseUserWriter):
 
         await self._session.execute(query, values)
 
+    @repository_exception_handler
     async def check_if_field_exists(self, field: str, value: str) -> bool:
         """Query to check if a user with the given field value exists.
 
@@ -78,6 +83,7 @@ class UserWriter(SQLAlchemyRepository, BaseUserWriter):
         result = await self._session.execute(text(query), {field: value})
         return result.scalar()
 
+    @repository_exception_handler
     async def check_user_has_permission(
         self, user_id: str, permission_name: str
     ) -> bool:

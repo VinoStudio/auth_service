@@ -15,6 +15,7 @@ from src.infrastructure.exceptions.repository import (
 )
 from src.infrastructure.base.repository.base import SQLAlchemyRepository
 from src.infrastructure.base.repository import BaseUserReader
+from src.infrastructure.repositories.helpers import repository_exception_handler
 from src.infrastructure.repositories.pagination import Pagination
 from src.infrastructure.repositories.converters import OrmToDomainConverter
 from sqlalchemy import text
@@ -26,6 +27,7 @@ import src.domain as domain
 
 @dataclass
 class UserReader(SQLAlchemyRepository, BaseUserReader):
+    @repository_exception_handler
     async def get_user_by_id(self, user_id: str) -> domain.User:
         stmt = self.get_user().where(models.User.id == user_id)
 
@@ -37,6 +39,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
+    @repository_exception_handler
     async def get_active_user_by_id(self, user_id: str) -> domain.User:
         user: domain.User | None = await self.get_user_by_id(user_id)
 
@@ -48,6 +51,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
+    @repository_exception_handler
     async def get_user_by_username(self, username: str) -> domain.User:
         stmt = self.get_user().where(models.User.username == username)
 
@@ -62,6 +66,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
+    @repository_exception_handler
     async def get_user_by_email(self, email: str) -> domain.User:
         stmt = self.get_user().where(models.User.email == email)
 
@@ -76,6 +81,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
+    @repository_exception_handler
     async def get_user_by_oauth_provider_and_id(
         self, provider: str, provider_user_id: str
     ) -> domain.User:
@@ -96,6 +102,22 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return OrmToDomainConverter.user_to_domain(user)
 
+    @repository_exception_handler
+    async def get_user_oauth_accounts(self, user_id: str) -> List[domain.OAuthAccount]:
+
+        stmt = select(models.OAuthAccount).where(
+            models.OAuthAccount.user_id == user_id,
+            models.OAuthAccount.is_active == True,
+        )
+        result = await self._session.execute(stmt)
+        oauth_accounts = result.scalars().all()
+
+        return [
+            OrmToDomainConverter.oauth_account_to_domain(account)
+            for account in oauth_accounts
+        ]
+
+    @repository_exception_handler
     async def get_user_credentials_by_email_or_username(
         self, email_or_username: str
     ) -> dto.UserCredentials:
@@ -117,6 +139,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
         return dto.UserCredentials(*fetched_user)
 
+    @repository_exception_handler
     async def get_user_credentials_by_oauth_provider(
         self, provider_name: str, provider_user_id: str
     ) -> dto.OAuthUserIdentity:
@@ -148,6 +171,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
             provider_name=provider_name,
         )
 
+    @repository_exception_handler
     async def get_all_users(self, pagination: Pagination) -> List[domain.User]:
         stmt = self.get_user().limit(pagination.limit).offset(pagination.offset)
 
@@ -157,8 +181,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
             OrmToDomainConverter.user_to_domain(user) for user in result.scalars().all()
         ]
 
-    async def get_all_usernames(self) -> Iterable[str]: ...
-
+    @repository_exception_handler
     async def check_field_exists(self, field_name: str, value: str) -> bool:
         result = await self._session.execute(
             text(
@@ -174,12 +197,15 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         )
         return result.scalar()
 
+    @repository_exception_handler
     async def check_username_exists(self, username: str) -> bool:
         return await self.check_field_exists("username", username)
 
+    @repository_exception_handler
     async def check_email_exists(self, email: str) -> bool:
         return await self.check_field_exists("email", email)
 
+    @repository_exception_handler
     async def get_user_roles_by_id(
         self, user_id: str, pagination: Pagination
     ) -> Sequence[str]:
@@ -205,6 +231,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         )
         return [row[0] for row in result.fetchall()]
 
+    @repository_exception_handler
     async def get_user_permissions(
         self, user_id: str, pagination: Pagination
     ) -> Set[str]:

@@ -4,17 +4,20 @@ from litestar.openapi import OpenAPIConfig
 from litestar.openapi.spec import Tag, SecurityScheme, Components
 from litestar.openapi.plugins import ScalarRenderPlugin, SwaggerRenderPlugin
 from litestar.plugins.prometheus import PrometheusConfig, PrometheusController
+from litestar.logging import LoggingConfig
 
 from src.presentation.api.lifespan import lifespan
 from src.presentation.api.v1.auth.auth_router import AuthController
-from src.presentation.api.v1.auth.oauth_router import OAuthController
+from src.presentation.api.v1.auth.oauth_router import (
+    OAuthController,
+)
 from src.presentation.api.v1.roles.rbac_router import (
     RoleController,
     PermissionController,
     UserRoleController,
 )
 from src.presentation.api.v1.users.user_router import UserController
-from src.presentation.api.exception_configuration import get_exception_handlers
+from src.presentation.api.exception_configuration import setup_exception_handlers
 
 
 def create_app() -> Litestar:
@@ -37,10 +40,27 @@ def create_app() -> Litestar:
             description="Authentication and authorization service with JWT and OAuth",
             path="/docs",
             tags=[
-                Tag(name="public", description="This endpoint is for external users"),
-                Tag(name="internal", description="This endpoint is for internal users"),
+                Tag(
+                    name="Authentication",
+                    description="Authentication and authorization",
+                ),
+                Tag(name="OAuth", description="OAuth authentication and authorization"),
+                Tag(name="Users", description="User management"),
+                Tag(name="Roles", description="Role management"),
+                Tag(name="Permissions", description="Permission management"),
+                Tag(name="User Roles", description="User role management"),
             ],
             render_plugins=[ScalarRenderPlugin(), SwaggerRenderPlugin()],
+            components=Components(
+                security_schemes={
+                    "BearerToken": SecurityScheme(
+                        type="http",
+                        scheme="bearer",
+                        bearer_format="JWT",
+                        description="Enter JWT Bearer token",
+                    )
+                },
+            ),
         ),
         cors_config=CORSConfig(
             allow_origins=["*"],
@@ -48,7 +68,11 @@ def create_app() -> Litestar:
             allow_headers=["*"],
         ),
         debug=True,
-        exception_handlers=get_exception_handlers(),
+        logging_config=LoggingConfig(
+            root={"level:": "INFO"},
+            log_exceptions="always",
+        ),
+        exception_handlers=setup_exception_handlers(),
     )
 
     return app

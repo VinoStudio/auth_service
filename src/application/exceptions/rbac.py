@@ -1,4 +1,8 @@
-from src.application.base.exception import ApplicationException
+from src.application.base.exception import (
+    ApplicationException,
+    ResourceExistsException,
+    ResourceNotFoundException,
+)
 from dataclasses import dataclass
 
 
@@ -10,7 +14,7 @@ class RBACException(ApplicationException):
 
 
 @dataclass(frozen=True)
-class RoleAlreadyExistsException(RBACException):
+class RoleAlreadyExistsException(ResourceExistsException):
     """Raised when attempting to create a role that already exists"""
 
     value: str
@@ -21,7 +25,7 @@ class RoleAlreadyExistsException(RBACException):
 
 
 @dataclass(frozen=True)
-class PermissionAlreadyExistsException(RBACException):
+class PermissionAlreadyExistsException(ResourceExistsException):
     """Raised when attempting to create a permission that already exists"""
 
     value: str
@@ -32,7 +36,7 @@ class PermissionAlreadyExistsException(RBACException):
 
 
 @dataclass(frozen=True)
-class RoleNotFoundException(RBACException):
+class RoleNotFoundException(ResourceNotFoundException):
     """Raised when a role is not found"""
 
     value: str
@@ -43,7 +47,7 @@ class RoleNotFoundException(RBACException):
 
 
 @dataclass(frozen=True)
-class PermissionNotFoundException(RBACException):
+class PermissionNotFoundException(ResourceNotFoundException):
     """Raised when a permission is not found"""
 
     value: str

@@ -14,11 +14,14 @@ from src.infrastructure.repositories.converters import (
 
 import src.domain as domain
 import src.infrastructure.db.models as models
+from src.infrastructure.repositories.helpers import repository_exception_handler
 
 
 # BaseOAuthAccountRepository
 @dataclass
 class OAuthAccountRepository(SQLAlchemyRepository):
+
+    @repository_exception_handler
     async def create_oauth_account(self, oauth_account: domain.OAuthAccount) -> None:
         """Create a new OAuth account link"""
 
@@ -29,6 +32,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
         self._session.add(oauth_account_model)
         await self._session.flush()
 
+    @repository_exception_handler
     async def update_oauth_account(self, oauth_account: domain.OAuthAccount) -> None:
         """Update an existing OAuth account link"""
 
@@ -38,6 +42,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
 
         await self._session.merge(oauth_account_model)
 
+    @repository_exception_handler
     async def deactivate_user_oauth_account(
         self, provider: str, provider_user_id: str, user_id: str
     ) -> None:
@@ -61,6 +66,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
             ),
         )
 
+    @repository_exception_handler
     async def deactivate_oauth_account(
         self, provider: str, provider_user_id: str
     ) -> None:
@@ -80,6 +86,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
             dict(provider=provider, provider_user_id=provider_user_id, is_active=False),
         )
 
+    @repository_exception_handler
     async def activate_user_oauth_account(
         self, provider: str, provider_user_id: str, user_id: str
     ) -> None:
@@ -103,9 +110,10 @@ class OAuthAccountRepository(SQLAlchemyRepository):
             ),
         )
 
+    @repository_exception_handler
     async def get_by_provider_and_id(
         self, provider: str, provider_user_id: str
-    ) -> domain.OAuthAccount:
+    ) -> domain.OAuthAccount | None:
         stmt = select(models.OAuthAccount).where(
             models.OAuthAccount.provider == provider,
             models.OAuthAccount.provider_user_id == provider_user_id,
@@ -114,21 +122,11 @@ class OAuthAccountRepository(SQLAlchemyRepository):
         oauth_account = result.scalars().one_or_none()
 
         if oauth_account is None:
-            raise OAuthAccountDoesNotExistException(f"{provider}:{provider_user_id}")
+            return None
 
         return OrmToDomainConverter.oauth_account_to_domain(oauth_account)
 
-    async def get_user_oauth_accounts(self, user_id: str) -> List[domain.OAuthAccount]:
-
-        stmt = select(models.OAuthAccount).where(models.OAuthAccount.user_id == user_id)
-        result = await self._session.execute(stmt)
-        oauth_accounts = result.scalars().all()
-
-        return [
-            OrmToDomainConverter.oauth_account_to_domain(account)
-            for account in oauth_accounts
-        ]
-
+    @repository_exception_handler
     async def check_if_oauth_account_exists(
         self, provider: str, provider_user_id: str
     ) -> bool:
@@ -145,6 +143,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
         )
         return result.scalar()
 
+    @repository_exception_handler
     async def check_if_user_oauth_account_exists(
         self, provider: str, provider_user_id: str, user_id: str
     ) -> bool:

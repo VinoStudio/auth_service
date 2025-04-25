@@ -1,9 +1,9 @@
 from litestar import Controller, Request, Response, route, HttpMethod
 from litestar.di import Provide
 from litestar.params import Body
-from litestar.exceptions import HTTPException
-from litestar.status_codes import HTTP_400_BAD_REQUEST
+from litestar.openapi.spec import Example
 from litestar.openapi.datastructures import ResponseSpec
+from litestar.exceptions import ValidationException as LitestarValidationException
 from dishka import AsyncContainer
 
 
@@ -19,24 +19,52 @@ from src.application.cqrs.user.commands import (
     ChangeUserEmailCommand,
 )
 from src.application.dependency_injector.di import get_container
+from src.application.exceptions import (
+    EmailAlreadyExistsException,
+    UsernameAlreadyExistsException,
+    PasswordIsInvalidException,
+    AccessRejectedException,
+    TokenValidationError,
+    TokenExpiredException,
+    TokenRevokedException,
+    PasswordTokenExpiredException,
+    EmailTokenExpiredException,
+)
+
+from src.domain.user.exceptions import (
+    UsernameIsTooLongException,
+    UsernameIsTooShortException,
+    WrongUsernameFormatException,
+    WrongPasswordFormatException,
+    WrongEmailFormatException,
+    PasswordDoesNotMatchException,
+)
+
+from src.domain.base.exceptions.domain import ValidationException
+from src.infrastructure.exceptions import UserDoesNotExistException
 
 from src.presentation.api.v1.auth.response.user import (
     CreateUserResponseSchema,
 )
+from src.presentation.api.v1.base_responses import (
+    ExampleGenerator,
+    COMMON_RESPONSES,
+    SERVER_ERROR_RESPONSES,
+)
+from src.presentation.api.exception_configuration import ErrorResponse
 
-import src.presentation.api.v1.auth.request.user as user_requests
 import litestar.status_codes as status
+import src.presentation.api.v1.auth.request.user as user_requests
 
 
 class AuthController(Controller):
     path = "/auth"
-    tags = ["Auth"]
+    tags = ["Authentication"]
     dependencies = {"di_container": Provide(get_container)}
 
     @route(
         path="/register",
         http_method=[HttpMethod.POST],
-        tags=["public"],
         summary="Register a new user account in the API.",
         description="Creates a new user with the provided credentials and future profile information. "
         "Username and email must be unique. "
@@ -47,6 +75,37 @@ class AuthController(Controller):
                 description="User successfully registered",
                 data_container=CreateUserResponseSchema,
             ),
+            status.HTTP_409_CONFLICT: ResponseSpec(
+                description="Email or username already in use",
+                data_container=ErrorResponse[
+                    EmailAlreadyExistsException | UsernameAlreadyExistsException
+                ],
+                examples=ExampleGenerator.create_conflict_examples(
+                    EmailAlreadyExistsException, UsernameAlreadyExistsException
+                ),
+            ),
+            status.HTTP_400_BAD_REQUEST: ResponseSpec(
+                description="Bad request. Wrong format of fulfillment data",
+                data_container=ErrorResponse[
+                    UsernameIsTooLongException
+                    | UsernameIsTooShortException
+                    | WrongUsernameFormatException
+                    | WrongPasswordFormatException
+                    | WrongEmailFormatException
+                    | PasswordDoesNotMatchException
+                    | ValidationException
+                ],
+                examples=ExampleGenerator.create_bad_request_examples(
+                    UsernameIsTooLongException,
+                    UsernameIsTooShortException,
+                    WrongUsernameFormatException,
+                    WrongPasswordFormatException,
+                    WrongEmailFormatException,
+                    PasswordDoesNotMatchException,
+                    LitestarValidationException,
+                ),
+            ),
+            **SERVER_ERROR_RESPONSES,
         },
     )
     async def register(
@@ -55,20 +114,6 @@ class AuthController(Controller):
         request: Request,
         data: user_requests.UserCreate = Body(),
     ) -> CreateUserResponseSchema:
-        """
-        Raises:
-            400 Bad Request:
-                - "Email already in use": Another account exists with this email
-                - "Username already taken": Another account exists with this username
-                - "Password too weak": Password doesn't meet complexity requirements
-
-            422 Unprocessable Entity:
-                - Validation errors for required or malformed fields
-
-        Notes:
-            - Triggers a welcome email to the user's email address
-            - Password is stored securely using bcrypt hashing
-        """
 
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
@@ -89,8 +134,46 @@ class AuthController(Controller):
     @route(
         path="/login",
         http_method=[HttpMethod.POST],
-        tags=["public"],
-        security=[{"BearerToken": []}],
+        summary="Login with email and get access and refresh token pair.",
+        description="Login with email and get access and refresh token pair. "
+        "Email and password must be provided. "
+        "Access token is returned in the response body. "
+        "Refresh token is set into the cookie. "
+        "Session will be created.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="User logged in",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"access_token": "token"},
+                        summary="Access token",
+                    )
+                ],
+            ),
+            status.HTTP_400_BAD_REQUEST: ResponseSpec(
+                description="Wrong format of email address",
+                data_container=ErrorResponse[ValidationException],
+                examples=ExampleGenerator.create_bad_request_examples(
+                    LitestarValidationException,
+                ),
+            ),
+            status.HTTP_404_NOT_FOUND: ResponseSpec(
+                description="User not found",
+                data_container=ErrorResponse[UserDoesNotExistException],
+                examples=ExampleGenerator.create_not_found_examples(
+                    UserDoesNotExistException
+                ),
+            ),
+            status.HTTP_409_CONFLICT: ResponseSpec(
+                description="Given password is not valid",
+                data_container=ErrorResponse[PasswordIsInvalidException],
+                examples=ExampleGenerator.create_conflict_examples(
+                    PasswordIsInvalidException
+                ),
+            ),
+            **SERVER_ERROR_RESPONSES,
+        },
     )
     async def login(
         self,
@@ -116,7 +199,29 @@ class AuthController(Controller):
 
             return response
 
-    @route(path="/refresh", http_method=[HttpMethod.POST])
+    @route(
+        path="/refresh",
+        http_method=[HttpMethod.POST],
+        security=[{"BearerToken": []}],
+        summary="Login with email and get access and refresh token pair.",
+        description="Refresh token pair with refresh token from cookie. "
+        "Access token is returned in the response body. "
+        "Refresh token is set into the cookie.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="Tokens successfully refreshed",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"access_token": "token"},
+                        summary="Access token",
+                    )
+                ],
+            ),
+            **COMMON_RESPONSES,
+            **SERVER_ERROR_RESPONSES,
+        },
+    )
     async def refresh_token(
         self,
         di_container: AsyncContainer,
@@ -136,7 +241,30 @@ class AuthController(Controller):
 
             return response
 
-    @route(path="/logout", http_method=[HttpMethod.POST])
+    @route(
+        path="/logout",
+        http_method=[HttpMethod.POST],
+        security=[{"BearerToken": []}],
+        summary="Logout user",
+        description="Logout user. "
+        "Refresh token is removed from cookie. "
+        "Session will be deactivated. "
+        "Current user_id will be added to blacklist as a key and logout timestamp as a value.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="User logged out",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"message": "Successfully logged out"},
+                        summary="Message",
+                    )
+                ],
+            ),
+            **COMMON_RESPONSES,
+            **SERVER_ERROR_RESPONSES,
+        },
+    )
     async def logout(
         self,
         di_container: AsyncContainer,
@@ -157,7 +285,41 @@ class AuthController(Controller):
 
             return response
 
-    @route(path="/password-reset/request", http_method=[HttpMethod.POST])
+    @route(
+        path="/password-reset/request",
+        http_method=[HttpMethod.POST],
+        summary="Request password reset",
+        description="Request password reset with email. "
+        "User must provide valid email address connected to his account. "
+        "Email of password reset will be sent to user with generated token for operation confirmation.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="Email of password reset has been sent",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"message": "Email of password reset has been sent"},
+                        summary="Message",
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: ResponseSpec(
+                description="User not found",
+                data_container=ErrorResponse[UserDoesNotExistException],
+                examples=ExampleGenerator.create_not_found_examples(
+                    UserDoesNotExistException
+                ),
+            ),
+            status.HTTP_400_BAD_REQUEST: ResponseSpec(
+                description="Wrong format of email address",
+                data_container=ErrorResponse[ValidationException],
+                examples=ExampleGenerator.create_bad_request_examples(
+                    LitestarValidationException,
+                ),
+            ),
+            **SERVER_ERROR_RESPONSES,
+        },
+    )
     async def reset_password(
         self,
         di_container: AsyncContainer,
@@ -177,7 +339,36 @@ class AuthController(Controller):
 
             return response
 
-    @route(path="/password-reset/confirm", http_method=[HttpMethod.POST])
+    @route(
+        path="/password-reset/confirm",
+        http_method=[HttpMethod.POST],
+        summary="Confirm password reset",
+        description="Confirm password reset with valid token and new password. "
+        "Front-end must provide token and new password. "
+        "Token must be valid. User credentials will be found from token as key.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="Password successfully has been reset",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"message": "Password successfully has been reset"},
+                        summary="Message",
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: ResponseSpec(
+                description="Password token expired or unexpected user not found",
+                data_container=ErrorResponse[
+                    UserDoesNotExistException | PasswordTokenExpiredException
+                ],
+                examples=ExampleGenerator.create_not_found_examples(
+                    PasswordTokenExpiredException, UserDoesNotExistException
+                ),
+            ),
+            **SERVER_ERROR_RESPONSES,
+        },
+    )
     async def confirm_password_reset(
         self,
         di_container: AsyncContainer,
@@ -200,7 +391,41 @@ class AuthController(Controller):
 
             return response
 
-    @route(path="/email-change/request", http_method=[HttpMethod.POST])
+    @route(
+        path="/email-change/request",
+        http_method=[HttpMethod.POST],
+        summary="Request email change",
+        description="Request to change user email. "
+        "Valid email address must be provided. "
+        "Email of email change will be sent to user with generated token for operation confirmation.",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="Notification of email change has been sent",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"message": "Notification of email change has been sent"},
+                        summary="Message",
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: ResponseSpec(
+                description="User not found",
+                data_container=ErrorResponse[UserDoesNotExistException],
+                examples=ExampleGenerator.create_not_found_examples(
+                    UserDoesNotExistException
+                ),
+            ),
+            status.HTTP_400_BAD_REQUEST: ResponseSpec(
+                description="Wrong format of email address",
+                data_container=ErrorResponse[ValidationException],
+                examples=ExampleGenerator.create_bad_request_examples(
+                    LitestarValidationException,
+                ),
+            ),
+            **SERVER_ERROR_RESPONSES,
+        },
+    )
     async def change_email(
         self,
         di_container: AsyncContainer,
@@ -220,7 +445,35 @@ class AuthController(Controller):
 
             return response
 
-    @route(path="/email-change/confirm", http_method=[HttpMethod.POST])
+    @route(
+        path="/email-change/confirm",
+        http_method=[HttpMethod.POST],
+        summary="Confirm email change",
+        description="Confirm email change with valid token and new email. "
+        "Front-end must provide token and new email. ",
+        responses={
+            status.HTTP_201_CREATED: ResponseSpec(
+                description="Email successfully has been changed",
+                data_container=Response,
+                examples=[
+                    Example(
+                        value={"message": "Email successfully has been changed"},
+                        summary="Message",
+                    )
+                ],
+            ),
+            status.HTTP_404_NOT_FOUND: ResponseSpec(
+                description="Email token expired or unexpected user not found",
+                data_container=ErrorResponse[
+                    UserDoesNotExistException | EmailTokenExpiredException
+                ],
+                examples=ExampleGenerator.create_not_found_examples(
+                    EmailTokenExpiredException, UserDoesNotExistException
+                ),
+            ),
+            **SERVER_ERROR_RESPONSES,
+        },
+    )
     async def confirm_email_change(
         self,
         di_container: AsyncContainer,

@@ -108,7 +108,7 @@ class OAuthGithub(BaseSettings, OAuthProvider):
 
 class JWTSettings(BaseSettings):
     secret_key: str = Field(default="secret_key", alias="JWT_SECRET_KEY")
-    access_token_expire_minutes: int = 60 * 24
+    access_token_expire_minutes: int = 10
     refresh_token_expire_minutes: int = 60 * 24 * 7
     verify_token_expire_minutes: int = 60
     algorithm: str = "HS256"

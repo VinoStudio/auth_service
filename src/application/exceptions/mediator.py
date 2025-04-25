@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 
-from src.application.base.exception import ApplicationException
+from src.application.base.exception import (
+    ResourceNotFoundException,
+)
 
 
 @dataclass(frozen=True)
-class CommandIsNotRegisteredException(ApplicationException):
+class CommandIsNotRegisteredException(ResourceNotFoundException):
 
     @property
     def message(self):
@@ -12,7 +14,7 @@ class CommandIsNotRegisteredException(ApplicationException):
 
 
 @dataclass(frozen=True)
-class QueryIsNotRegisteredException(ApplicationException):
+class QueryIsNotRegisteredException(ResourceNotFoundException):
 
     @property
     def message(self):
@@ -20,7 +22,7 @@ class QueryIsNotRegisteredException(ApplicationException):
 
 
 @dataclass(frozen=True)
-class EventIsNotRegisteredException(ApplicationException):
+class EventIsNotRegisteredException(ResourceNotFoundException):
 
     @property
     def message(self):

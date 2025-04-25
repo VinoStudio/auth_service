@@ -3,8 +3,6 @@ from typing import Optional
 from uuid6 import uuid7
 import re
 
-#PASSWORD_PATTERN = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
@@ -34,6 +32,8 @@ class UserCreate(BaseModel):
 
         return self
 
+class ResetRequest(BaseModel):
+    email: EmailStr
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -43,15 +43,18 @@ class UserLogin(BaseModel):
 class UserLogout(BaseModel):
     refresh_token: str
 
-class PasswordResetRequest(BaseModel):
-    email: EmailStr
+class PasswordResetRequest(ResetRequest): ...
+
+class EmailChangeRequest(ResetRequest): ...
 
 class PasswordReset(BaseModel):
     token: str
     new_password: str
 
-class EmailChangeRequest(PasswordResetRequest): ...
-
 class EmailChange(BaseModel):
     token: str
     new_email: EmailStr
+
+class DisconnectProvider(BaseModel):
+    provider_name: str
+    provider_user_id: str

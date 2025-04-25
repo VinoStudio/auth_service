@@ -15,6 +15,8 @@ class UserIsDeletedException(DomainException):
 
 @dataclass(frozen=True)
 class PasswordDoesNotMatchException(DomainException):
+    value: str
+
     @property
     def message(self):
         return "Password does not match"

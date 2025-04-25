@@ -5,11 +5,9 @@ from typing import List
 
 class RoleCreateRequestSchema(BaseModel):
     name: str = Field(..., min_length=3, max_length=35)
-    description: str = Field(..., min_length=3, max_length=100)
+    description: str = Field(..., max_length=100)
     security_level: int = 8
-    permissions: List[str] = Field(
-        ["user:read", "project:view", "content:view"], min_length=1
-    )
+    permissions: List[str] = Field(["project:view", "content:view"], min_length=1)
 
 
 class RoleDeleteRequestSchema(BaseModel):

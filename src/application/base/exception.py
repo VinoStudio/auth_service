@@ -9,3 +9,17 @@ class ApplicationException(AppException):
     @property
     def message(self):
         return "Something went wrong on a server"
+
+
+@dataclass(frozen=True)
+class ResourceNotFoundException(ApplicationException):
+    """Base class for all 404 Not Found exceptions"""
+
+    value: str
+
+
+@dataclass(frozen=True)
+class ResourceExistsException(ApplicationException):
+    """Base class for all 409 Conflict exceptions"""
+
+    value: str

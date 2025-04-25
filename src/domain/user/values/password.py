@@ -10,21 +10,21 @@ from src.domain.user.exceptions import (
 
 PASSWORD_PATTERN_REGEX = re.compile(r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$")
 
+
 @dataclass(frozen=True)
 class Password(ValueObject):
     value: bytes
 
-    def _validate(self) -> None:
-        ...
+    def _validate(self) -> None: ...
 
     @classmethod
-    def create(cls, password: str) -> 'Password':
+    def create(cls, password: str) -> "Password":
         if not PASSWORD_PATTERN_REGEX.match(password):
-            raise WrongPasswordFormatException()
+            raise WrongPasswordFormatException("")
 
-        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
         return cls(value=hashed)
 
     def verify(self, password: str) -> bool:
-        return bcrypt.checkpw(password.encode('utf-8'), self.value)
+        return bcrypt.checkpw(password.encode("utf-8"), self.value)

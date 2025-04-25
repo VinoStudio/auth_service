@@ -4,6 +4,7 @@ from typing import List
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
+from src.application.cqrs.helpers import authorization_required
 from src.application.services.rbac.rbac_manager import RBACManager
 from src.infrastructure.base.repository import BaseUserWriter, BaseUserReader
 from src.infrastructure.base.uow import UnitOfWork
@@ -29,12 +30,10 @@ class RemoveRoleCommandHandler(CommandHandler[RemoveRoleCommand, domain.User]):
     _blacklist_repo: TokenBlackListRepository
     _uow: UnitOfWork
 
-    async def handle(self, command: RemoveRoleCommand) -> domain.User:
-        token = self._jwt_manager.get_token_from_cookie(command.request)
-        token_data: dto.Token = await self._jwt_manager.validate_token(token)
-
-        security_user: SecurityUser = SecurityUser.create_from_token_dto(token_data)
-
+    @authorization_required
+    async def handle(
+        self, command: RemoveRoleCommand, security_user: SecurityUser
+    ) -> domain.User:
         role: domain.Role = await self._rbac_manager.get_role(
             role_name=command.role_name, request_from=security_user
         )

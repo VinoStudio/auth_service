@@ -35,4 +35,10 @@ def get_render_processor(
 ) -> ProcessorType:
     if render_json_logs:
         return structlog.processors.JSONRenderer(serializer=serializer)
-    return structlog.dev.ConsoleRenderer(colors=colors)
+    else:
+        return structlog.dev.ConsoleRenderer(
+            colors=colors,
+            pad_event=0,
+            pad_level=False,
+            event_key="event",
+        )

@@ -10,5 +10,4 @@ class DomainException(AppException):
 
 
 @dataclass(frozen=True)
-class ValidationException(DomainException):
-    pass
+class ValidationException(DomainException): ...

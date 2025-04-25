@@ -4,6 +4,8 @@ from src.domain.base.exceptions.domain import ValidationException
 
 @dataclass(frozen=True)
 class WrongPasswordFormatException(ValidationException):
+    value: str
+
     @property
     def message(self) -> str:
         return (

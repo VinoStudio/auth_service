@@ -15,12 +15,14 @@ from src.infrastructure.repositories.converters import (
     OrmToDomainConverter,
     DomainToOrmConverter,
 )
+from src.infrastructure.repositories.helpers import repository_exception_handler
 from src.infrastructure.repositories.pagination import Pagination
 
 
 @dataclass
 class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
+    @repository_exception_handler
     async def create_role(self, role: domain.Role) -> Optional[models.Role]:
         """
         Since we use already existing permissions,
@@ -33,11 +35,13 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         await self._session.flush()
         await self.update_role(role)
 
+    @repository_exception_handler
     async def update_role(self, role: domain.Role) -> Optional[domain.Role]:
         role_model: models.Role = DomainToOrmConverter.domain_to_role(role)
 
         await self._session.merge(role_model)
 
+    @repository_exception_handler
     async def get_role_by_id(self, role_id: str) -> Optional[domain.Role]:
         """Get a role with permissions by its ID."""
 
@@ -52,6 +56,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
         return role_domain
 
+    @repository_exception_handler
     async def get_role_by_name(self, name: str) -> Optional[domain.Role]:
         query = self.get_role().where(models.Role.name == name)
 
@@ -65,6 +70,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
         return role_domain
 
+    @repository_exception_handler
     async def get_all_roles(self, pagination: Pagination) -> Iterable[domain.Role]:
         query = self.get_role().limit(pagination.limit).offset(pagination.offset)
 
@@ -74,6 +80,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
 
         return [OrmToDomainConverter.role_to_domain(role) for role in roles]
 
+    @repository_exception_handler
     async def update_role_name(self, role_id: str, name: str) -> Optional[models.Role]:
         """Update a role's name."""
 
@@ -82,6 +89,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             {"name": name, "role_id": role_id},
         )
 
+    @repository_exception_handler
     async def delete_role(self, role_id: str) -> bool:
         """Delete a role by its ID."""
         # Using raw SQL for direct deletion (more efficient)
@@ -98,7 +106,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         return len(result.fetchall()) > 0
 
     # Role-Permission relationship methods
-
+    @repository_exception_handler
     async def set_role_permission(self, role_id: str, permission_id: str) -> None:
         """Add a permission to a role."""
         query = text(
@@ -113,6 +121,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             query, {"role_id": role_id, "permission_id": permission_id}
         )
 
+    @repository_exception_handler
     async def get_role_permissions(self, role_id: str) -> List[domain.Permission]:
         """Get all permissions for a specific role."""
         query = text(
@@ -132,6 +141,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             permissions.append(permission)
         return permissions
 
+    @repository_exception_handler
     async def get_existing_roles(self) -> Sequence[models.Role]:
         query = select(models.Role)
         result = await self._session.execute(query)
@@ -139,7 +149,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         return result.scalars().all()
 
     # User-Role relationship methods
-
+    @repository_exception_handler
     async def get_users_with_role(
         self,
         role_id: str,
@@ -172,7 +182,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         return users
 
     # Analytics methods
-
+    @repository_exception_handler
     async def get_roles_with_metrics(self) -> List[Dict[str, Any]]:
         """Get all roles with counts of their permissions and users."""
         query = text(
@@ -198,6 +208,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
             )
         return roles
 
+    @repository_exception_handler
     async def check_role_exists(self, role_name: str) -> bool:
         """Check if a role exists"""
         query = text(
@@ -212,6 +223,7 @@ class RoleRepository(SQLAlchemyRepository, BaseRoleRepository):
         result = await self._session.execute(query, {"role_name": role_name})
         return result.scalar()
 
+    @repository_exception_handler
     async def count_users_with_role(self, role_name: str) -> int:
         query = text(
             """
