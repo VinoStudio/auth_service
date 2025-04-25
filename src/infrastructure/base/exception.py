@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-# from domain.base.exceptions.application import AppException
+from src.domain.base.exceptions.application import AppException
 
 
 @dataclass(frozen=True)
-class InfrastructureException(Exception):
+class InfrastructureException(AppException):
     """Base infrastructure exception."""
 
     value: str | None

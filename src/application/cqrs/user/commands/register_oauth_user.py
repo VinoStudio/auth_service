@@ -4,12 +4,7 @@ from typing import Optional
 from uuid6 import uuid7
 
 from src.application.base.event_publisher.event_publisher import BaseEventPublisher
-from src.application.base.interface.request import RequestProtocol
-from src.application.base.interface.response import ResponseProtocol
-from src.application.exceptions import (
-    UsernameAlreadyExistsException,
-    EmailAlreadyExistsException,
-)
+
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.repositories.oauth.oauth_repo import OAuthAccountRepository

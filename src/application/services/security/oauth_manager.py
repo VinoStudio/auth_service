@@ -12,7 +12,10 @@ from typing import Dict, Any, Optional
 from src.application.exceptions import (
     EmailAlreadyExistsException,
     MappingProviderException,
+    OAuthAccountAlreadyDeactivatedException,
+    OAuthAccountDoesNotExistException,
 )
+from src.application.exceptions.oauth import OAuthAccountAlreadyAssociatedException
 from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.repositories.oauth.oauth_repo import OAuthAccountRepository
 from src.settings.config import OAuthProvider
@@ -74,8 +77,6 @@ class OAuthManager:
             Either credentials for a new user to be created or identity for an existing user
 
         Raises:
-            ValueError: If the OAuth account is already associated with another user
-            UserNotFoundException: If the user does not exist
             EmailAlreadyExistsException: If user not found, but OAuth email already taken
         """
 
@@ -88,12 +89,12 @@ class OAuthManager:
             state=state,
         )
 
-        logger.info("Received tokens: ", tokens=oauth_tokens)
+        logger.debug("Received tokens: ", tokens=oauth_tokens)
 
         # Get user info from provider
         user_info = self._get_provider_user_info(provider, oauth_tokens["access_token"])
 
-        logger.info("Received user_data: ", user_data=user_info)
+        logger.debug("Received user_data: ", user_data=user_info)
 
         # Find or create user in our system
         result = await self._find_or_create_user(provider_name, user_info)
@@ -120,7 +121,7 @@ class OAuthManager:
             state: Parameter to protect from XSRF. Also used as redis key for oauth account connection
 
         Raises:
-            ValueError: If the OAuth account is already associated with another user
+            OAuthAccountAlreadyAssociatedException: If the OAuth account is already associated with another user
             UserNotFoundException: If the specified user does not exist
         """
 
@@ -145,12 +146,22 @@ class OAuthManager:
         provider_parsed_info = self._parse_oauth_user_info(provider_name, user_info)
 
         # Check if this OAuth account is already associated with any user
-        existing_user = await self._find_account_by_oauth_data(
-            provider_name, provider_parsed_info["provider_user_id"]
+        existing_oauth_account: domain.OAuthAccount = (
+            await self._find_account_by_oauth_data(
+                provider_name, provider_parsed_info["provider_user_id"]
+            )
         )
 
-        if existing_user:
-            raise ValueError(f"OAuth account is already associated with user {user_id}")
+        if existing_oauth_account:
+            if existing_oauth_account.is_active:
+                raise OAuthAccountAlreadyAssociatedException("provider_user_id")
+            else:
+                existing_oauth_account.reactivate()
+                await self.oauth_repo.update_oauth_account(existing_oauth_account)
+                logger.info(
+                    f"Successfully reactivated {provider_name} account for user {user_id}"
+                )
+                return None
 
         associated_account = domain.OAuthAccount(
             user_id=user_id,
@@ -164,6 +175,22 @@ class OAuthManager:
         logger.info(
             f"Successfully associated {provider_name} account with user {user_id}"
         )
+
+    async def disconnect_oauth_account(
+        self, provider_name: str, provider_user_id: str
+    ) -> None:
+        account: domain.OAuthAccount = await self._find_account_by_oauth_data(
+            provider_name, provider_user_id
+        )
+        if account is None:
+            raise OAuthAccountDoesNotExistException("provider_user_id")
+
+        if not account.is_active:
+            raise OAuthAccountAlreadyDeactivatedException("provider_user_id")
+
+        account.deactivate()
+
+        await self.oauth_repo.update_oauth_account(account)
 
     def get_oauth_url(
         self, provider_name: str, state: str, is_connect: bool = False
@@ -361,7 +388,7 @@ class OAuthManager:
         provider_user_id = parsed_info["provider_user_id"]
 
         # Try to find user by provider info
-        existing_user = await self._find_account_by_oauth_data(
+        existing_user: domain.OAuthAccount = await self._find_account_by_oauth_data(
             provider_name, provider_user_id
         )
 
@@ -739,8 +766,6 @@ class OAuthManager:
 
     async def _find_account_by_oauth_data(
         self, provider: str, provider_user_id: str
-    ) -> bool:
+    ) -> domain.OAuthAccount:
         """Find user by OAuth provider and ID"""
-        return await self.oauth_repo.check_if_oauth_account_exists(
-            provider, provider_user_id
-        )
+        return await self.oauth_repo.get_by_provider_and_id(provider, provider_user_id)

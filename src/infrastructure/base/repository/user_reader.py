@@ -21,7 +21,3 @@ class BaseUserReader(ABC):
     @abstractmethod
     async def get_all_users(self, pagination: "Pagination") -> List[User]:
         raise NotImplementedError
-
-    @abstractmethod
-    async def get_all_usernames(self) -> Iterable[str]:
-        raise NotImplementedError

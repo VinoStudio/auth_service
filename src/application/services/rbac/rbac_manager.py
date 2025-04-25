@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from functools import wraps
 from typing import ClassVar, Tuple
@@ -512,9 +511,9 @@ class RBACManager(BaseRBACManager):
         if role_level == 0:
             raise AccessDeniedException("Security level 0 role is read-only")
 
-        if user_level > role_level:
+        if user_level >= role_level:
             raise AccessDeniedException(
-                "You cannot interact with roles having higher security level than yours"
+                "You cannot interact with roles having higher or equal security level than yours"
             )
 
     def _can_modify_system_roles(

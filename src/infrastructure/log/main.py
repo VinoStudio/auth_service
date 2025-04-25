@@ -12,7 +12,7 @@ config: Config = get_config()
 
 def configure_logging() -> None:
     # Mute SQLAlchemy default logger handler
-    sa_log._add_default_handler = lambda _: None  # noqa
+    sa_log._add_default_handler = lambda _: None
 
     common_processors = (
         structlog.stdlib.add_log_level,
@@ -86,6 +86,3 @@ def configure_logging() -> None:
         wrapper_class=structlog.stdlib.BoundLogger,  # type: ignore
         cache_logger_on_first_use=True,
     )
-
-    structlog.get_logger().setLevel(config.logging.level)
-    # logging.getLogger().setLevel(config.logging.level)

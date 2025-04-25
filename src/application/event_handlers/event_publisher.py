@@ -1,26 +1,29 @@
 import structlog
 from dataclasses import dataclass, field
-from typing import Iterable, Any
+from typing import Iterable, Any, List, Dict
 
 from collections import defaultdict
 
 from src.application.base.event_publisher.event_publisher import BaseEventPublisher
 from src.application.base.events.event_handler import EventHandler
-from src.infrastructure.message_broker.events.internal.base import IntegrationEvent
+from src.infrastructure.message_broker.events.internal.base import (
+    IntegrationEvent,
+    IntegrationEventType,
+)
 
 logger = structlog.getLogger(__name__)
 
 
 @dataclass(eq=False)
 class EventPublisher(BaseEventPublisher):
-    event_map: dict[IntegrationEvent, list[EventHandler]] = field(
+    event_map: Dict[IntegrationEventType, List[EventHandler]] = field(
         default_factory=lambda: defaultdict(list), kw_only=True
     )
 
     def register_event(
         self,
-        event: IntegrationEvent,
-        event_handlers: Iterable[EventHandler[IntegrationEvent, Any]],
+        event: IntegrationEventType,
+        event_handlers: Iterable[EventHandler[IntegrationEventType, Any]],
     ) -> None:
         self.event_map[event].extend(event_handlers)
 

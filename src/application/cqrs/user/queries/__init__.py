@@ -43,6 +43,11 @@ from src.application.cqrs.user.queries.get_all_user_sessions import (
     GetCurrentUserSessionsHandler,
 )
 
+from src.application.cqrs.user.queries.get_current_user_oauth_accounts import (
+    GetCurrentUserConnectedAccounts,
+    GetCurrentUserConnectedAccountsHandler,
+)
+
 __all__ = (
     "GetUserById",
     "GetUserByIdHandler",
@@ -56,6 +61,8 @@ __all__ = (
     "GetCurrentUserHandler",
     "GetCurrentUserSession",
     "GetCurrentUserSessionHandler",
+    "GetCurrentUserConnectedAccounts",
+    "GetCurrentUserConnectedAccountsHandler",
     "GetCurrentUserRoles",
     "GetCurrentUserRolesHandler",
     "GetCurrentUserPermissions",

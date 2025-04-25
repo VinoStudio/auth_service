@@ -57,6 +57,11 @@ from src.application.cqrs.user.commands.add_oauth_account_request import (
     AddOAuthAccountRequestCommandHandler,
 )
 
+from src.application.cqrs.user.commands.deactivate_oauth_account import (
+    DeactivateUsersOAuthAccountCommand,
+    DeactivateUsersOAuthAccountCommandHandler,
+)
+
 __all__ = (
     "LoginUserCommand",
     "LoginUserCommandHandler",
@@ -66,6 +71,8 @@ __all__ = (
     "AddOAuthAccountRequestCommandHandler",
     "AddOAuthAccountToCurrentUserCommand",
     "AddOAuthAccountToCurrentUserCommandHandler",
+    "DeactivateUsersOAuthAccountCommand",
+    "DeactivateUsersOAuthAccountCommandHandler",
     "LogoutUserCommand",
     "LogoutUserCommandHandler",
     "RegisterUserCommand",

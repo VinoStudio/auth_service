@@ -11,6 +11,7 @@ from src.application.exceptions.user import (
     UserNotFoundException,
     PasswordTokenExpiredException,
     EmailTokenExpiredException,
+    OAuthConnectionTokenExpiredException,
 )
 
 from src.application.exceptions.rbac import (
@@ -35,6 +36,11 @@ from src.application.exceptions.jwt import (
     TokenRevokedException,
     TokenValidationError,
     MappingProviderException,
+)
+
+from src.application.exceptions.oauth import (
+    OAuthAccountDoesNotExistException,
+    OAuthAccountAlreadyDeactivatedException,
 )
 
 __all__ = (
@@ -66,4 +72,7 @@ __all__ = (
     "AuthorizationException",
     "AccessRejectedException",
     "MappingProviderException",
+    "OAuthAccountDoesNotExistException",
+    "OAuthAccountAlreadyDeactivatedException",
+    "OAuthConnectionTokenExpiredException",
 )

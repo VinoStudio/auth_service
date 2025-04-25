@@ -30,7 +30,7 @@ class TokenRevokedException(AuthorizationException):
 
     @property
     def message(self):
-        return f"Given {self.value} refresh token was revoked"
+        return f"Given refresh token was revoked"
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,7 @@ class TokenExpiredException(AuthorizationException):
 
     @property
     def message(self):
-        return f"Given {self.value} refresh token expired. Please, login again"
+        return f"Given refresh token expired. Please, login again"
 
 
 @dataclass(frozen=True)

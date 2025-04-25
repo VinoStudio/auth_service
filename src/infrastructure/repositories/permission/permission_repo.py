@@ -9,11 +9,14 @@ import src.domain as domain
 import src.infrastructure.db.models as models
 from src.infrastructure.exceptions import PermissionDoesNotExistException
 from src.infrastructure.repositories.converters import OrmToDomainConverter
+from src.infrastructure.repositories.helpers import repository_exception_handler
 from src.infrastructure.repositories.pagination import Pagination
 
 
 @dataclass
 class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
+
+    @repository_exception_handler
     async def create_permission(
         self, permission: domain.Permission
     ) -> Optional[models.Permission]:
@@ -24,12 +27,14 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
         self._session.add(permission_model)
         await self._session.flush()
 
+    @repository_exception_handler
     async def delete_permission(self, permission_name: str) -> None:
         await self._session.execute(
             text("DELETE FROM permission WHERE name = :name"),
             {"name": permission_name},
         )
 
+    @repository_exception_handler
     async def get_permission_by_id(
         self, permission_id: str
     ) -> Optional[domain.Permission]:
@@ -43,6 +48,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
 
         return OrmToDomainConverter.permission_to_domain(permission.id, permission.name)
 
+    @repository_exception_handler
     async def get_permission_by_name(
         self, permission_name: str
     ) -> Optional[domain.Permission]:
@@ -57,6 +63,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
 
         return OrmToDomainConverter.permission_to_domain(permission.id, permission.name)
 
+    @repository_exception_handler
     async def get_permission_roles(self, permission_id: str) -> List[domain.Role]:
         query = (
             select(models.Role)
@@ -68,12 +75,14 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
         roles = result.scalars().all()
         return [OrmToDomainConverter.role_to_domain(role) for role in roles]
 
+    @repository_exception_handler
     async def get_existing_permissions(self) -> Sequence[models.Permission]:
         query = self.get_permission()
         result = await self._session.execute(query)
 
         return result.scalars().all()
 
+    @repository_exception_handler
     async def get_all_permissions(
         self, pagination: Pagination
     ) -> Iterable[domain.Permission]:
@@ -88,6 +97,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
             for permission in permissions
         ]
 
+    @repository_exception_handler
     async def check_permission_exists(self, permission_name: str) -> bool:
         """Check if a role exists"""
         query = text(
@@ -104,6 +114,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
         )
         return result.scalar()
 
+    @repository_exception_handler
     async def count_roles_with_permission(self, permission_name: str) -> int:
         query = text(
             """

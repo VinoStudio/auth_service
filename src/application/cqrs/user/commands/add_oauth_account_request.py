@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
+from src.application.cqrs.helpers import authorization_required
 from src.application.services.security.oauth_manager import OAuthManager
+from src.application.services.security.security_user import SecurityUser
 from src.application.services.tasks.notification_manager import (
     NotificationManager,
     NotificationType,
@@ -29,15 +31,18 @@ class AddOAuthAccountRequestCommandHandler(
     _oauth_manager: OAuthManager
     _jwt_manager: BaseJWTManager
 
-    async def handle(self, command: AddOAuthAccountRequestCommand) -> str:
+    @authorization_required
+    async def handle(
+        self, command: AddOAuthAccountRequestCommand, security_user: SecurityUser
+    ) -> str:
 
         state = secrets.token_urlsafe(32)
 
-        token = self._jwt_manager.get_token_from_cookie(command.request)
-        token_data = await self._jwt_manager.validate_token(token)
-        user_id = token_data.sub
-
-        await self._token_repo.add_reset_token(user_id, state, TokenType.OAUTH_CONNECT)
+        await self._token_repo.add_reset_token(
+            user_id=security_user.get_user_identifier(),
+            token=state,
+            token_type=TokenType.OAUTH_CONNECT,
+        )
 
         # Get OAuth login URL
         return self._oauth_manager.get_oauth_url(

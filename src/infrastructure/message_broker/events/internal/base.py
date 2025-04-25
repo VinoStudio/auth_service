@@ -14,13 +14,13 @@ class IntegrationEvent:
     topic: ClassVar[str]
 
 
-EventType = TypeVar("EventType", bound=type[IntegrationEvent])
+IntegrationEventType = TypeVar("IntegrationEventType", bound=type[IntegrationEvent])
 
 
 def integration_event(
     topic: str,
-) -> Callable[[EventType], EventType]:
-    def _integration_event(cls: EventType) -> EventType:
+) -> Callable[[IntegrationEventType], IntegrationEventType]:
+    def _integration_event(cls: IntegrationEventType) -> IntegrationEventType:
         # Set class variables
         cls.topic = topic
         return cls

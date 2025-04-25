@@ -16,4 +16,4 @@ class GetUserByIdHandler(BaseQueryHandler[GetUserById, Any]):
     _user_reader: BaseUserReader
 
     async def handle(self, query: GetUserById) -> domain.User:
-        return await self._user_reader.get_user_by_id(user_id=query.user_id)
+        return await self._user_reader.get_active_user_by_id(user_id=query.user_id)

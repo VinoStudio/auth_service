@@ -153,7 +153,7 @@ class User(AggregateRoot):
 
     def _pass_is_match(self, password: str):
         if not self.password.verify(password=password):
-            raise PasswordDoesNotMatchException()
+            raise PasswordDoesNotMatchException("")
 
     def _version_upgrade(self) -> None:
         self.version += 1

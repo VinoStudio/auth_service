@@ -8,21 +8,12 @@ class RepositoryException(InfrastructureException):
 
 
 @dataclass(frozen=True)
-class UserIdAlreadyExistsErrorException(RepositoryException):
-    value: str
-
-    @property
-    def message(self) -> str:
-        return f'A user with the "{self.value}" user_id already exists'
-
-
-@dataclass(frozen=True)
 class UserDoesNotExistException(RepositoryException):
     value: str
 
     @property
     def message(self) -> str:
-        return f'A user with "{self.value}" user_id does not exist'
+        return f"A user with {self.value!r} does not exist"
 
 
 @dataclass(frozen=True)
@@ -31,7 +22,7 @@ class OAuthUserDoesNotExistException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f'A user with "{self.value}" does not exist'
+        return f"A user with {self.value!r} does not exist"
 
 
 @dataclass(frozen=True)
@@ -40,7 +31,7 @@ class OAuthAccountDoesNotExistException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f'An account with "{self.value}" does not exist'
+        return f"An account with {self.value!r} does not exist"
 
 
 @dataclass(frozen=True)
@@ -49,7 +40,7 @@ class UserWithUsernameDoesNotExistException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f'A user with "{self.value}" username does not exist'
+        return f"A user with {self.value!r} username does not exist"
 
 
 @dataclass(frozen=True)
@@ -58,7 +49,7 @@ class UserWithEmailDoesNotExistException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f'A user with "{self.value}" email does not exist'
+        return f"A user with {self.value!r} email does not exist"
 
 
 @dataclass(frozen=True)
@@ -67,7 +58,7 @@ class UserIsDeletedException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f'A user with "{self.value}" user_id is deleted'
+        return f"A user with {self.value!r} user_id is deleted"
 
 
 @dataclass(frozen=True)
@@ -76,7 +67,7 @@ class RoleDoesNotExistException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f"A role with '{self.value}' name does not exist"
+        return f"A role with {self.value!r} name does not exist"
 
 
 @dataclass(frozen=True)
@@ -85,4 +76,4 @@ class PermissionDoesNotExistException(RepositoryException):
 
     @property
     def message(self) -> str:
-        return f"A permission with '{self.value}' name does not exist"
+        return f"A permission with {self.value!r} name does not exist"

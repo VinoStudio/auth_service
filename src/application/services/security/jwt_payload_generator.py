@@ -58,7 +58,6 @@ class JWTPayloadGenerator(BaseJWTPayloadGenerator):
             "lvl": user.get_security_level(),
             "did": user.get_device_id(),
             "roles": user.get_roles(),
-            "permissions": user.get_permissions(),
             "jti": str(uuid7()),
             "exp": (
                 now
@@ -72,5 +71,8 @@ class JWTPayloadGenerator(BaseJWTPayloadGenerator):
             ).timestamp(),  # Returns float with microseconds
             "iat": now.timestamp(),  # Returns float with microseconds
         }
+
+        if token_type == TokenType.ACCESS.value:
+            payload["permissions"] = user.get_permissions()
 
         return payload

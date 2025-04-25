@@ -54,6 +54,33 @@ class GetUserSessionsResponseSchema(BaseModel):
         )
 
 
+class GetUserConnectedAccountResponseSchema(BaseModel):
+    provider: str
+    provider_user_id: str
+    provider_email: str
+
+    @classmethod
+    def from_entity(cls, account: domain.OAuthAccount):
+        return cls(
+            provider=account.provider,
+            provider_user_id=account.provider_user_id,
+            provider_email=account.provider_email,
+        )
+
+
+class GetUserConnectedAccountsResponseSchema(BaseModel):
+    accounts: List[GetUserConnectedAccountResponseSchema]
+
+    @classmethod
+    def from_entity(cls, accounts: List[domain.OAuthAccount]):
+        return cls(
+            accounts=[
+                GetUserConnectedAccountResponseSchema.from_entity(account)
+                for account in accounts
+            ]
+        )
+
+
 class GetUserRolesResponseSchema(BaseModel):
     roles: List[str]
 

@@ -1,5 +1,4 @@
 from src.infrastructure.exceptions.repository import (
-    UserIdAlreadyExistsErrorException,
     RepositoryException,
     UserDoesNotExistException,
     UserWithUsernameDoesNotExistException,
@@ -21,7 +20,6 @@ __all__ = (
     "RepositoryException",
     "RollbackErrorException",
     "CommitErrorException",
-    "UserIdAlreadyExistsErrorException",
     "UserIsDeletedException",
     "UserDoesNotExistException",
     "UserWithUsernameDoesNotExistException",

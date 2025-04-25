@@ -20,6 +20,8 @@ from src.application.cqrs.user.commands import (
     AddOAuthAccountRequestCommandHandler,
     AddOAuthAccountToCurrentUserCommand,
     AddOAuthAccountToCurrentUserCommandHandler,
+    DeactivateUsersOAuthAccountCommand,
+    DeactivateUsersOAuthAccountCommandHandler,
     LoginUserCommand,
     LoginUserCommandHandler,
     OAuthLoginUserCommand,
@@ -79,6 +81,8 @@ from src.application.cqrs.user.queries import (
     GetCurrentUserSessionHandler,
     GetCurrentUserSessions,
     GetCurrentUserSessionsHandler,
+    GetCurrentUserConnectedAccounts,
+    GetCurrentUserConnectedAccountsHandler,
     GetUserRoles,
     GetUserRolesHandler,
     GetUserPermissions,
@@ -141,6 +145,7 @@ class MediatorConfigProvider(Provider):
         change_user_email: ChangeUserEmailCommandHandler,
         add_oauth_account: AddOAuthAccountToCurrentUserCommandHandler,
         add_oauth_account_request: AddOAuthAccountRequestCommandHandler,
+        deactivate_users_oauth_account: DeactivateUsersOAuthAccountCommandHandler,
     ) -> BaseCommandMediator:
 
         command_mediator.register_command(RegisterUserCommand, [register_user])
@@ -152,6 +157,9 @@ class MediatorConfigProvider(Provider):
         )
         command_mediator.register_command(
             AddOAuthAccountToCurrentUserCommand, [add_oauth_account]
+        )
+        command_mediator.register_command(
+            DeactivateUsersOAuthAccountCommand, [deactivate_users_oauth_account]
         )
         command_mediator.register_command(LoginUserCommand, [login_user])
         command_mediator.register_command(OAuthLoginUserCommand, [oauth_login])
@@ -252,6 +260,7 @@ class MediatorConfigProvider(Provider):
         get_user_permissions: GetUserPermissionsHandler,
         get_current_user_session: GetCurrentUserSessionHandler,
         get_current_user_sessions: GetCurrentUserSessionsHandler,
+        get_current_user_connected_accounts: GetCurrentUserConnectedAccountsHandler,
         get_users: GetUsersHandler,
     ) -> BaseQueryMediator:
 
@@ -264,6 +273,9 @@ class MediatorConfigProvider(Provider):
         )
         query_mediator.register_query(GetCurrentUserSession, get_current_user_session)
         query_mediator.register_query(GetCurrentUserSessions, get_current_user_sessions)
+        query_mediator.register_query(
+            GetCurrentUserConnectedAccounts, get_current_user_connected_accounts
+        )
         query_mediator.register_query(GetUserRoles, get_user_roles)
         query_mediator.register_query(GetUserPermissions, get_user_permissions)
         query_mediator.register_query(GetUsers, get_users)

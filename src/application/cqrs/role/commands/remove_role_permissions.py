@@ -4,6 +4,7 @@ from typing import List
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
+from src.application.cqrs.helpers import authorization_required
 from src.application.services.rbac.rbac_manager import RBACManager
 from src.infrastructure.base.uow import UnitOfWork
 from src.application.services.security.security_user import SecurityUser
@@ -27,12 +28,10 @@ class RemoveRolePermissionsCommandHandler(
     _rbac_manager: RBACManager
     _uow: UnitOfWork
 
-    async def handle(self, command: RemoveRolePermissionsCommand) -> domain.Role:
-        token = self._jwt_manager.get_token_from_cookie(command.request)
-        token_data: dto.Token = await self._jwt_manager.validate_token(token)
-
-        security_user: SecurityUser = SecurityUser.create_from_token_dto(token_data)
-
+    @authorization_required
+    async def handle(
+        self, command: RemoveRolePermissionsCommand, security_user: SecurityUser
+    ) -> domain.Role:
         role: domain.Role = await self._rbac_manager.get_role(
             role_name=command.role_name, request_from=security_user
         )
