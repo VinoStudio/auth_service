@@ -681,7 +681,7 @@ Event Consumer in this example is a part of Event Sourcing that implemented in A
 
 ### Command and Query (src/application/cqrs)
 
-[CRSQ](./screenshots/cqrs.png)
+![CRSQ](./screenshots/cqrs.png)
 
 #### Commands represent intentions to change the project state. Each command follows this workflow:
 
@@ -753,9 +753,9 @@ class RegisterUserCommandHandler(CommandHandler[RegisterUserCommand, domain.User
 ### Event Sourcing (src/application/event_sourcing)
 ###### Architectural pattern where application state changes are captured as a sequence of immutable events rather than just storing the current state.
 
-#### Event Livecycle with [user_service](https://github.com/VinoStudio/user_service/tree/main) example:
+#### Event Lifecycle with [user_service](https://github.com/VinoStudio/user_service/tree/main) example:
 
-[Event Sourcing](./screenshots/event_sourcing.png)
+![Event Sourcing](./screenshots/event_sourcing.png)
 
 #### Core Components:
 
