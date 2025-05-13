@@ -1,16 +1,14 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from dataclasses import (
     dataclass,
     field,
 )
-from typing import Iterable, Type
 
 from src.application.base.queries.base import BaseQuery
 from src.application.base.queries.query_handler import (
-    BaseQueryHandler,
-    QT,
     QR,
+    QT,
+    BaseQueryHandler,
 )
 
 
@@ -23,7 +21,7 @@ class BaseQueryMediator(ABC):
 
     @abstractmethod
     def register_query(
-        self, query: Type[BaseQuery], query_handler: BaseQueryHandler[QT, QR]
+        self, query: type[BaseQuery], query_handler: BaseQueryHandler[QT, QR]
     ) -> None:
         raise NotImplementedError
 

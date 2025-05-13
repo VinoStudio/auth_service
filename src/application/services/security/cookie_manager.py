@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
@@ -33,7 +32,7 @@ class CookieManager(BaseCookieManager):
         self,
         response: ResponseProtocol,
         token: str,
-        max_age: int = None,
+        max_age: int | None = None,
         key: str = "refresh_token",
     ) -> None:
         """
@@ -75,7 +74,7 @@ class CookieManager(BaseCookieManager):
             path=self.cookie_path,
         )
 
-    def get_cookie(self, request: RequestProtocol, key: str) -> Optional[str]:
+    def get_cookie(self, request: RequestProtocol, key: str) -> str | None:
         """
         Retrieve a cookie value from the HTTP request.
 

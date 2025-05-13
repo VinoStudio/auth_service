@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from src.domain.base.exceptions.domain import ValidationException
 
 

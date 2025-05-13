@@ -1,11 +1,11 @@
-from src.domain.user.entity.user import User
-from src.domain.user.values import Email, Password, Username, UserId
+from uuid6 import uuid7
 
 from src.domain.permission.entity.permission import Permission
 from src.domain.permission.values import PermissionName
 from src.domain.role.entity.role import Role
 from src.domain.role.values import RoleName
-from uuid6 import uuid7
+from src.domain.user.entity.user import User
+from src.domain.user.values import Email, Password, UserId, Username
 
 
 async def test_create_user():

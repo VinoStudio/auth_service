@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from dishka import Provider, Scope, provide
+from pydantic import Field
 from pydantic_settings import BaseSettings
-from dataclasses import dataclass
-from pydantic import Field, EmailStr
-from dishka import provide, Scope, Provider
 
 
-@dataclass
 class OAuthProvider(ABC):
     name: str
     client_id: str
     client_secret: str
     redirect_uri: str
+    connect_url: str
     token_url: str
     userinfo_url: str
 
@@ -49,7 +49,7 @@ class OAuthGoogle(BaseSettings, OAuthProvider):
     def get_auth_url(self) -> str:
         return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.redirect_uri}&scope=openid%20profile%20email&access_type=offline"
 
-    def get_connect_url(self):
+    def get_connect_url(self) -> str:
         return f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={self.client_id}&redirect_uri={self.connect_url}&scope=openid%20profile%20email&access_type=offline"
 
 
@@ -131,7 +131,7 @@ class SMTPSettings(BaseSettings):
     password: str = Field(default="", alias="SMTP_PASSWORD")
 
     @property
-    def url(self):
+    def url(self) -> str:
         return f"smtp://{self.user}:{self.password}@{self.host}:{self.port}"
 
 
@@ -140,7 +140,7 @@ class RedisSettings(BaseSettings):
     port: int = Field(default=6379, alias="REDIS_PORT")
 
     @property
-    def redis_url(self):
+    def redis_url(self) -> str:
         return f"redis://{self.host}:{self.port}/0"
 
 
@@ -156,7 +156,7 @@ class PostgresDB(BaseSettings):
         case_sensitive = False
 
     @property
-    def db_url(self):
+    def db_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
@@ -172,7 +172,7 @@ class TestPostgresDB(BaseSettings):
         case_sensitive = False
 
     @property
-    def db_url(self):
+    def db_url(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 

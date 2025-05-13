@@ -1,12 +1,12 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from sqlalchemy import MetaData, sql, TIMESTAMP
+from sqlalchemy import TIMESTAMP, MetaData, sql
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
+    declared_attr,
     mapped_column,
     registry,
-    declared_attr,
 )
 
 convention = {
@@ -22,7 +22,7 @@ mapper_registry = registry(metadata=MetaData(naming_convention=convention))
 
 class BaseModel(DeclarativeBase):
     @declared_attr
-    def __tablename__(cls):
+    def __tablename__(cls) -> str:  # noqa N805
         return cls.__name__.lower()
 
     registry = mapper_registry

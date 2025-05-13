@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
 from abc import ABC
-from datetime import datetime, UTC
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 from uuid6 import uuid7
 

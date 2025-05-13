@@ -1,10 +1,10 @@
-from src.domain.base.exceptions.application import AppException
 from dataclasses import dataclass
+
+from src.domain.base.exceptions.application import AppException
 
 
 @dataclass(frozen=True)
 class MessageBrokerException(AppException):
-
     @property
     def message(self) -> str:
         return "Message Broker Error"

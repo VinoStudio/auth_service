@@ -1,12 +1,11 @@
 from enum import Enum
-from .permission import Permission
-from ..values.permission_name import PermissionName
+
+from src.domain.permission.entity.permission import Permission
+from src.domain.permission.values.permission_name import PermissionName
 
 
 class PermissionEnum(Enum):
-    """
-    An example of predefined project permissions
-    """
+    """An example of predefined project permissions."""
 
     # System Management
     MANAGE_SYSTEM_SETTINGS = Permission(PermissionName("system:manage_settings"))
@@ -56,16 +55,5 @@ class PermissionEnum(Enum):
     EXPORT_AUDIT_LOGS = Permission(PermissionName("audit:export"))
 
     @classmethod
-    def get_all_permissions(cls):
-        return set(permission.value for permission in cls)
-
-    @classmethod
-    def get_by_category(cls):
-        categories = {}
-        for permission in cls:
-            # Extract category from permission name (before the colon)
-            category = permission.value.permission_name.to_raw().split(":")[0]
-            if category not in categories:
-                categories[category] = []
-            categories[category].append(permission.value)
-        return categories
+    def get_all_permissions(cls) -> set[Permission]:
+        return {permission.value for permission in cls}

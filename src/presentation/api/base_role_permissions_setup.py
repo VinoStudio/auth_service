@@ -1,21 +1,13 @@
-from enum import Enum
-from typing import Dict, List
 import structlog
 import uuid6
 
+from src import domain
 from src.application.dependency_injector.di import get_container
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.domain.role.values.role_name import RoleName
-from src.domain.permission.values.permission_name import PermissionName
-from src.domain.user.values import Email, UserId, Password, Username
-
-import src.infrastructure.db.models as models
-import src.domain as domain
+from src.domain.role.entity.role_catalog import SystemRoles
+from src.domain.user.values import Email, Password, UserId, Username
 from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.uow import UnitOfWork
-from src.domain.role.entity.role_catalog import SystemRoles
 
 logger = structlog.getLogger(__name__)
 
@@ -31,16 +23,16 @@ async def seed_roles_and_permissions() -> None:
 
             super_role = await role_repo.check_role_exists("super_admin")
             if super_role:
-                print("Roles already exist, skipping seed")
+                logger.debug("Roles already exist, skipping seed")
                 return
 
             # Log that we're starting the seed process
-            logger.info("Starting to seed roles and permissions...")
+            logger.debug("Starting to seed roles and permissions...")
 
             for role in SystemRoles.get_all_roles():
                 await role_repo.create_role(role=role)
                 await uow.commit()
-            logger.info("Roles and permissions seeded successfully!")
+            logger.debug("Roles and permissions seeded successfully!")
 
             if not super_role:
                 super_role = await role_repo.get_role_by_name("super_admin")
@@ -59,7 +51,6 @@ async def seed_roles_and_permissions() -> None:
     except Exception as e:
         import traceback
 
-        logger.error(f"ERROR seeding roles and permissions: {e}")
+        logger.error("ERROR seeding roles and permissions:", exception=e)
         logger.error(traceback.format_exc())
-        # Re-raise to ensure lifespan setup fails visibly
         raise

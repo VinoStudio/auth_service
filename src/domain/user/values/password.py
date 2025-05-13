@@ -28,3 +28,6 @@ class Password(ValueObject):
 
     def verify(self, password: str) -> bool:
         return bcrypt.checkpw(password.encode("utf-8"), self.value)
+
+    def to_raw(self) -> bytes:
+        return self.value

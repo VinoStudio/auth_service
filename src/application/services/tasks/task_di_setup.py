@@ -1,4 +1,4 @@
-from dishka import Scope, provide, Provider
+from dishka import Provider, Scope, provide
 
 from src.application.services.tasks.notification_manager import NotificationManager
 from src.settings import Config

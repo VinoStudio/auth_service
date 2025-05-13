@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from typing import ClassVar, Callable, Type, TypeVar
+from datetime import UTC, datetime
+from typing import ClassVar, TypeVar
 
 from uuid6 import uuid7
 
@@ -11,6 +12,7 @@ class IntegrationEvent:
     event_timestamp: datetime = field(
         default_factory=lambda: datetime.now(UTC).timestamp()
     )
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     topic: ClassVar[str]
 
 

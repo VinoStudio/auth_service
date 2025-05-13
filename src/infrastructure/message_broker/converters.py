@@ -1,5 +1,3 @@
-from dataclasses import asdict
-
 import orjson
 
 from src.infrastructure.message_broker.events import IntegrationEvent

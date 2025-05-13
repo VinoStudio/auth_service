@@ -1,17 +1,13 @@
 from dataclasses import dataclass
 
-from src.application.base.session.session_manager import BaseSessionManager
-
-from src.application.base.commands import BaseCommand, CommandHandler
-from src.application.exceptions import OAuthConnectionTokenExpiredException
-from src.application.services.security.oauth_manager import OAuthManager
-
-from src.application.services.security.security_user import SecurityUser
-from src.infrastructure.base.repository import BaseUserReader
-from src.infrastructure.base.uow import UnitOfWork
-
 import structlog
 
+from src.application.base.commands import BaseCommand, CommandHandler
+from src.application.base.session.session_manager import BaseSessionManager
+from src.application.exceptions import OAuthConnectionTokenExpiredException
+from src.application.services.security.oauth_manager import OAuthManager
+from src.infrastructure.base.repository import BaseUserReader
+from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.repositories import TokenBlackListRepository, TokenType
 
 logger = structlog.getLogger(__name__)

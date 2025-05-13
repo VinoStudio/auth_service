@@ -1,12 +1,13 @@
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List, Iterable, Sequence
-from sqlalchemy.orm import selectinload
-from sqlalchemy import select, text
 
+from sqlalchemy import Select, select, text
+from sqlalchemy.orm import selectinload
+
+from src import domain
 from src.infrastructure.base.repository import SQLAlchemyRepository
 from src.infrastructure.base.repository.permission_repo import BasePermissionRepository
-import src.domain as domain
-import src.infrastructure.db.models as models
+from src.infrastructure.db import models
 from src.infrastructure.exceptions import PermissionDoesNotExistException
 from src.infrastructure.repositories.converters import OrmToDomainConverter
 from src.infrastructure.repositories.helpers import repository_exception_handler
@@ -15,12 +16,10 @@ from src.infrastructure.repositories.pagination import Pagination
 
 @dataclass
 class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
-
     @repository_exception_handler
     async def create_permission(
         self, permission: domain.Permission
-    ) -> Optional[models.Permission]:
-        """Create a new Permission from entity"""
+    ) -> models.Permission | None:
         permission_model = models.Permission(
             id=permission.id, name=permission.permission_name.to_raw()
         )
@@ -37,8 +36,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
     @repository_exception_handler
     async def get_permission_by_id(
         self, permission_id: str
-    ) -> Optional[domain.Permission]:
-        """Get a permission by its ID."""
+    ) -> domain.Permission | None:
         query = self.get_permission().where(models.Permission.id == permission_id)
         result = await self._session.execute(query)
         permission = result.scalars().one_or_none()
@@ -51,9 +49,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
     @repository_exception_handler
     async def get_permission_by_name(
         self, permission_name: str
-    ) -> Optional[domain.Permission]:
-        """Get roles by name"""
-
+    ) -> domain.Permission | None:
         query = self.get_permission().where(models.Permission.name == permission_name)
         result = await self._session.execute(query)
         permission = result.scalars().one_or_none()
@@ -64,7 +60,7 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
         return OrmToDomainConverter.permission_to_domain(permission.id, permission.name)
 
     @repository_exception_handler
-    async def get_permission_roles(self, permission_id: str) -> List[domain.Role]:
+    async def get_permission_roles(self, permission_id: str) -> list[domain.Role]:
         query = (
             select(models.Role)
             .options(selectinload(models.Role.permissions))
@@ -99,7 +95,6 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
 
     @repository_exception_handler
     async def check_permission_exists(self, permission_name: str) -> bool:
-        """Check if a role exists"""
         query = text(
             """
             SELECT EXISTS (
@@ -131,5 +126,5 @@ class PermissionRepository(BasePermissionRepository, SQLAlchemyRepository):
         return result.scalar()
 
     @staticmethod
-    def get_permission():
+    def get_permission() -> Select:
         return select(models.Permission)

@@ -1,7 +1,7 @@
-from .event_handler import EventHandler, ET, ER
+from .event_handler import ER, ET, EventHandler
 
 __all__ = (
-    "EventHandler",
-    "ET",
     "ER",
+    "ET",
+    "EventHandler",
 )

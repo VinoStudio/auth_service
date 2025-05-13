@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, List
-from src.infrastructure.base.message_broker.base import MessageBroker
 from dataclasses import dataclass
+
 from aiokafka import AIOKafkaConsumer
+
+from src.infrastructure.base.message_broker.base import MessageBroker
 
 
 @dataclass
-class AsyncMessageConsumer(MessageBroker):
+class AsyncMessageConsumer(MessageBroker, ABC):
     consumer: AIOKafkaConsumer
 
     @abstractmethod
@@ -20,7 +21,7 @@ class AsyncMessageConsumer(MessageBroker):
         raise NotImplementedError
 
     @abstractmethod
-    async def subscribe(self, topics: List[str]) -> None:
+    async def subscribe(self, topics: list[str]) -> None:
         """Subscribe to one or more topics."""
         raise NotImplementedError
 

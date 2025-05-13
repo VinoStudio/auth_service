@@ -1,17 +1,17 @@
-from typing import Optional, Dict, Any, List, Sequence
-from sqlalchemy import select, text
+from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta, UTC, timezone
+from datetime import UTC, datetime
 
+from sqlalchemy import select, text
+
+from src import domain
 from src.infrastructure.base.repository import SQLAlchemyRepository
 from src.infrastructure.base.repository.session_repo import BaseSessionRepository
+from src.infrastructure.db import models
 from src.infrastructure.repositories.converters import (
-    OrmToDomainConverter,
     DomainToOrmConverter,
+    OrmToDomainConverter,
 )
-
-import src.infrastructure.db.models as models
-import src.domain as domain
 from src.infrastructure.repositories.helpers import repository_exception_handler
 
 
@@ -22,7 +22,6 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
     @repository_exception_handler
     async def create_session(self, session: domain.Session) -> None:
         """Create a new user session record"""
-
         user_session: models.UserSession = DomainToOrmConverter.domain_to_user_session(
             session
         )
@@ -31,7 +30,7 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
         await self._session.flush()
 
     @repository_exception_handler
-    async def get_session_by_id(self, session_id: str) -> Optional[domain.Session]:
+    async def get_session_by_id(self, session_id: str) -> domain.Session | None:
         result = await self._session.execute(
             select(models.UserSession).where(models.UserSession.id == session_id)
         )
@@ -46,14 +45,13 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
     @repository_exception_handler
     async def get_active_session_by_device_id(
         self, user_id: str, device_id: str
-    ) -> Optional[domain.Session]:
+    ) -> domain.Session | None:
         """Find existing session by user ID and device ID"""
-
         result = await self._session.execute(
             select(models.UserSession).where(
                 models.UserSession.user_id == user_id,
                 models.UserSession.device_id == device_id,
-                models.UserSession.is_active == True,
+                models.UserSession.is_active,
             )
         )
 
@@ -65,12 +63,12 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
         return OrmToDomainConverter.user_session_to_domain(user_session)
 
     @repository_exception_handler
-    async def get_user_active_sessions(self, user_id: str) -> List[domain.Session]:
+    async def get_user_active_sessions(self, user_id: str) -> list[domain.Session]:
         """Get all active sessions for a user"""
         result = await self._session.execute(
             select(models.UserSession).where(
                 models.UserSession.user_id == user_id,
-                models.UserSession.is_active == True,
+                models.UserSession.is_active,
             )
         )
         return [
@@ -79,9 +77,8 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
         ]
 
     @repository_exception_handler
-    async def deactivate_session(self, session_id: str) -> Optional[domain.Session]:
+    async def deactivate_session(self, session_id: str) -> domain.Session | None:
         """Deactivate a user session"""
-
         await self._session.execute(
             text(
                 """
@@ -90,11 +87,11 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
                 WHERE id = :session_id
                 """
             ),
-            dict(is_active=False, session_id=session_id),
+            {"is_active": False, "session_id": session_id},
         )
 
     @repository_exception_handler
-    async def deactivate_user_session(self, user_id: str, device_id: str):
+    async def deactivate_user_session(self, user_id: str, device_id: str) -> None:
         await self._session.execute(
             text(
                 """
@@ -103,7 +100,7 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
                 WHERE user_id = :user_id AND device_id = :device_id
                 """
             ),
-            dict(is_active=False, user_id=user_id, device_id=device_id),
+            {"is_active": False, "user_id": user_id, "device_id": device_id},
         )
 
     @repository_exception_handler
@@ -111,7 +108,7 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
         result = await self._session.execute(
             select(models.UserSession).filter(
                 models.UserSession.user_id == user_id,
-                models.UserSession.is_active == True,
+                models.UserSession.is_active,
             )
         )
         return result.scalars().all()
@@ -141,5 +138,5 @@ class SessionRepository(BaseSessionRepository, SQLAlchemyRepository):
                 WHERE id = :session_id
                 """
             ),
-            dict(session_id=session_id, last_activity=datetime.now(UTC)),
+            {"session_id": session_id, "last_activity": datetime.now(UTC)},
         )

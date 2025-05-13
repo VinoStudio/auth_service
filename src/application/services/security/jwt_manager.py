@@ -1,5 +1,9 @@
-from datetime import datetime, UTC
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
+from jose import ExpiredSignatureError, JWTError
+
+from src.application import dto
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security.cookie_manager import BaseCookieManager
@@ -8,19 +12,14 @@ from src.application.base.security.jwt_manager import BaseJWTManager
 from src.application.base.security.jwt_payload import BaseJWTPayloadGenerator
 from src.application.base.security.jwt_user import JWTUserInterface
 from src.application.exceptions import (
-    TokenRevokedException,
-    TokenExpiredException,
-    TokenValidationError,
     AccessRejectedException,
+    TokenExpiredException,
+    TokenRevokedException,
+    TokenValidationError,
 )
 from src.application.services.security.security_user import SecurityUser
 from src.application.services.security.token_type import TokenType
 from src.infrastructure.repositories import TokenBlackListRepository
-
-from dataclasses import dataclass
-from jose import JWTError, ExpiredSignatureError
-
-import src.application.dto as dto
 from src.infrastructure.repositories.role.role_invalidation_repo import (
     RoleInvalidationRepository,
 )
@@ -52,7 +51,6 @@ class JWTManager(BaseJWTManager):
         self,
         security_user: JWTUserInterface,
     ) -> dto.TokenPair:
-
         access_payload = self.payload_generator.generate(
             security_user, TokenType.ACCESS.value
         )
@@ -66,7 +64,6 @@ class JWTManager(BaseJWTManager):
         return dto.TokenPair(access_token=access_token, refresh_token=refresh_token)
 
     def get_token_from_cookie(self, request: RequestProtocol) -> str:
-
         token = self.cookie_manager.get_cookie(request, "refresh_token")
 
         if not token:
@@ -75,7 +72,6 @@ class JWTManager(BaseJWTManager):
         return token
 
     def set_token_in_cookie(self, response: ResponseProtocol, token: str) -> None:
-
         self.cookie_manager.set_cookie(
             response=response,
             token=token,
@@ -83,7 +79,7 @@ class JWTManager(BaseJWTManager):
         )
 
     @staticmethod
-    def get_access_token_from_request(request) -> str:
+    def get_access_token_from_request(request: RequestProtocol) -> str:
         # Check if Authorization header exists
         auth_header = request.headers.get("Authorization")
         if not auth_header:
@@ -103,7 +99,6 @@ class JWTManager(BaseJWTManager):
         return token
 
     async def validate_token(self, token: str) -> dto.Token:
-
         try:
             payload = self.jwt_encoder.decode(token)
             token_data: dto.Token = dto.Token(**payload)
@@ -133,13 +128,14 @@ class JWTManager(BaseJWTManager):
                     if token_time < invalidated_time:
                         raise TokenRevokedException(token)
 
+        except ExpiredSignatureError as err:
+            raise TokenExpiredException(token) from err
+
+        except JWTError as err:
+            raise TokenValidationError(token) from err
+
+        else:
             return token_data
-
-        except ExpiredSignatureError:
-            raise TokenExpiredException(token)
-
-        except JWTError:
-            raise TokenValidationError(token)
 
     async def refresh_tokens(
         self, request: RequestProtocol, response: ResponseProtocol
@@ -158,10 +154,11 @@ class JWTManager(BaseJWTManager):
             )
             self.set_token_in_cookie(response, new_token_pair.refresh_token)
 
-            return new_token_pair
+        except ValueError as err:
+            raise TokenValidationError("") from err
 
-        except ValueError as e:
-            raise ValueError(f"Token refresh failed: {str(e)}")
+        else:
+            return new_token_pair
 
     async def revoke_token(self, response: ResponseProtocol, token: str) -> None:
         # Clear the refresh token cookie

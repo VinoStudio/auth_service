@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any
 
+from src import domain
 from src.application.base.queries import BaseQuery, BaseQueryHandler
 from src.infrastructure.base.repository import BaseUserReader
-import src.domain as domain
 
 
 @dataclass(frozen=True)

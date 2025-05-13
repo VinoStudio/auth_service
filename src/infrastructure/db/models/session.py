@@ -1,15 +1,10 @@
-from typing import TYPE_CHECKING
+from datetime import UTC, datetime
 
-from sqlalchemy import String, Boolean, func, TIMESTAMP, LargeBinary
-from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from src.infrastructure.db.models import BaseModel, TimedBaseModel
-from src.infrastructure.db.models import UserMixin
-from datetime import datetime, UTC
+from sqlalchemy import TIMESTAMP, Boolean, LargeBinary, String, func
+from sqlalchemy.orm import Mapped, mapped_column
 from uuid6 import uuid7
 
-
-if TYPE_CHECKING:
-    from src.infrastructure.db.models import User
+from src.infrastructure.db.models import TimedBaseModel, UserMixin
 
 
 class UserSession(TimedBaseModel, UserMixin):

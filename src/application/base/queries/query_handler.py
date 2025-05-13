@@ -1,12 +1,13 @@
-from src.application.base.queries.base import BaseQuery
 from abc import ABC
-from typing import Generic, TypeVar, Any
 from dataclasses import dataclass
+from typing import Any, Generic, TypeVar
 
-QT = TypeVar("QT", bound=type(BaseQuery))
-QR = TypeVar("QR", bound=Any)
+from src.application.base.queries.base import BaseQuery
+
+QueryType = TypeVar("QueryType", bound=type(BaseQuery))
+QueryResult = TypeVar("QueryResult", bound=Any)
 
 
 @dataclass(frozen=True)
-class BaseQueryHandler(ABC, Generic[QT, QR]):
-    async def handle(self, query: QT) -> QR: ...
+class BaseQueryHandler(ABC, Generic[QueryType, QueryResult]):
+    async def handle(self, query: QueryType) -> QueryResult: ...

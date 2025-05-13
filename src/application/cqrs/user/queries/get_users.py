@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List, Iterable
 
 from src.application.base.queries import BaseQuery, BaseQueryHandler
 from src.domain import User
@@ -13,8 +12,8 @@ class GetUsers(BaseQuery):
 
 
 @dataclass(frozen=True)
-class GetUsersHandler(BaseQueryHandler[GetUsers, List[User]]):
+class GetUsersHandler(BaseQueryHandler[GetUsers, list[User]]):
     _user_reader: BaseUserReader
 
-    async def handle(self, query: GetUsers) -> List[User]:
+    async def handle(self, query: GetUsers) -> list[User]:
         return await self._user_reader.get_all_users(pagination=query.pagination)

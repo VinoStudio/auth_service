@@ -1,27 +1,23 @@
 import pickle
-import ssl
-from datetime import datetime
-from enum import Enum
-from typing import Dict
-
-import structlog
-import smtplib
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from dataclasses import dataclass
+from enum import Enum
+
+import structlog
+
+from src.application.services.tasks.celery import (
+    send_notification_email,
+    send_user_registration_notification,
+)
 from src.application.services.tasks.email_templates import (
+    generate_email_change_html,
+    generate_email_changed_html,
+    generate_password_changed_html,
     generate_registration_html,
     generate_reset_password_html,
-    generate_email_change_html,
-    generate_password_changed_html,
-    generate_email_changed_html,
 )
-from src.application.services.tasks.celery import (
-    send_user_registration_notification,
-    send_notification_email,
-)
-from email.message import Message
-
 
 logger = structlog.getLogger(__name__)
 
@@ -88,7 +84,7 @@ class NotificationManager:
 
     username: str
 
-    async def send_registration_notification(self, user_data: Dict[str, str]):
+    async def send_registration_notification(self, user_data: dict[str, str]) -> None:
         """
         Send HTML welcome email to newly registered user.
 
@@ -126,13 +122,10 @@ class NotificationManager:
                 args=[msg],
             )
 
-            logger.info(f"Registration notification queued for {user_data['email']}")
+            logger.info("Registration notification queued", email=user_data["email"])
 
-            return True
-
-        except Exception as e:
-            logger.error(f"Failed to send notification: {str(e)}")
-            return False
+        except (ValueError, RuntimeError) as e:
+            logger.error("Failed to send notification: ", exception=e)
 
     async def send_notification(
         self,
@@ -140,7 +133,7 @@ class NotificationManager:
         email: str,
         token: str | None,
         username: str | None,
-    ):
+    ) -> None:
         """
         Universal method to send various types of notifications.
 
@@ -167,8 +160,10 @@ class NotificationManager:
 
             # Validate token requirement
             if needs_token and not token:
-                logger.error(f"Token required for {notification_type} but not provided")
-                return False
+                logger.error(
+                    "Token required, but not provided", notification=notification_type
+                )
+                return
 
             # Create email message
             msg = MIMEMultipart("alternative")
@@ -177,8 +172,7 @@ class NotificationManager:
             msg["To"] = email
 
             # Prepare template data
-            data = dict()
-            data["email"] = email
+            data = {"email": email}
 
             # Add verification URL if token provided
             if token and notification_schema.get("url_path"):
@@ -186,7 +180,7 @@ class NotificationManager:
                 data["verification_url"] = verification_url
 
             if not needs_token:
-                data["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                data["timestamp"] = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
             if username:
                 data["username"] = username
@@ -205,11 +199,15 @@ class NotificationManager:
                 args=[msg_pickle],
             )
 
-            logger.info(f"{notification_type.value} notification queued for {email}")
-            return True
-
-        except Exception as e:
-            logger.error(
-                f"Failed to send {notification_type.value} notification: {str(e)}"
+            logger.debug(
+                "Notification queued.",
+                notification=notification_type.value,
+                email=email,
             )
-            return False
+
+        except (ValueError, RuntimeError) as e:
+            logger.error(
+                "Failed to send notification: ",
+                error=e,
+                notification=notification_type.value,
+            )

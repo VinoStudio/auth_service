@@ -1,19 +1,19 @@
 from src.presentation.api.v1.users.response.user import (
+    GetUserConnectedAccountResponseSchema,
+    GetUserConnectedAccountsResponseSchema,
+    GetUserPermissionsResponseSchema,
     GetUserResponseSchema,
     GetUserRolesResponseSchema,
-    GetUserPermissionsResponseSchema,
     GetUserSessionResponseSchema,
     GetUserSessionsResponseSchema,
-    GetUserConnectedAccountsResponseSchema,
-    GetUserConnectedAccountResponseSchema,
 )
 
 __all__ = (
+    "GetUserConnectedAccountResponseSchema",
+    "GetUserConnectedAccountsResponseSchema",
+    "GetUserPermissionsResponseSchema",
     "GetUserResponseSchema",
     "GetUserRolesResponseSchema",
-    "GetUserPermissionsResponseSchema",
     "GetUserSessionResponseSchema",
     "GetUserSessionsResponseSchema",
-    "GetUserConnectedAccountsResponseSchema",
-    "GetUserConnectedAccountResponseSchema",
 )

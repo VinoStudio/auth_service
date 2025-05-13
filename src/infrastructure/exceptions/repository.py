@@ -1,5 +1,6 @@
-from src.infrastructure.base.exception import InfrastructureException
 from dataclasses import dataclass
+
+from src.infrastructure.base.exception import InfrastructureException
 
 
 @dataclass(frozen=True)

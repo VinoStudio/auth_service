@@ -1,15 +1,12 @@
-from dishka import Scope, provide, Provider
+from dishka import Provider, Scope, provide
 
 from src.application.cqrs.permission.commands import (
     CreatePermissionCommandHandler,
     DeletePermissionCommandHandler,
 )
-
 from src.application.cqrs.permission.queries import (
     GetAllPermissionsHandler,
 )
-
-from src.settings.config import Config
 
 
 class PermissionCommandProvider(Provider):

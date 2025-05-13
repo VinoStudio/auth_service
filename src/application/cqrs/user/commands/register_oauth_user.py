@@ -1,24 +1,20 @@
+from dataclasses import dataclass
+
 import structlog
-from dataclasses import dataclass, field
-from typing import Optional
 from uuid6 import uuid7
 
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
-
+from src import domain
+from src.application import dto
 from src.application.base.commands import BaseCommand, CommandHandler
+from src.application.base.event_sourcing.event_publisher import BaseEventPublisher
+from src.domain.user.values import Email, Password, UserId, Username
 from src.infrastructure.base.repository import BaseUserWriter
-from src.infrastructure.repositories.oauth.oauth_repo import OAuthAccountRepository
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.message_broker.events.internal.user_registered import (
     UserRegistered,
 )
-
-
-from src.domain.user.values import Email, Username, Password, UserId
-import src.domain as domain
-import src.application.dto as dto
-
+from src.infrastructure.repositories.oauth.oauth_repo import OAuthAccountRepository
 
 logger = structlog.getLogger(__name__)
 
@@ -73,8 +69,8 @@ class RegisterOAuthUserCommandHandler(
             created_at=user.created_at,
         )
 
-        # await self._event_publisher.handle_event(event)
+        await self._event_publisher.handle_event(event)
 
-        # logger.info("Event created", event_type=event.event_type)
+        logger.info("Event created", event_type=event.event_type)
 
         return user

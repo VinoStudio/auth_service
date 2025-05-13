@@ -1,10 +1,10 @@
-import orjson
-import src.domain as domain
-
-from src.application.base.security.jwt_user import JWTUserInterface
 from dataclasses import dataclass, field
-from typing import List, Self, Dict, Any
+from typing import Any, Self
 
+import orjson
+
+from src import domain
+from src.application.base.security.jwt_user import JWTUserInterface
 from src.application.dto.token import Token
 
 
@@ -26,16 +26,13 @@ class SecurityUser(JWTUserInterface):
     """
 
     id: str
-    roles: List[str]
-    permissions: List[str]
+    roles: list[str]
+    permissions: list[str]
     security_level: int | None = field(default=None)
     device_id: str | None = field(default=None)
 
     @classmethod
     def create_from_domain_user(cls, domain_user: domain.User) -> Self:
-        if domain_user.jwt_data is None:
-            domain_user._set_jwt_user_data()
-
         jwt_data = orjson.loads(domain_user.jwt_data)
 
         return cls(
@@ -59,7 +56,7 @@ class SecurityUser(JWTUserInterface):
         )
 
     @classmethod
-    def create_from_payload(cls, payload: Dict[str, Any]) -> Self:
+    def create_from_payload(cls, payload: dict[str, Any]) -> Self:
         return cls(
             id=payload["sub"],
             roles=payload["roles"],
@@ -81,10 +78,10 @@ class SecurityUser(JWTUserInterface):
     def set_device_id(self, device_id: str) -> None:
         self.device_id = device_id
 
-    def get_roles(self) -> List[str]:
+    def get_roles(self) -> list[str]:
         return self.roles
 
-    def get_permissions(self) -> List[str]:
+    def get_permissions(self) -> list[str]:
         return self.permissions
 
     def get_user_identifier(self) -> str:

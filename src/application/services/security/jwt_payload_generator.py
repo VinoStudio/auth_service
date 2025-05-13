@@ -1,11 +1,12 @@
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from uuid6 import uuid7
+
 from src.application.base.security.jwt_payload import BaseJWTPayloadGenerator
 from src.application.base.security.jwt_user import JWTUserInterface
 from src.application.services.security.token_type import TokenType
-
-from uuid6 import uuid7
-from dataclasses import dataclass
-from datetime import datetime, UTC, timedelta
-from typing import Dict, Any
 
 
 @dataclass(frozen=True)
@@ -25,7 +26,7 @@ class JWTPayloadGenerator(BaseJWTPayloadGenerator):
     access_token_expire_minutes: int
     refresh_token_expire_minutes: int
 
-    def generate(self, user: JWTUserInterface, token_type: TokenType) -> Dict[str, Any]:
+    def generate(self, user: JWTUserInterface, token_type: TokenType) -> dict[str, Any]:
         """
         Generate a JWT payload for the specified user and token type.
 

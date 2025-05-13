@@ -1,44 +1,41 @@
 import secrets
-import structlog
-
-from typing import Dict, Any
-from dishka import AsyncContainer
-from litestar import Controller, route, Response, Request
-from litestar.di import Provide
-
-from litestar.enums import HttpMethod
-from litestar.params import Body
-from litestar.response import Redirect, Response
-from litestar.openapi.spec import Example
-from litestar.openapi.datastructures import ResponseSpec
+from typing import Any
 
 import litestar.status_codes as status
+import structlog
+from dishka import AsyncContainer
+from litestar import Controller, Request, route
+from litestar.di import Provide
+from litestar.enums import HttpMethod
+from litestar.openapi.datastructures import ResponseSpec
+from litestar.openapi.spec import Example
+from litestar.params import Body
+from litestar.response import Redirect, Response
 
+from src.application import dto
 from src.application.base.mediator.command import BaseCommandMediator
 from src.application.cqrs.user.commands import (
+    AddOAuthAccountRequestCommand,
+    AddOAuthAccountToCurrentUserCommand,
+    DeactivateUsersOAuthAccountCommand,
     OAuthLoginUserCommand,
     RegisterOAuthUserCommand,
-    AddOAuthAccountToCurrentUserCommand,
-    AddOAuthAccountRequestCommand,
-    DeactivateUsersOAuthAccountCommand,
 )
 from src.application.dependency_injector.di import get_container
 from src.application.exceptions import (
-    OAuthAccountDoesNotExistException,
-    OAuthAccountAlreadyDeactivatedException,
-    OAuthConnectionTokenExpiredException,
     EmailAlreadyExistsException,
+    OAuthAccountAlreadyDeactivatedException,
+    OAuthAccountDoesNotExistException,
+    OAuthConnectionTokenExpiredException,
 )
 from src.application.exceptions.oauth import OAuthAccountAlreadyAssociatedException
 from src.application.services.security.oauth_manager import OAuthManager
-
-import src.application.dto as dto
 from src.presentation.api.exception_configuration import ErrorResponse
 from src.presentation.api.v1.auth.request.user import DisconnectProvider
 from src.presentation.api.v1.base_responses import (
     COMMON_RESPONSES,
-    ExampleGenerator,
     SERVER_ERROR_RESPONSES,
+    ExampleGenerator,
 )
 
 logger = structlog.getLogger(__name__)
@@ -72,9 +69,7 @@ class OAuthController(Controller):
     async def oauth_login(
         self, di_container: AsyncContainer, provider: str
     ) -> Redirect:
-        """
-        Redirect user to OAuth provider login page
-        """
+        """Redirect user to OAuth provider login page."""
         async with di_container() as c:
             oauth_manager = await c.get(OAuthManager)
             # Generate random state for CSRF protection
@@ -121,9 +116,7 @@ class OAuthController(Controller):
         provider: str,
         request: Request,
     ) -> Redirect:
-        """
-        Redirect user to OAuth provider login page
-        """
+        """Redirect user to OAuth provider login page."""
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
 
@@ -184,9 +177,7 @@ class OAuthController(Controller):
         provider: str,
         request: Request,
     ) -> Response:
-        """
-        Handle OAuth callback and create user session and register user if it needs to
-        """
+        """Handle OAuth callback and create user session and register user if it needs to."""
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
             response = Response(content="")
@@ -240,9 +231,7 @@ class OAuthController(Controller):
         request: Request,
         provider: str,
     ) -> Response:
-        """
-        Handle OAuth callback and create user session and register user if it needs to
-        """
+        """Handle OAuth callback and create user session and register user if it needs to."""
         async with di_container() as c:
             oauth_manager = await c.get(OAuthManager)
             command_handler = await c.get(BaseCommandMediator)
@@ -315,11 +304,8 @@ class OAuthController(Controller):
     async def get_providers(
         self,
         di_container: AsyncContainer,
-    ) -> Dict[str, Dict[str, Any]]:
-        """
-        Get list of supported OAuth providers
-        """
-
+    ) -> dict[str, dict[str, Any]]:
+        """Get list of supported OAuth providers."""
         async with di_container() as c:
             oauth_manager = await c.get(OAuthManager)
             providers = {}
@@ -373,9 +359,7 @@ class OAuthController(Controller):
         request: Request,
         data: DisconnectProvider = Body(description="OAuth provider data"),
     ) -> Response:
-        """
-        Disconnect user from OAuth provider
-        """
+        """Disconnect user from OAuth provider."""
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
 

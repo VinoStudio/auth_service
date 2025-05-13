@@ -1,13 +1,9 @@
 from .base import BaseQuery
-from .query_handler import (
-    BaseQueryHandler,
-    QR,
-    QT,
-)
+from .query_handler import BaseQueryHandler, QueryResult, QueryType
 
 __all__ = [
     "BaseQuery",
     "BaseQueryHandler",
-    "QT",
-    "QR",
+    "QueryResult",
+    "QueryType",
 ]

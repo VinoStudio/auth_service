@@ -20,7 +20,7 @@ class AccessRejectedException(AuthenticationException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self.value
 
 
@@ -29,8 +29,8 @@ class TokenRevokedException(AuthorizationException):
     value: str
 
     @property
-    def message(self):
-        return f"Given refresh token was revoked"
+    def message(self) -> str:
+        return "Given refresh token was revoked"
 
 
 @dataclass(frozen=True)
@@ -38,8 +38,8 @@ class TokenExpiredException(AuthorizationException):
     value: str
 
     @property
-    def message(self):
-        return f"Given refresh token expired. Please, login again"
+    def message(self) -> str:
+        return "Given refresh token expired. Please, login again"
 
 
 @dataclass(frozen=True)
@@ -47,8 +47,8 @@ class TokenValidationError(AuthorizationException):
     value: str
 
     @property
-    def message(self):
-        return f"Given token is invalid"
+    def message(self) -> str:
+        return "Given token is invalid"
 
 
 @dataclass(frozen=True)
@@ -56,5 +56,5 @@ class MappingProviderException(AuthorizationException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return f"Unknown OAuth provider: {self.value}"

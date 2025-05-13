@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import List, Self, Dict, Any
+from typing import Any, Self
 
-import src.domain as domain
+from src import domain
 from src.application.dto import Token
 
 
@@ -51,7 +50,7 @@ class JWTUserInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create_from_payload(self, payload: Dict[str, Any]) -> Self:
+    def create_from_payload(self, payload: dict[str, Any]) -> Self:
         """
         Create a SecurityUser instance from a dictionary payload.
 
@@ -93,7 +92,7 @@ class JWTUserInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_roles(self) -> List[str]:
+    def get_roles(self) -> list[str]:
         """
         Get the list of roles assigned to this user.
 
@@ -103,7 +102,7 @@ class JWTUserInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_permissions(self) -> List[str]:
+    def get_permissions(self) -> list[str]:
         """
         Get the list of permissions granted to this user.
 

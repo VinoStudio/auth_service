@@ -1,8 +1,6 @@
 from collections.abc import Callable
 from typing import Any
-from uuid import UUID
 
-import aiokafka
 import orjson
 import structlog
 
@@ -14,14 +12,6 @@ ProcessorType = Callable[
     ],
     str | bytes,
 ]
-
-#
-# def additionally_serialize(obj: object) -> Any:
-#     if isinstance(obj, UUID):
-#         return str(obj)
-#     if isinstance(obj, aio_pika.Message):
-#         return obj.info()
-#     raise TypeError(f"TypeError: Type is not JSON serializable: {type(obj)}")
 
 
 def serialize_to_json(data: Any) -> str:
@@ -35,10 +25,9 @@ def get_render_processor(
 ) -> ProcessorType:
     if render_json_logs:
         return structlog.processors.JSONRenderer(serializer=serializer)
-    else:
-        return structlog.dev.ConsoleRenderer(
-            colors=colors,
-            pad_event=0,
-            pad_level=False,
-            event_key="event",
-        )
+    return structlog.dev.ConsoleRenderer(
+        colors=colors,
+        pad_event=0,
+        pad_level=False,
+        event_key="event",
+    )

@@ -1,6 +1,8 @@
+from typing import Self
+
 from pydantic import BaseModel
-from typing import List
-import src.domain as domain
+
+from src import domain
 
 
 class CreatedRoleResponseSchema(BaseModel):
@@ -8,10 +10,10 @@ class CreatedRoleResponseSchema(BaseModel):
     role_name: str
     description: str
     security_level: int
-    permissions: List[str]
+    permissions: list[str]
 
     @classmethod
-    def from_entity(cls, role: domain.Role):
+    def from_entity(cls, role: domain.Role) -> Self:
         return cls(
             role_id=role.id,
             role_name=role.name.to_raw(),
@@ -28,10 +30,10 @@ class RoleDeletedResponseSchema(BaseModel):
 class RoleAssignedResponseSchema(BaseModel):
     user_id: str
     username: str
-    roles: List[str]
+    roles: list[str]
 
     @classmethod
-    def from_entity(cls, user: domain.User):
+    def from_entity(cls, user: domain.User) -> Self:
         return cls(
             user_id=user.id.to_raw(),
             username=user.username.to_raw(),
@@ -40,10 +42,10 @@ class RoleAssignedResponseSchema(BaseModel):
 
 
 class GetRolesResponseSchema(BaseModel):
-    roles: List[CreatedRoleResponseSchema]
+    roles: list[CreatedRoleResponseSchema]
 
     @classmethod
-    def from_entity(cls, roles: List[domain.Role]):
+    def from_entity(cls, roles: list[domain.Role]) -> Self:
         return cls(
             roles=[CreatedRoleResponseSchema.from_entity(role) for role in roles]
         )

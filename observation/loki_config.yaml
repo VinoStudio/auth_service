@@ -48,7 +48,3 @@ ruler:
 
 frontend:
   encoding: protobuf
-
-#querier:
-#  engine:
-#    enable_multi_variant_queries: true

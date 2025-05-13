@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+
 from src.domain.base.values.base import ValueObject
 from src.domain.user.exceptions import WrongEmailFormatException
 
@@ -13,3 +14,6 @@ class Email(ValueObject):
     def _validate(self) -> None:
         if not re.match(EMAIL_PATTERN_REGEX, self.value):
             raise WrongEmailFormatException(self.value)
+
+    def to_raw(self) -> str:
+        return self.value

@@ -1,28 +1,20 @@
 import pytest
-import pytest_asyncio
-
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine
-from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
 
+from src import domain
 from src.application.dto.user import UserCredentials
 from src.domain.permission.values import PermissionName
 from src.domain.role.values import RoleName
 from src.domain.user.entity.user import User
-from src.domain.user.values import UserId, Username, Email, Password
-from src.infrastructure.base.repository.base import SQLAlchemyRepository
+from src.domain.user.values import Email, Password, UserId, Username
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.repository.user_reader import BaseUserReader
 from src.infrastructure.base.repository.user_writer import BaseUserWriter
 from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.db.uow import SQLAlchemyUoW
 from src.infrastructure.exceptions import UserDoesNotExistException
-from src.infrastructure.repositories import UserReader, UserWriter, RoleRepository
+from src.infrastructure.repositories import RoleRepository, UserReader, UserWriter
 from src.infrastructure.repositories.pagination import Pagination
-import src.infrastructure.db.models as models
-import src.domain as domain
 
 
 async def test_roles_permissions_creation(di_container):
@@ -59,7 +51,6 @@ async def test_roles_permissions_creation(di_container):
 
 
 async def test_create_user(di_container, create_test_permissions_roles):
-
     async with di_container() as c:
         user_writer: UserWriter = await c.get(BaseUserWriter)
         role_repo: RoleRepository = await c.get(BaseRoleRepository)
@@ -162,10 +153,8 @@ async def test_update_user_and_roles(di_container, create_test_permissions_roles
         assert admin_role in list(updated_db_user.roles)
         assert updated_db_user.jwt_data
 
-        test_user: UserCredentials = (
-            await user_reader.get_user_credentials_by_email_or_username(
-                email_or_username="test@test.com"
-            )
+        test_user: UserCredentials = await user_reader.get_user_credentials_by_email(
+            email_or_username="test@test.com"
         )
 
         assert test_user.user_id == updated_db_user.id.to_raw()
@@ -358,7 +347,6 @@ async def test_transaction_rollback_on_error(di_container):
 
 async def test_get_all_users(di_container):
     async with di_container() as c:
-
         user_writer = await c.get(BaseUserWriter)
         role_repo = await c.get(BaseRoleRepository)
         uow = await c.get(UnitOfWork)

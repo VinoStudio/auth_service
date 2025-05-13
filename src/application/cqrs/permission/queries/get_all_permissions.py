@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import List
 
+from src import domain
 from src.application.base.queries import BaseQuery, BaseQueryHandler
-import src.domain as domain
 from src.infrastructure.base.repository.permission_repo import BasePermissionRepository
 from src.infrastructure.repositories.pagination import Pagination
 
@@ -14,11 +13,11 @@ class GetAllPermissionsQuery(BaseQuery):
 
 @dataclass(frozen=True)
 class GetAllPermissionsHandler(
-    BaseQueryHandler[GetAllPermissionsQuery, List[domain.Permission]]
+    BaseQueryHandler[GetAllPermissionsQuery, list[domain.Permission]]
 ):
     _permission_repo: BasePermissionRepository
 
-    async def handle(self, query: GetAllPermissionsQuery) -> List[domain.Permission]:
+    async def handle(self, query: GetAllPermissionsQuery) -> list[domain.Permission]:
         return await self._permission_repo.get_all_permissions(
             pagination=query.pagination
         )

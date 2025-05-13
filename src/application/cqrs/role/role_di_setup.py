@@ -1,21 +1,19 @@
-from dishka import Scope, provide, Provider
+from dishka import Provider, Scope, provide
 
 from src.application.cqrs.role.commands import (
-    CreateRoleCommandHandler,
     AssignRoleCommandHandler,
+    CreateRoleCommandHandler,
     DeleteRoleCommandHandler,
     RemoveRoleCommandHandler,
-    UpdateRoleSecurityLvlCommandHandler,
+    RemoveRolePermissionsCommandHandler,
     UpdateRoleDescriptionCommandHandler,
     UpdateRolePermissionsCommandHandler,
-    RemoveRolePermissionsCommandHandler,
+    UpdateRoleSecurityLvlCommandHandler,
 )
 from src.application.cqrs.role.queries import GetAllRolesHandler
-from src.settings.config import Config
 
 
 class RoleCommandProvider(Provider):
-
     create_role = provide(CreateRoleCommandHandler, scope=Scope.REQUEST)
 
     assign_role = provide(AssignRoleCommandHandler, scope=Scope.REQUEST)

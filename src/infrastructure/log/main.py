@@ -4,7 +4,8 @@ import structlog
 from sqlalchemy import log as sa_log
 from structlog.processors import CallsiteParameter, CallsiteParameterAdder
 
-from src.settings.config import get_config, Config
+from src.settings.config import Config, get_config
+
 from .processors import get_render_processor
 
 config: Config = get_config()
@@ -12,7 +13,7 @@ config: Config = get_config()
 
 def configure_logging() -> None:
     # Mute SQLAlchemy default logger handler
-    sa_log._add_default_handler = lambda _: None
+    sa_log._add_default_handler = lambda _: None  # noqa SLF001
 
     common_processors = (
         structlog.stdlib.add_log_level,

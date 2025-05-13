@@ -1,24 +1,14 @@
-import pytest
 import asyncio
+
+import pytest
+from sqlalchemy.ext.asyncio import AsyncEngine
 from uuid6 import uuid7
 
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine
-from sqlalchemy import text
-
-from src.domain.role.entity.role_catalog import SystemRoles
-from src.infrastructure.base.repository import BaseUserReader
-from src.infrastructure.base.repository.role_repo import BaseRoleRepository
-from src.infrastructure.base.repository.user_writer import BaseUserWriter
-from src.infrastructure.base.uow import UnitOfWork
-from src.infrastructure.db.uow import SQLAlchemyUoW
-from tests.fixtures import init_test_di_container
-from src.infrastructure.db.models import BaseModel
-from src.infrastructure.repositories import RoleRepository, UserReader
-
-from src.application.services.security.jwt_manager import JWTManager
+from src import domain
+from src.application import dto
 from src.application.base.security.jwt_manager import BaseJWTManager
 from src.application.services.security.security_user import SecurityUser
-
+from src.domain.role.entity.role_catalog import SystemRoles
 from src.domain.user.entity.user import User
 from src.domain.user.values import (
     Email,
@@ -26,12 +16,14 @@ from src.domain.user.values import (
     UserId,
     Username,
 )
-from tests.mock.response import MockResponse
+from src.infrastructure.base.repository import BaseUserReader
+from src.infrastructure.base.repository.role_repo import BaseRoleRepository
+from src.infrastructure.base.repository.user_writer import BaseUserWriter
+from src.infrastructure.base.uow import UnitOfWork
+from src.infrastructure.db.models import BaseModel
+from tests.fixtures import init_test_di_container
 from tests.mock.request import MockRequest
-
-import src.domain as domain
-import src.application.dto as dto
-
+from tests.mock.response import MockResponse
 
 # from fastapi.testclient import TestClient
 # from httpx import AsyncClient, ASGITransport
@@ -76,7 +68,6 @@ async def create_test_database():
 
 @pytest.fixture(scope="session", autouse=True)
 async def create_test_permissions_roles():
-
     container = init_test_di_container()
 
     async with container() as c:
@@ -135,14 +126,11 @@ async def mock_admin_request():
     test_request = MockRequest()
 
     async with container() as c:
-        jwt_manager: JWTManager = await c.get(BaseJWTManager)
-        role_repo = await c.get(BaseRoleRepository)
+        jwt_manager = await c.get(BaseJWTManager)
         user_reader = await c.get(BaseUserReader)
 
         user_credentials: dto.UserCredentials = (
-            await user_reader.get_user_credentials_by_email_or_username(
-                "test@admin.com"
-            )
+            await user_reader.get_user_credentials_by_email("test@admin.com")
         )
 
         security_user = SecurityUser.create_from_jwt_data(
@@ -154,6 +142,8 @@ async def mock_admin_request():
             response=test_request,  # type: ignore
         )
 
+        test_request.set_cookie(key="refresh-token", value=tokens.refresh_token)
+
     return test_request
 
 
@@ -163,9 +153,7 @@ async def get_security_admin():
     async with container() as c:
         user_reader = await c.get(BaseUserReader)
         user_credentials: dto.UserCredentials = (
-            await user_reader.get_user_credentials_by_email_or_username(
-                "test@admin.com"
-            )
+            await user_reader.get_user_credentials_by_email("test@admin.com")
         )
 
         security_user = SecurityUser.create_from_jwt_data(
@@ -181,9 +169,7 @@ async def get_security_user(create_test_user):
     async with container() as c:
         user_reader = await c.get(BaseUserReader)
         user_credentials: dto.UserCredentials = (
-            await user_reader.get_user_credentials_by_email_or_username(
-                "test_email@test.com"
-            )
+            await user_reader.get_user_credentials_by_email("test_email@test.com")
         )
 
         security_user = SecurityUser.create_from_jwt_data(
@@ -214,7 +200,7 @@ async def get_security_project_manager():
         await uow.commit()
 
         user_credentials: dto.UserCredentials = (
-            await user_reader.get_user_credentials_by_email_or_username(
+            await user_reader.get_user_credentials_by_email(
                 "test_project_manager_email@test.com"
             )
         )

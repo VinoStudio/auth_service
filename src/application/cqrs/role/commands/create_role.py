@@ -1,16 +1,14 @@
 from dataclasses import dataclass
-from typing import List
 
+from src import domain
+from src.application import dto
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
 from src.application.cqrs.helpers import authorization_required
 from src.application.services.rbac.rbac_manager import RBACManager
-from src.infrastructure.base.uow import UnitOfWork
 from src.application.services.security.security_user import SecurityUser
-
-import src.domain as domain
-import src.application.dto as dto
+from src.infrastructure.base.uow import UnitOfWork
 
 
 @dataclass(frozen=True)
@@ -18,7 +16,7 @@ class CreateRoleCommand(BaseCommand):
     name: str
     description: str
     security_level: int
-    permissions: List[str]
+    permissions: list[str]
     request: RequestProtocol
 
 
@@ -32,7 +30,6 @@ class CreateRoleCommandHandler(CommandHandler[CreateRoleCommand, domain.Role]):
     async def handle(
         self, command: CreateRoleCommand, security_user: SecurityUser
     ) -> domain.Role:
-
         role = dto.RoleCreation(
             name=command.name,
             description=command.description,

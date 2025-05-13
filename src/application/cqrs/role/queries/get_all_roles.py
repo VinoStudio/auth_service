@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import List
 
+from src import domain
 from src.application.base.queries import BaseQuery, BaseQueryHandler
-import src.domain as domain
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.repositories.pagination import Pagination
 
@@ -13,8 +12,8 @@ class GetAllRolesQuery(BaseQuery):
 
 
 @dataclass(frozen=True)
-class GetAllRolesHandler(BaseQueryHandler[GetAllRolesQuery, List[domain.Role]]):
+class GetAllRolesHandler(BaseQueryHandler[GetAllRolesQuery, list[domain.Role]]):
     _role_repo: BaseRoleRepository
 
-    async def handle(self, query: GetAllRolesQuery) -> List[domain.Role]:
+    async def handle(self, query: GetAllRolesQuery) -> list[domain.Role]:
         return await self._role_repo.get_all_roles(pagination=query.pagination)

@@ -1,5 +1,8 @@
+from collections.abc import Callable, Coroutine
 from functools import wraps
-from typing import Callable, TypeVar, Any, ParamSpec, Coroutine
+from typing import Any, ParamSpec, TypeVar
+
+from src.application.base.commands import CommandHandler
 from src.application.services.security.security_user import SecurityUser
 
 Param = ParamSpec("Param")
@@ -23,7 +26,9 @@ def authorization_required(
     """
 
     @wraps(func)
-    async def wrapper(self, command: Any, *args, **kwargs) -> ReturnType:
+    async def wrapper(
+        self: CommandHandler, command: Any, *args: Param.args, **kwargs: Param.kwargs
+    ) -> ReturnType:
         # Extract and validate token
         token = self._jwt_manager.get_access_token_from_request(command.request)
         token_data = await self._jwt_manager.validate_token(token)

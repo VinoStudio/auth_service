@@ -1,27 +1,21 @@
 import pytest
-from src.application.base.security import BaseJWTManager, JWTUserInterface
-from src.application.services.rbac.rbac_manager import RBACManager
-from src.application.services.security.jwt_manager import JWTManager
-from src.application.services.security.security_user import SecurityUser
+
+from src import domain
+from src.application import dto
 from src.application.exceptions.rbac import (
-    RBACException,
-    RoleInUseException,
-    PermissionInUseException,
     AccessDeniedException,
-    RoleAlreadyExistsException,
-    PermissionNotFoundException,
     PermissionAlreadyExistsException,
+    PermissionInUseException,
+    RBACException,
+    RoleAlreadyExistsException,
+    RoleInUseException,
 )
-
-from src.infrastructure.exceptions.repository import (
-    PermissionDoesNotExistException,
-    RoleDoesNotExistException,
-)
-
-import src.domain as domain
-import src.application.dto as dto
+from src.application.services.rbac.rbac_manager import RBACManager
 from src.infrastructure.base.repository import BaseUserReader, BaseUserWriter
 from src.infrastructure.base.uow import UnitOfWork
+from src.infrastructure.exceptions.repository import (
+    PermissionDoesNotExistException,
+)
 
 
 async def test_get_role_by_admin(di_container, get_security_admin):
@@ -135,6 +129,7 @@ async def test_create_new_super_admin_role(di_container, get_security_admin):
             await rbac_manager.create_role(
                 role_dto=new_role_dto, request_from=get_security_admin
             )
+            uow.commit()
 
 
 async def test_create_lower_role_with_high_tier_permissions(
@@ -154,6 +149,7 @@ async def test_create_lower_role_with_high_tier_permissions(
             await rbac_manager.create_role(
                 role_dto=new_role_dto, request_from=get_security_project_manager
             )
+            await uow.commit()
 
 
 async def test_create_role_with_permissions_that_requested_dont_have(
@@ -173,6 +169,7 @@ async def test_create_role_with_permissions_that_requested_dont_have(
             await rbac_manager.create_role(
                 role_dto=new_role_dto, request_from=get_security_project_manager
             )
+            await uow.commit()
 
 
 async def test_update_role_by_admin(di_container, get_security_admin):
@@ -227,9 +224,11 @@ async def test_update_role_with_high_tier_permissions(
 
         # cannot interact with roles having higher security level than yours
         with pytest.raises(AccessDeniedException):
-            await rbac_manager.get_permission(
+            permission = await rbac_manager.get_permission(
                 permission_name="role:update", request_from=get_security_project_manager
             )
+            role.add_permission(permission)
+            await uow.commit()
 
 
 async def test_delete_role_in_use_by_admin(di_container, get_security_admin):

@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
+
 from src.infrastructure.message_broker.events.internal.base import (
     IntegrationEvent,
     integration_event,
 )
-from datetime import datetime, UTC
 
 
 @dataclass(frozen=True)
@@ -14,5 +15,4 @@ class UserRegistered(IntegrationEvent):
     first_name: str
     last_name: str
     middle_name: str | None = field(default=None)
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     event_type: str = field(default="UserRegistered")

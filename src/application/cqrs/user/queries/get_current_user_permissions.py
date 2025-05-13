@@ -1,13 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, List
 
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.queries import BaseQuery, BaseQueryHandler
 from src.application.base.security import BaseJWTManager
 from src.application.cqrs.helpers import authorization_required
 from src.application.services.security.security_user import SecurityUser
-
-import src.application.dto as dto
 
 
 @dataclass(frozen=True)
@@ -17,12 +14,12 @@ class GetCurrentUserPermissions(BaseQuery):
 
 @dataclass(frozen=True)
 class GetCurrentUserPermissionsHandler(
-    BaseQueryHandler[GetCurrentUserPermissions, List[str]]
+    BaseQueryHandler[GetCurrentUserPermissions, list[str]]
 ):
     _jwt_manager: BaseJWTManager
 
     @authorization_required
     async def handle(
-        self, query: GetCurrentUserPermissions, security_user: SecurityUser
-    ) -> List[str]:
+        self, _query: GetCurrentUserPermissions, security_user: SecurityUser
+    ) -> list[str]:
         return security_user.get_permissions()

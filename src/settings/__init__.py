@@ -1,3 +1,3 @@
-from .config import Config, KafkaConfig, ConfigProvider, PostgresDB, TestPostgresDB
+from .config import Config, ConfigProvider, KafkaConfig, PostgresDB, TestPostgresDB
 
-__all__ = ("Config", "KafkaConfig", "ConfigProvider", "PostgresDB", "TestPostgresDB")
+__all__ = ("Config", "ConfigProvider", "KafkaConfig", "PostgresDB", "TestPostgresDB")

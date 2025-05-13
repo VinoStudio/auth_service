@@ -1,4 +1,5 @@
-from dishka import Scope, provide, Provider
+from dishka import Provider, Scope, provide
+
 from src.application.services.rbac.rbac_manager import RBACManager
 from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.base.repository.permission_repo import BasePermissionRepository

@@ -1,13 +1,14 @@
-from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 from dataclasses import dataclass
+
 import structlog
+
+from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 
 logger = structlog.getLogger(__name__)
 
 
 @dataclass
 class AsyncKafkaProducer(AsyncMessageProducer):
-
     async def publish(self, topic: str, value: bytes, key: bytes | None) -> None:
         """Publish a message to a topic."""
         await self.producer.send(topic=topic, value=value, key=key)
@@ -28,7 +29,4 @@ class AsyncKafkaProducer(AsyncMessageProducer):
         if not self.producer:
             return False
 
-        if getattr(self.producer, "_closed", True):
-            return False
-
-        return True
+        return not getattr(self.producer, "_closed", True)

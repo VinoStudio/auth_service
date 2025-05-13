@@ -1,34 +1,30 @@
-from typing import List, Annotated
-from dishka import AsyncContainer
+from typing import Annotated
 
-from litestar import Controller, Request, route, HttpMethod
-from litestar.di import Provide
-from litestar.params import Body, Parameter
-from litestar.openapi.datastructures import ResponseSpec
 import litestar.status_codes as status
+from dishka import AsyncContainer
+from litestar import Controller, HttpMethod, Request, route
+from litestar.di import Provide
+from litestar.openapi.datastructures import ResponseSpec
+from litestar.params import Parameter
 
-
+import src.presentation.api.v1.users.response as user_response
+from src import domain
 from src.application.base.mediator.query import BaseQueryMediator
 from src.application.cqrs.user.queries import (
-    GetUserByUsername,
-    GetUsers,
-    GetUserRoles,
     GetCurrentUser,
-    GetCurrentUserRoles,
+    GetCurrentUserConnectedAccounts,
     GetCurrentUserPermissions,
+    GetCurrentUserRoles,
     GetCurrentUserSession,
     GetCurrentUserSessions,
     GetUserById,
+    GetUserByUsername,
     GetUserPermissions,
-    GetCurrentUserConnectedAccounts,
+    GetUserRoles,
+    GetUsers,
 )
-
-from src.infrastructure.repositories.pagination import Pagination
 from src.application.dependency_injector.di import get_container
-
-import src.domain as domain
-import src.presentation.api.v1.users.response as user_response
-
+from src.infrastructure.repositories.pagination import Pagination
 from src.presentation.api.v1.base_responses import (
     COMMON_RESPONSES,
     COMMON_USER_RESPONSES,
@@ -62,7 +58,6 @@ class UserController(Controller):
         ],
         di_container: AsyncContainer,
     ) -> user_response.GetUserResponseSchema:
-
         async with di_container() as c:
             query_mediator = await c.get(BaseQueryMediator)
             user = await query_mediator.handle_query(GetUserById(user_id=user_id))
@@ -88,7 +83,6 @@ class UserController(Controller):
         username: str,
         di_container: AsyncContainer,
     ) -> user_response.GetUserResponseSchema:
-
         async with di_container() as c:
             query_mediator = await c.get(BaseQueryMediator)
             user = await query_mediator.handle_query(
@@ -251,10 +245,10 @@ class UserController(Controller):
     ) -> user_response.GetUserConnectedAccountsResponseSchema:
         async with di_container() as c:
             query_mediator = await c.get(BaseQueryMediator)
-            connected_accounts: List[domain.OAuthAccount] = (
-                await query_mediator.handle_query(
-                    GetCurrentUserConnectedAccounts(request=request)
-                )
+            connected_accounts: list[
+                domain.OAuthAccount
+            ] = await query_mediator.handle_query(
+                GetCurrentUserConnectedAccounts(request=request)
             )
 
         return user_response.GetUserConnectedAccountsResponseSchema.from_entity(
@@ -288,7 +282,6 @@ class UserController(Controller):
             Parameter(description="Set limit", title="Limit", required=False),
         ] = 100,
     ) -> user_response.GetUserRolesResponseSchema:
-
         async with di_container() as c:
             query_mediator = await c.get(BaseQueryMediator)
             roles = await query_mediator.handle_query(
@@ -327,7 +320,6 @@ class UserController(Controller):
             Parameter(description="Set limit", title="Limit", required=False),
         ] = 100,
     ) -> user_response.GetUserPermissionsResponseSchema:
-
         async with di_container() as c:
             query_mediator = await c.get(BaseQueryMediator)
             permissions = await query_mediator.handle_query(
@@ -366,8 +358,7 @@ class UserController(Controller):
             Parameter(ge=1, le=1000),
             Parameter(description="Set limit", title="Limit", required=False),
         ] = 100,
-    ) -> List[user_response.GetUserResponseSchema]:
-
+    ) -> list[user_response.GetUserResponseSchema]:
         async with di_container() as c:
             query_mediator = await c.get(BaseQueryMediator)
             users = await query_mediator.handle_query(

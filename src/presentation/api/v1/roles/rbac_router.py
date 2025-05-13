@@ -1,12 +1,16 @@
-from typing import Annotated, List
+from typing import Annotated
 
-from litestar import Controller, Request, Response, route, HttpMethod, status_codes
+import litestar.status_codes as status
+from dishka import AsyncContainer
+from litestar import Controller, HttpMethod, Request, Response, route, status_codes
+from litestar.di import Provide
 from litestar.openapi.datastructures import ResponseSpec
 from litestar.openapi.spec import Example
-from litestar.di import Provide
 from litestar.params import Body, Parameter
-from dishka import AsyncContainer
 
+import src.presentation.api.v1.roles.request as rbac_request
+import src.presentation.api.v1.roles.response as rbac_response
+from src import domain
 from src.application.base.mediator.command import BaseCommandMediator
 from src.application.base.mediator.query import BaseQueryMediator
 from src.application.cqrs.permission.commands import (
@@ -15,23 +19,23 @@ from src.application.cqrs.permission.commands import (
 )
 from src.application.cqrs.permission.queries import GetAllPermissionsQuery
 from src.application.cqrs.role.commands import (
+    AssignRoleCommand,
     CreateRoleCommand,
     DeleteRoleCommand,
-    AssignRoleCommand,
     RemoveRoleCommand,
-    UpdateRolePermissionsCommand,
-    UpdateRoleDescriptionCommand,
-    UpdateRoleSecurityLvlCommand,
     RemoveRolePermissionsCommand,
+    UpdateRoleDescriptionCommand,
+    UpdateRolePermissionsCommand,
+    UpdateRoleSecurityLvlCommand,
 )
 from src.application.cqrs.role.queries import GetAllRolesQuery
 from src.application.dependency_injector.di import get_container
 from src.application.exceptions import (
-    ValidationException,
-    RoleAlreadyExistsException,
-    RoleInUseException,
     PermissionAlreadyExistsException,
     PermissionInUseException,
+    RoleAlreadyExistsException,
+    RoleInUseException,
+    ValidationException,
 )
 from src.domain.permission.exceptions import WrongPermissionNameFormatException
 from src.domain.role.exceptions.role import WrongRoleNameFormatException
@@ -40,21 +44,13 @@ from src.infrastructure.exceptions import (
     RoleDoesNotExistException,
 )
 from src.infrastructure.repositories.pagination import Pagination
-
+from src.presentation.api.exception_configuration import ErrorResponse
 from src.presentation.api.v1.base_responses import (
-    ExampleGenerator,
     COMMON_RESPONSES,
     COMMON_ROLE_RESPONSES,
     SERVER_ERROR_RESPONSES,
+    ExampleGenerator,
 )
-from src.presentation.api.exception_configuration import ErrorResponse
-
-import litestar.status_codes as status
-
-import src.domain as domain
-import src.application.dto as dto
-import src.presentation.api.v1.roles.response as rbac_response
-import src.presentation.api.v1.roles.request as rbac_request
 
 
 class RoleController(Controller):
@@ -115,7 +111,6 @@ class RoleController(Controller):
         request: Request,
         data: rbac_request.RoleCreateRequestSchema = Body(),
     ) -> rbac_response.CreatedRoleResponseSchema:
-
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
             command = CreateRoleCommand(
@@ -162,7 +157,7 @@ class RoleController(Controller):
             query_handler = await c.get(BaseQueryMediator)
             query = GetAllRolesQuery(pagination=Pagination(offset=offset, limit=limit))
 
-            roles: List[domain.Role] = await query_handler.handle_query(query)
+            roles: list[domain.Role] = await query_handler.handle_query(query)
 
             return rbac_response.GetRolesResponseSchema.from_entity(roles)
 
@@ -202,7 +197,6 @@ class RoleController(Controller):
         role_name: str,
         request: Request,
     ) -> Response:
-
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
             command = DeleteRoleCommand(
@@ -216,28 +210,6 @@ class RoleController(Controller):
                 content={"message": "Role successfully deleted"},
                 status_code=status_codes.HTTP_200_OK,
             )
-
-    # @route(path="/{role_name:str}", http_method=[HttpMethod.PUT])
-    # async def update_role(
-    #     self,
-    #     di_container: AsyncContainer,
-    #     request: Request,
-    #     role_name: str,
-    #     data: RoleUpdateRequestSchema = Body(),
-    # ) -> role_response.RoleUpdatedResponseSchema:
-    #     """Complete replacement of a role (requires all fields)"""
-    #     async with di_container() as c:
-    #         command_handler = await c.get(BaseCommandMediator)
-    #         command = UpdateRoleCommand(
-    #             role_name=role_name,
-    #             description=data.description,
-    #             security_level=data.security_level,
-    #             permissions=data.permissions,
-    #             request=request,
-    #         )
-    #
-    #         role, *_ = await command_handler.handle_command(command)
-    #         return role_response.RoleUpdatedResponseSchema.from_entity(role)
 
     @route(
         path="/{role_name:str}",
@@ -373,7 +345,7 @@ class PermissionController(Controller):
         http_method=[HttpMethod.GET],
         summary="Get all permissions",
         security=[{}],
-        description="Get all permissions. " "Must be protected in API Gateway.",
+        description="Get all permissions. Must be protected in API Gateway.",
         responses={
             status.HTTP_200_OK: ResponseSpec(
                 description="Permissions successfully retrieved",
@@ -401,7 +373,7 @@ class PermissionController(Controller):
                 pagination=Pagination(offset=offset, limit=limit)
             )
 
-            permissions: List[domain.Permission] = await query_handler.handle_query(
+            permissions: list[domain.Permission] = await query_handler.handle_query(
                 query
             )
 
@@ -449,9 +421,7 @@ class PermissionController(Controller):
             description="Permission to create", title="Permission"
         ),
     ) -> rbac_response.CreatedPermissionResponseSchema:
-
         async with di_container() as c:
-
             command_handler = await c.get(BaseCommandMediator)
             command = CreatePermissionCommand(name=data.name, request=request)
             created_permission, *_ = await command_handler.handle_command(command)

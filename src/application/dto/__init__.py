@@ -1,16 +1,20 @@
-from src.application.dto.token import TokenPair, Token
-from src.application.dto.user import UserCredentials, OauthUserCredentials, OAuthUserIdentity
-from src.application.dto.session import DeviceInformation
-from src.application.dto.role import RoleCreation
 from src.application.dto.permission import PermissionCreation
+from src.application.dto.role import RoleCreation
+from src.application.dto.session import DeviceInformation
+from src.application.dto.token import Token, TokenPair
+from src.application.dto.user import (
+    OauthUserCredentials,
+    OAuthUserIdentity,
+    UserCredentials,
+)
 
 __all__ = (
-    "TokenPair",
-    "Token",
-    "UserCredentials",
     "DeviceInformation",
-    "RoleCreation",
-    "PermissionCreation",
+    "OAuthUserIdentity",
     "OauthUserCredentials",
-    "OAuthUserIdentity"
+    "PermissionCreation",
+    "RoleCreation",
+    "Token",
+    "TokenPair",
+    "UserCredentials",
 )

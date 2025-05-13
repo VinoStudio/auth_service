@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from src.domain.base.values.base import ValueObject
 
 
@@ -9,3 +10,6 @@ class UserId(ValueObject[str]):
     def _validate(self) -> None:
         if not self.value:
             raise ValueError
+
+    def to_raw(self) -> str:
+        return self.value
