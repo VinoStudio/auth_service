@@ -1,27 +1,28 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from typing import TypeVar, Generic, Callable, Optional
+from typing import Generic, TypeVar
 
 import structlog
 from litestar import MediaType, Request, Response
+from litestar.exceptions import ValidationException as LitestarValidationException
 from litestar.status_codes import (
-    HTTP_404_NOT_FOUND,
-    HTTP_409_CONFLICT,
-    HTTP_410_GONE,
-    HTTP_422_UNPROCESSABLE_ENTITY,
     HTTP_400_BAD_REQUEST,
-    HTTP_500_INTERNAL_SERVER_ERROR,
     HTTP_401_UNAUTHORIZED,
     HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
+    HTTP_500_INTERNAL_SERVER_ERROR,
 )
-from litestar.exceptions import ValidationException as LitestarValidationException
 
 from src.application.base.exception import (
     ApplicationException,
-    ResourceNotFoundException,
     ResourceExistsException,
+    ResourceNotFoundException,
 )
 from src.application.exceptions import (
+    AuthenticationException,
+    AuthorizationException,
     RBACException,
     UnauthorizedRBACOperationException,
 )
@@ -32,10 +33,6 @@ from src.infrastructure.exceptions import (
     DatabaseException,
     RepositoryException,
     UserIsDeletedException,
-)
-from src.application.exceptions import (
-    AuthorizationException,
-    AuthenticationException,
 )
 
 logger = structlog.getLogger(__name__)
@@ -48,7 +45,7 @@ class ErrorData(Generic[T]):
     status_code: int
     error_type: str
     detail: str
-    data: Optional[T] = None
+    data: T | None = None
 
 
 @dataclass
@@ -65,16 +62,14 @@ def handle_exception(
     request: Request, exc: Exception, status_code: int = HTTP_500_INTERNAL_SERVER_ERROR
 ) -> Response:
     """Common exception handling logic."""
-    # Log the exception
-
     exc_name = exc.__class__.__name__
     logger.error(
-        f"Exception occurred: {exc_name}",
+        "Exception occurred:",
+        exception=exc_name,
         path=request.url.path,
         method=request.method,
     )
 
-    # Create error response
     if isinstance(exc, LitestarValidationException):
         validation_errors = getattr(exc, "extra", None)
 
@@ -91,7 +86,6 @@ def handle_exception(
             detail=getattr(exc, "message", str(exc)),
         )
 
-    # Return formatted response
     return Response(
         content={"error": error_data.__dict__},
         status_code=status_code,
@@ -101,9 +95,9 @@ def handle_exception(
 
 def handle_unknown_exception(request: Request, exc: Exception) -> Response:
     """Handler for unexpected exceptions."""
-    # Log with higher severity
     logger.critical(
-        f"Unhandled exception: {exc.__class__.__name__}",
+        "Unhandled exception:",
+        exception=exc.__class__.__name__,
         path=request.url.path,
         method=request.method,
     )
@@ -121,7 +115,7 @@ def handle_unknown_exception(request: Request, exc: Exception) -> Response:
     )
 
 
-def setup_exception_handlers():
+def setup_exception_handlers() -> dict:
     """Configure exception handlers with their respective status codes."""
     handlers = {
         # Map exception types to handlers with appropriate status codes

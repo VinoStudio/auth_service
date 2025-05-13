@@ -1,21 +1,22 @@
-from src.infrastructure.base.exception import InfrastructureException
 from dataclasses import dataclass
+
+from src.infrastructure.base.exception import InfrastructureException
 
 
 @dataclass(frozen=True)
 class DatabaseException(InfrastructureException):
     @property
-    def message(self):
+    def message(self) -> str:
         return "Database Error occurred"
 
 
 @dataclass(frozen=True)
-class CommitErrorException(DatabaseException):
+class CommitException(DatabaseException):
     pass
 
 
 @dataclass(frozen=True)
-class RollbackErrorException(DatabaseException):
+class RollbackException(DatabaseException):
     pass
 
 

@@ -1,34 +1,35 @@
-import structlog
-from dataclasses import dataclass, field
-from typing import Dict, List, Iterable
 from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import dataclass, field
 
-from src.application.base.event_publisher.event_dispatcher import BaseEventDispatcher
-from src.application.base.events import (
-    ET,
+import structlog
+
+from src.application.base.event_sourcing.event_consumer import BaseEventConsumer
+from src.application.base.events.external_event_handler import (
+    ExternalEventHandler,
+    ExternalEventResult,
+    ExternalEventType,
 )
-from src.application.base.events.external_event_handler import ExternalEventHandler
-from src.domain.base.events.base import BaseEvent
 from src.infrastructure.message_broker.events.external.base import ExternalEvent
 
 logger = structlog.getLogger(__name__)
 
 
 @dataclass
-class EventDispatcher(BaseEventDispatcher):
+class EventConsumer(BaseEventConsumer):
     """Dispatches events to appropriate handlers based on event type"""
 
-    _handlers: Dict[ExternalEvent, List[ET]] = field(
+    _handlers: dict[ExternalEventType, list[ExternalEventHandler]] = field(
         default_factory=lambda: defaultdict(list)
     )
 
     def register_handler(
-        self, event_type: ExternalEvent, handlers: Iterable[ET]
+        self, event_type: ExternalEventType, handlers: Iterable[ExternalEventHandler]
     ) -> None:
         """Register a handler for a specific event type"""
         self._handlers[event_type].extend(handlers)
 
-    async def dispatch(self, event: ExternalEvent) -> None:
+    async def handle(self, event: ExternalEvent) -> ExternalEventResult:
         """Dispatch an event to all registered handlers"""
         event_handlers: Iterable[ExternalEventHandler] = self._handlers.get(
             event.__class__

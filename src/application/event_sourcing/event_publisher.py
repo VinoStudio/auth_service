@@ -1,10 +1,11 @@
-import structlog
-from dataclasses import dataclass, field
-from typing import Iterable, Any, List, Dict
-
 from collections import defaultdict
+from collections.abc import Iterable
+from dataclasses import dataclass, field
+from typing import Any
 
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
+import structlog
+
+from src.application.base.event_sourcing.event_publisher import BaseEventPublisher
 from src.application.base.events.event_handler import EventHandler
 from src.infrastructure.message_broker.events.internal.base import (
     IntegrationEvent,
@@ -16,7 +17,7 @@ logger = structlog.getLogger(__name__)
 
 @dataclass(eq=False)
 class EventPublisher(BaseEventPublisher):
-    event_map: Dict[IntegrationEventType, List[EventHandler]] = field(
+    event_map: dict[IntegrationEventType, list[EventHandler]] = field(
         default_factory=lambda: defaultdict(list), kw_only=True
     )
 

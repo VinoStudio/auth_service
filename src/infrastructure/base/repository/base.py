@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from abc import ABC
+from dataclasses import dataclass
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

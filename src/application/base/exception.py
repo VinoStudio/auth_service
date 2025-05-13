@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from src.domain.base.exceptions.application import AppException
 
 
@@ -7,7 +8,7 @@ class ApplicationException(AppException):
     value: str | None
 
     @property
-    def message(self):
+    def message(self) -> str:
         return "Something went wrong on a server"
 
 

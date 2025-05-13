@@ -1,19 +1,12 @@
-import hashlib
 import secrets
 from dataclasses import dataclass
+
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
 from src.application.cqrs.helpers import authorization_required
 from src.application.services.security.oauth_manager import OAuthManager
 from src.application.services.security.security_user import SecurityUser
-from src.application.services.tasks.notification_manager import (
-    NotificationManager,
-    NotificationType,
-)
-from src.infrastructure.base.repository import BaseUserReader
-
-import src.application.dto as dto
 from src.infrastructure.repositories import TokenBlackListRepository, TokenType
 
 
@@ -35,7 +28,6 @@ class AddOAuthAccountRequestCommandHandler(
     async def handle(
         self, command: AddOAuthAccountRequestCommand, security_user: SecurityUser
     ) -> str:
-
         state = secrets.token_urlsafe(32)
 
         await self._token_repo.add_reset_token(

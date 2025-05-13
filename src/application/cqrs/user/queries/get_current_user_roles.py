@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.queries import BaseQuery, BaseQueryHandler
@@ -14,11 +13,11 @@ class GetCurrentUserRoles(BaseQuery):
 
 
 @dataclass(frozen=True)
-class GetCurrentUserRolesHandler(BaseQueryHandler[GetCurrentUserRoles, List[str]]):
+class GetCurrentUserRolesHandler(BaseQueryHandler[GetCurrentUserRoles, list[str]]):
     _jwt_manager: BaseJWTManager
 
     @authorization_required
     async def handle(
-        self, query: GetCurrentUserRoles, security_user: SecurityUser
-    ) -> List[str]:
+        self, _query: GetCurrentUserRoles, security_user: SecurityUser
+    ) -> list[str]:
         return security_user.get_roles()

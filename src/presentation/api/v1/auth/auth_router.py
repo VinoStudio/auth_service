@@ -1,60 +1,51 @@
-from litestar import Controller, Request, Response, route, HttpMethod
-from litestar.di import Provide
-from litestar.params import Body
-from litestar.openapi.spec import Example
-from litestar.openapi.datastructures import ResponseSpec
-from litestar.exceptions import ValidationException as LitestarValidationException
+import litestar.status_codes as status
 from dishka import AsyncContainer
+from litestar import Controller, HttpMethod, Request, Response, route
+from litestar.di import Provide
+from litestar.exceptions import ValidationException as LitestarValidationException
+from litestar.openapi.datastructures import ResponseSpec
+from litestar.openapi.spec import Example
+from litestar.params import Body
 
-
+import src.presentation.api.v1.auth.request.user as user_requests
 from src.application.base.mediator.command import BaseCommandMediator
 from src.application.cqrs.user.commands import (
-    RegisterUserCommand,
-    LoginUserCommand,
-    RefreshUserTokensCommand,
-    LogoutUserCommand,
-    ResetPasswordRequestCommand,
-    ResetUserPasswordCommand,
     ChangeEmailRequestCommand,
     ChangeUserEmailCommand,
+    LoginUserCommand,
+    LogoutUserCommand,
+    RefreshUserTokensCommand,
+    RegisterUserCommand,
+    ResetPasswordRequestCommand,
+    ResetUserPasswordCommand,
 )
 from src.application.dependency_injector.di import get_container
 from src.application.exceptions import (
     EmailAlreadyExistsException,
-    UsernameAlreadyExistsException,
-    PasswordIsInvalidException,
-    AccessRejectedException,
-    TokenValidationError,
-    TokenExpiredException,
-    TokenRevokedException,
-    PasswordTokenExpiredException,
     EmailTokenExpiredException,
+    PasswordIsInvalidException,
+    PasswordTokenExpiredException,
+    UsernameAlreadyExistsException,
 )
-
+from src.domain.base.exceptions.domain import ValidationException
 from src.domain.user.exceptions import (
+    PasswordDoesNotMatchException,
     UsernameIsTooLongException,
     UsernameIsTooShortException,
-    WrongUsernameFormatException,
-    WrongPasswordFormatException,
     WrongEmailFormatException,
-    PasswordDoesNotMatchException,
+    WrongPasswordFormatException,
+    WrongUsernameFormatException,
 )
-
-from src.domain.base.exceptions.domain import ValidationException
 from src.infrastructure.exceptions import UserDoesNotExistException
-
+from src.presentation.api.exception_configuration import ErrorResponse
 from src.presentation.api.v1.auth.response.user import (
     CreateUserResponseSchema,
 )
 from src.presentation.api.v1.base_responses import (
-    ExampleGenerator,
     COMMON_RESPONSES,
     SERVER_ERROR_RESPONSES,
+    ExampleGenerator,
 )
-from src.presentation.api.exception_configuration import ErrorResponse
-
-import litestar.status_codes as status
-import src.presentation.api.v1.auth.request.user as user_requests
 
 
 class AuthController(Controller):
@@ -68,7 +59,8 @@ class AuthController(Controller):
         summary="Register a new user account in the API.",
         description="Creates a new user with the provided credentials and future profile information. "
         "Username and email must be unique. "
-        "Password has to be at least 8 characters long and contain at least one number, one lowercase letter and one uppercase letter. "
+        "Password has to be at least 8 characters long and contain: "
+        "at least one number, one lowercase letter and one uppercase letter. "
         "Fullname detail should be provided for user service communication.",
         responses={
             status.HTTP_201_CREATED: ResponseSpec(
@@ -114,7 +106,6 @@ class AuthController(Controller):
         request: Request,
         data: user_requests.UserCreate = Body(),
     ) -> CreateUserResponseSchema:
-
         async with di_container() as c:
             command_handler = await c.get(BaseCommandMediator)
             command = RegisterUserCommand(
@@ -187,7 +178,7 @@ class AuthController(Controller):
             response: Response = Response(content=None)
             command_handler = await c.get(BaseCommandMediator)
             command = LoginUserCommand(
-                email_or_username=data.email,
+                email=data.email,
                 password=data.password,
                 request=request,
                 response=response,

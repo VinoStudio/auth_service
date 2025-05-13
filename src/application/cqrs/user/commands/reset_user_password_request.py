@@ -1,14 +1,14 @@
 import hashlib
 import secrets
 from dataclasses import dataclass
+
+from src.application import dto
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.services.tasks.notification_manager import (
     NotificationManager,
     NotificationType,
 )
 from src.infrastructure.base.repository import BaseUserReader
-
-import src.application.dto as dto
 from src.infrastructure.repositories import TokenBlackListRepository, TokenType
 
 
@@ -27,9 +27,7 @@ class ResetPasswordRequestCommandHandler(
 
     async def handle(self, command: ResetPasswordRequestCommand) -> None:
         user_credentials: dto.UserCredentials = (
-            await self._user_reader.get_user_credentials_by_email_or_username(
-                command.email
-            )
+            await self._user_reader.get_user_credentials_by_email(command.email)
         )
 
         # Generate secure token

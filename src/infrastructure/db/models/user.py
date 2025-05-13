@@ -1,18 +1,18 @@
-from typing import List, TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from src.infrastructure.db.models import BaseModel, TimedBaseModel
-from sqlalchemy import String, TIMESTAMP, LargeBinary
-from sqlalchemy.sql import func
-from sqlalchemy.sql.elements import Null
+from sqlalchemy import TIMESTAMP, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.elements import Null
 from uuid6 import uuid7
-from datetime import datetime, UTC
+
+from src.infrastructure.db.models import TimedBaseModel
 
 if TYPE_CHECKING:
     from src.infrastructure.db.models import (
+        OAuthAccount,
         Role,
         UserSession,
-        OAuthAccount,
     )
 
 
@@ -30,19 +30,19 @@ class User(TimedBaseModel):
     )
     version: Mapped[int]
 
-    sessions: Mapped[List["UserSession"]] = relationship(
+    sessions: Mapped[list["UserSession"]] = relationship(
         "UserSession",
         back_populates="user",
         cascade="all, delete-orphan",
     )
 
-    oauth_accounts: Mapped[List["OAuthAccount"]] = relationship(
+    oauth_accounts: Mapped[list["OAuthAccount"]] = relationship(
         "OAuthAccount",
         back_populates="user",
         cascade="all, delete-orphan",
     )
 
-    roles: Mapped[List["Role"]] = relationship(
+    roles: Mapped[list["Role"]] = relationship(
         secondary="user_roles",
         back_populates="users",
         lazy="selectin",

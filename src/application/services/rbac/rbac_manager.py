@@ -1,26 +1,26 @@
 from dataclasses import dataclass
-from functools import wraps
-from typing import ClassVar, Tuple
+from typing import ClassVar
 
+import structlog
+
+from src import domain
+from src.application import dto
 from src.application.base.rbac.base import BaseRBACManager
 from src.application.base.security.jwt_user import JWTUserInterface
 from src.application.exceptions import (
-    RoleAlreadyExistsException,
     AccessDeniedException,
-    RoleInUseException,
     PermissionAlreadyExistsException,
     PermissionInUseException,
+    RoleAlreadyExistsException,
+    RoleInUseException,
     ValidationException,
 )
+from src.application.services.rbac.helpers import require_permission
 from src.domain.permission.values import PermissionName
 from src.domain.role.values.role_name import RoleName
 from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.base.repository.permission_repo import BasePermissionRepository
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
-import src.domain as domain
-import src.application.dto as dto
-import structlog
-
 from src.infrastructure.repositories.role.role_invalidation_repo import (
     RoleInvalidationRepository,
 )
@@ -39,8 +39,8 @@ class RBACManager(BaseRBACManager):
     user_writer: BaseUserWriter
     permission_repository: BasePermissionRepository
     role_invalidation: RoleInvalidationRepository
-    system_roles: ClassVar[Tuple[str]] = ("super_admin", "system_admin")
-    protected_permissions: ClassVar[Tuple[str]] = (
+    system_roles: ClassVar[tuple[str]] = ("super_admin", "system_admin")
+    protected_permissions: ClassVar[tuple[str]] = (
         "role:create",
         "role:update",
         "role:delete",
@@ -54,38 +54,12 @@ class RBACManager(BaseRBACManager):
         "user:impersonate",
     )
 
-    # -------------------- Authorization Decorators --------------------
-
-    @staticmethod
-    def require_permission(permission_name: str):
-        """Decorator to check if user has required permission"""
-
-        def decorator(func):
-            @wraps(func)
-            async def wrapper(self, *args, **kwargs):
-                # Get user from a consistent position or parameter name
-                request_from = kwargs.get("request_from")
-
-                if not request_from:
-                    raise ValueError("Authorization requires request_from parameter")
-
-                if not self._has_permission(request_from, permission_name):
-                    raise AccessDeniedException(
-                        f"You don't have permission to {permission_name}"
-                    )
-
-                return await func(self, *args, **kwargs)
-
-            return wrapper
-
-        return decorator
-
     # -------------------- Role Operations --------------------
     @require_permission("role:view")
     async def get_role(
         self,
         role_name: str,
-        request_from: JWTUserInterface,
+        request_from: JWTUserInterface,  # noqa ARG002
     ) -> domain.Role:
         """
         Retrieve a role by its name.
@@ -101,7 +75,6 @@ class RBACManager(BaseRBACManager):
             AccessDeniedException: If user do not have required permission for view roles
             RoleDoesNotExistException(InfrastructureException): If the role does not exist
         """
-
         return await self.role_repository.get_role_by_name(role_name)
 
     @require_permission("role:create")
@@ -132,7 +105,6 @@ class RBACManager(BaseRBACManager):
             or interact with protected permissions without system status
             PermissionDoesNotExistException(InfrastructureException): If any of the specified permissions don't exist
         """
-
         self._validate_role_name(request_from=request_from, role_name=role_dto.name)
 
         await self._check_if_role_exists(role_dto.name)
@@ -163,7 +135,9 @@ class RBACManager(BaseRBACManager):
         await self.role_repository.create_role(new_role)
 
         logger.info(
-            f"Role '{new_role.name.to_raw()}' created by {request_from.get_user_identifier()}"
+            "Role created",
+            role_name=new_role.name.to_raw(),
+            created_by=request_from.get_user_identifier(),
         )
 
         return new_role
@@ -188,7 +162,6 @@ class RBACManager(BaseRBACManager):
             AccessDeniedException: If the user lacks required permission or sufficient security level
             or interact with protected permissions without system status
         """
-
         # Security checks
         self._can_modify_system_roles(request_from, role)
         self._check_security_level(
@@ -200,7 +173,9 @@ class RBACManager(BaseRBACManager):
         await self.role_repository.update_role(role=role)
 
         logger.info(
-            f"Role '{role.name.to_raw()}' updated by {request_from.get_user_identifier()}"
+            "Role updated",
+            role_name=role.name.to_raw(),
+            updated_by=request_from.get_user_identifier(),
         )
 
         return role
@@ -223,7 +198,6 @@ class RBACManager(BaseRBACManager):
             or interact with protected permissions without system status
             RoleInUseException: If the role is still assigned to users
         """
-
         # Security checks
         self._can_modify_system_roles(request_from, role)
         self._check_security_level(
@@ -243,7 +217,9 @@ class RBACManager(BaseRBACManager):
         await self.role_repository.delete_role(role_id=role.id)
 
         logger.info(
-            f"Role '{role.name.to_raw()}' deleted by {request_from.get_user_identifier()}"
+            "Role deleted",
+            role_name=role.name.to_raw(),
+            created_by=request_from.get_user_identifier(),
         )
 
     # -------------------- Permission Operations --------------------
@@ -267,7 +243,6 @@ class RBACManager(BaseRBACManager):
             or lacks required permission to view permissions
             PermissionDoesNotExistException(InfrastructureException): If the permission does not exist
         """
-
         self._validate_permission_interaction(
             permission_name=permission_name,
             request_from=request_from,
@@ -313,7 +288,9 @@ class RBACManager(BaseRBACManager):
         await self.permission_repository.create_permission(new_permission)
 
         logger.info(
-            f"Permission '{new_permission.permission_name.to_raw()}' created by {request_from.get_user_identifier()}"
+            "Permission created",
+            permission_name=new_permission.permission_name.to_raw(),
+            created_by=request_from.get_user_identifier(),
         )
 
         return new_permission
@@ -349,7 +326,9 @@ class RBACManager(BaseRBACManager):
         )
 
         logger.info(
-            f"Permission '{permission.permission_name.to_raw()}' deleted by {request_from.get_user_identifier()}"
+            "Permission deleted",
+            permission_name=permission.permission_name.to_raw(),
+            deleted_by=request_from.get_user_identifier(),
         )
 
     # -------------------- User Role Operations --------------------
@@ -387,7 +366,10 @@ class RBACManager(BaseRBACManager):
         await self.user_writer.update_user(user=user)
 
         logger.info(
-            f"Role '{role.name.to_raw()}' assigned to user '{user.username.to_raw()}' by {request_from.get_user_identifier()}"
+            "Role assigned",
+            role_name=role.name.to_raw(),
+            assigned_to=user.username.to_raw(),
+            assigned_by=request_from.get_user_identifier(),
         )
 
         return user
@@ -426,7 +408,10 @@ class RBACManager(BaseRBACManager):
         await self.user_writer.update_user(user=user)
 
         logger.info(
-            f"Role '{role.name.to_raw()}' removed from user '{user.username.to_raw()}' by {request_from.get_user_identifier()}"
+            "Role removed from user",
+            role_name=role.name.to_raw(),
+            user=user.username.to_raw(),
+            removed_by=request_from.get_user_identifier(),
         )
 
         return user
@@ -492,7 +477,7 @@ class RBACManager(BaseRBACManager):
         # Check if requesting user has this permission
         if permission_name not in request_from.get_permissions():
             raise AccessDeniedException(
-                f"You cannot interact with permission that you don't have"
+                "You cannot interact with permission that you don't have"
             )
 
     def _has_permission(self, user: JWTUserInterface, permission_name: str) -> bool:
@@ -507,7 +492,6 @@ class RBACManager(BaseRBACManager):
     @staticmethod
     def _check_security_level(user_level: int, role_level: int) -> None:
         """Verify user has sufficient security level to manipulate role"""
-
         if role_level == 0:
             raise AccessDeniedException("Security level 0 role is read-only")
 

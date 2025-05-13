@@ -1,23 +1,18 @@
 import asyncio
 
 import orjson
+from sqlalchemy import UniqueConstraint, text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from uuid6 import uuid7
 
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine
-from sqlalchemy import text
-from sqlalchemy import UniqueConstraint
 from src.infrastructure.base.repository.base import SQLAlchemyRepository
 from src.infrastructure.base.repository.user_reader import BaseUserReader
 from src.infrastructure.base.repository.user_writer import BaseUserWriter
 from src.infrastructure.db.models import BaseModel
-from src.infrastructure.repositories.user.user_reader import UserReader
-from src.infrastructure.repositories.user.user_writer import UserWriter
 from src.infrastructure.db.uow import SQLAlchemyUoW
-import pytest
 
 
 async def test_same_session_for_uow_writer_reader(di_container):
-
     async with di_container() as c:
         uow = await c.get(SQLAlchemyUoW)
         user_reader = await c.get(BaseUserReader)
@@ -36,7 +31,6 @@ async def test_same_session_for_uow_writer_reader(di_container):
 
 async def test_database_connection_establishment(di_container):
     """Test database connection can be established properly"""
-
     engine = await di_container.get(AsyncEngine)
 
     # Verify engine is created and can connect to the database
@@ -96,7 +90,6 @@ async def test_database_user_column_definitions(di_container):
 
 async def test_database_constraints(di_container):
     """Test database constraints are properly defined"""
-    engine = await di_container.get(AsyncEngine)
     metadata = BaseModel.metadata
 
     # Get the User model table definition
@@ -120,9 +113,6 @@ async def test_database_constraints(di_container):
     )
 
 
-#
-#
-@pytest.mark.asyncio
 async def test_transaction_isolation(di_container):
     values = dict(
         id=str(uuid7()),

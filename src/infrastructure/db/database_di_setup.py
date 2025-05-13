@@ -1,15 +1,12 @@
-from sqlite3 import connect
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
 
-from dishka import provide, Scope, Provider
-
+from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-    async_sessionmaker,
     AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
 )
-from sqlalchemy.pool import NullPool
 
 from src.infrastructure.db.setup import build_engine, build_session_factory
 from src.settings.config import Config

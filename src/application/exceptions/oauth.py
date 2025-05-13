@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from src.application.base.exception import ResourceExistsException
 
 

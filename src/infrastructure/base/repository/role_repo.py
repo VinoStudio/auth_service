@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Iterable, Optional, Any, List
-import src.domain as domain
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+from src import domain
+
+if TYPE_CHECKING:
+    from src.infrastructure.repositories.pagination import Pagination
 
 
 @dataclass
@@ -35,10 +39,6 @@ class BaseRoleRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def set_role_permission(self, role_id: str, permission_id: str) -> Any:
-        raise NotImplementedError
-
-    @abstractmethod
     async def get_role_permissions(self, role_id: str) -> Any:
         raise NotImplementedError
 
@@ -56,15 +56,3 @@ class BaseRoleRepository(ABC):
     @abstractmethod
     async def count_users_with_role(self, role_name: str) -> int:
         raise NotImplementedError
-
-    @abstractmethod
-    async def get_roles_with_metrics(self) -> Any:
-        raise NotImplementedError
-
-    @staticmethod
-    def get_role():
-        pass
-
-    @staticmethod
-    def get_permission():
-        pass

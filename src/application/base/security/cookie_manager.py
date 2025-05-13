@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any
 
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
@@ -17,7 +16,11 @@ class BaseCookieManager(ABC):
 
     @abstractmethod
     def set_cookie(
-        self, response: ResponseProtocol, key: str, token: str, max_age: int = None
+        self,
+        response: ResponseProtocol,
+        key: str,
+        token: str,
+        max_age: int | None = None,
     ) -> None:
         """
         Set a cookie in the HTTP response.

@@ -1,17 +1,13 @@
 from dataclasses import dataclass
-from typing import List
 
+from src import domain
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
 from src.application.cqrs.helpers import authorization_required
 from src.application.services.rbac.rbac_manager import RBACManager
-from src.infrastructure.base.uow import UnitOfWork
 from src.application.services.security.security_user import SecurityUser
-from src.domain.permission.values.permission_name import PermissionName
-
-import src.domain as domain
-import src.application.dto as dto
+from src.infrastructure.base.uow import UnitOfWork
 
 
 @dataclass(frozen=True)

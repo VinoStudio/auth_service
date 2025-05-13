@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
+from src import domain
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.queries import BaseQuery, BaseQueryHandler
 from src.application.base.security import BaseJWTManager
 from src.application.cqrs.helpers import authorization_required
 from src.application.services.security.security_user import SecurityUser
-import src.domain as domain
 from src.infrastructure.base.repository import BaseUserReader
 
 
@@ -21,9 +21,8 @@ class GetCurrentUserHandler(BaseQueryHandler[GetCurrentUser, domain.User]):
 
     @authorization_required
     async def handle(
-        self, query: GetCurrentUser, security_user: SecurityUser
+        self, _query: GetCurrentUser, security_user: SecurityUser
     ) -> domain.User:
-
         current_user = await self._user_reader.get_user_by_id(
             user_id=security_user.get_user_identifier()
         )

@@ -1,6 +1,5 @@
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Awaitable, Union, Optional
+from dataclasses import dataclass
 
 
 @dataclass
@@ -9,4 +8,3 @@ class MessageBroker(ABC):
     @abstractmethod
     def is_connected(self) -> bool:
         """Check if connected to the message broker."""
-        pass

@@ -1,17 +1,16 @@
-from src.settings.config import get_config
-from celery import Celery
-from typing import Dict
-from email.message import Message
-
+import pickle
 import smtplib
 import ssl
-import pickle
+
 import structlog
+from celery import Celery, Task
+
+from src.settings.config import get_config
 
 logger = structlog.getLogger(__name__)
+
 config = get_config()
 celery = Celery(__name__, broker=config.redis.redis_url)
-
 
 celery.conf.update(
     result_expires=60 * 60 * 24,  # 24 hours
@@ -41,8 +40,8 @@ common_email_task = {
     autoretry_for=(smtplib.SMTPException, ConnectionError),
     **common_email_task,
 )
-def send_user_registration_notification(self, msg: bytes):
-    msg = pickle.loads(msg)
+def send_user_registration_notification(self: Task, msg: bytes) -> None:
+    msg = pickle.loads(msg)  # noqa S301
     """Send HTML notification for new user registration"""
     try:
         with smtplib.SMTP(config.smtp.host, config.smtp.port) as server:
@@ -64,9 +63,9 @@ def send_user_registration_notification(self, msg: bytes):
     ),
     **common_email_task,
 )
-def send_notification_email(self, msg: bytes):
+def send_notification_email(self: Task, msg: bytes) -> None:
     """Send HTML notification for password reset"""
-    msg = pickle.loads(msg)
+    msg = pickle.loads(msg)  # noqa S301
 
     try:
         with smtplib.SMTP(self.app.conf.smtp_host, self.app.conf.smtp_port) as server:

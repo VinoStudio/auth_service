@@ -1,16 +1,15 @@
+from dataclasses import dataclass
+
 from src.application.base.exception import (
     ApplicationException,
     ResourceExistsException,
     ResourceNotFoundException,
 )
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class RBACException(ApplicationException):
     """Base exception for RBAC operations"""
-
-    pass
 
 
 @dataclass(frozen=True)
@@ -20,7 +19,7 @@ class RoleAlreadyExistsException(ResourceExistsException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return f"You're trying to create existing role {self.value}"
 
 
@@ -31,7 +30,7 @@ class PermissionAlreadyExistsException(ResourceExistsException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return f"You're trying to create existing permission {self.value}"
 
 
@@ -42,7 +41,7 @@ class RoleNotFoundException(ResourceNotFoundException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return f"Role {self.value} not found"
 
 
@@ -53,7 +52,7 @@ class PermissionNotFoundException(ResourceNotFoundException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return f"Permission {self.value} not found"
 
 
@@ -64,8 +63,8 @@ class UnauthorizedRBACOperationException(RBACException):
     value: str
 
     @property
-    def message(self):
-        return f"You're not authorized to perform this operation"
+    def message(self) -> str:
+        return "You're not authorized to perform this operation"
 
 
 @dataclass(frozen=True)
@@ -75,7 +74,7 @@ class RoleInUseException(RBACException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self.value
 
 
@@ -86,7 +85,7 @@ class PermissionInUseException(RBACException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self.value
 
 
@@ -97,7 +96,7 @@ class AccessDeniedException(UnauthorizedRBACOperationException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self.value
 
 
@@ -108,8 +107,8 @@ class RoleCreationAccessDeniedException(UnauthorizedRBACOperationException):
     value: str
 
     @property
-    def message(self):
-        return f"You cannot create role higher than yours"
+    def message(self) -> str:
+        return "You cannot create role higher than yours"
 
 
 @dataclass(frozen=True)
@@ -119,5 +118,5 @@ class ValidationException(RBACException):
     value: str
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self.value

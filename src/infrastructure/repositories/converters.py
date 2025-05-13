@@ -1,16 +1,15 @@
-import src.domain as domain
-import src.infrastructure.db.models as models
-
+from src import domain
+from src.domain.permission.values.permission_name import PermissionName
+from src.domain.role.values.role_name import RoleName
+from src.domain.session.values.device_info import DeviceInfo
 from src.domain.user.values import (
     Email,
     Password,
     UserId,
     Username,
 )
-from src.domain.role.entity.role import Role
-from src.domain.role.values.role_name import RoleName
-from src.domain.permission.values.permission_name import PermissionName
-from src.domain.session.values.device_info import DeviceInfo
+from src.infrastructure.db import models
+
 
 class OrmToDomainConverter:
     """Converts SQLAlchemy ORM models to domain entities"""
@@ -56,7 +55,7 @@ class OrmToDomainConverter:
                     provider_email=account.provider_email,
                     created_at=account.created_at,
                     updated_at=account.updated_at,
-                    is_active=account.is_active
+                    is_active=account.is_active,
                 )
                 domain_user.add_oauth_account(oauth_account)
 
@@ -68,14 +67,14 @@ class OrmToDomainConverter:
                 description=role_model.description,
                 security_level=role_model.security_level,
                 created_at=role_model.created_at,
-                updated_at=role_model.updated_at
+                updated_at=role_model.updated_at,
             )
             for perm in role_model.permissions:
                 permission = domain.Permission(
                     id=perm.id,
                     permission_name=PermissionName(perm.name),
                     created_at=perm.created_at,
-                    updated_at=perm.updated_at
+                    updated_at=perm.updated_at,
                 )
                 role_domain.add_permission(permission)
 
@@ -84,21 +83,21 @@ class OrmToDomainConverter:
         return domain_user
 
     @staticmethod
-    def role_to_domain(role_model: models.Role) -> Role:
-        role_domain = Role(
+    def role_to_domain(role_model: models.Role) -> domain.Role:
+        role_domain = domain.Role(
             id=role_model.id,
             name=RoleName(role_model.name),
             description=role_model.description,
             security_level=role_model.security_level,
             created_at=role_model.created_at,
-            updated_at=role_model.updated_at
+            updated_at=role_model.updated_at,
         )
         for perm in role_model.permissions:
             permission = domain.Permission(
                 id=perm.id,
                 permission_name=PermissionName(perm.name),
                 created_at=perm.created_at,
-                updated_at=perm.updated_at
+                updated_at=perm.updated_at,
             )
             role_domain.add_permission(permission)
 
@@ -122,7 +121,7 @@ class OrmToDomainConverter:
             last_activity=session.last_activity,
             is_active=session.is_active,
             created_at=session.created_at,
-            updated_at=session.updated_at
+            updated_at=session.updated_at,
         )
 
     @staticmethod
@@ -135,7 +134,7 @@ class OrmToDomainConverter:
             provider_email=account.provider_email,
             created_at=account.created_at,
             updated_at=account.updated_at,
-            is_active=account.is_active
+            is_active=account.is_active,
         )
 
 
@@ -153,7 +152,6 @@ class DomainToOrmConverter:
             updated_at=user.updated_at,
             version=user.version,
         )
-
 
         return user_model
 
@@ -197,7 +195,7 @@ class DomainToOrmConverter:
                     provider_email=oauth_account.provider_email,
                     created_at=oauth_account.created_at,
                     updated_at=oauth_account.updated_at,
-                    is_active=oauth_account.is_active
+                    is_active=oauth_account.is_active,
                 )
                 for oauth_account in user.oauth_accounts
             ]
@@ -234,7 +232,7 @@ class DomainToOrmConverter:
             security_level=role.security_level,
             created_at=role.created_at,
             updated_at=role.updated_at,
-            permissions=[]
+            permissions=[],
         )
 
     @staticmethod
@@ -256,7 +254,7 @@ class DomainToOrmConverter:
         )
 
     @staticmethod
-    def domain_to_user_session(session: domain.Session):
+    def domain_to_user_session(session: domain.Session) -> models.UserSession:
         return models.UserSession(
             id=session.id,
             user_id=session.user_id,  # type: ignore
@@ -266,11 +264,11 @@ class DomainToOrmConverter:
             created_at=session.created_at,
             updated_at=session.updated_at,
             last_activity=session.last_activity,
-            is_active=session.is_active
+            is_active=session.is_active,
         )
 
     @staticmethod
-    def domain_to_oauth_account(oauth_account: domain.OAuthAccount):
+    def domain_to_oauth_account(oauth_account: domain.OAuthAccount) -> models.OAuthAccount:
         return models.OAuthAccount(
             id=oauth_account.id,
             user_id=oauth_account.user_id,
@@ -279,5 +277,5 @@ class DomainToOrmConverter:
             provider_email=oauth_account.provider_email,
             created_at=oauth_account.created_at,
             updated_at=oauth_account.updated_at,
-            is_active=oauth_account.is_active
+            is_active=oauth_account.is_active,
         )

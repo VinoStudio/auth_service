@@ -1,7 +1,11 @@
-from datetime import timedelta, datetime, UTC
+from datetime import UTC, datetime, timedelta
 
+import pytest
+
+from src import domain
+from src.application import dto
 from src.application.base.security import BaseJWTManager
-from src.application.dto.token import TokenPair, Token
+from src.application.dto.token import Token, TokenPair
 from src.application.exceptions import (
     TokenExpiredException,
     TokenRevokedException,
@@ -14,21 +18,13 @@ from src.application.services.security.token_type import TokenType
 from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.base.uow import UnitOfWork
 from src.infrastructure.repositories import TokenBlackListRepository, UserReader
-
 from tests.mock.response import MockResponse
-from tests.mock.request import MockRequest
-
-import pytest
-import src.domain as domain
-import src.application.dto as dto
 
 
 async def test_create_token_pair(
     di_container, create_test_permissions_roles, create_test_user
 ):
-
     async with di_container() as c:
-
         jwt_manager = await c.get(BaseJWTManager)
         user_reader = await c.get(BaseUserReader)
 
@@ -74,7 +70,6 @@ async def test_create_token_pair(
 
 
 async def test_validate_token_with_valid_token(di_container):
-
     async with di_container() as c:
         jwt_manager = await c.get(BaseJWTManager)
 
@@ -104,7 +99,6 @@ async def test_validate_token_with_valid_token(di_container):
 
 
 async def test_validate_token_with_expired_token(di_container):
-
     async with di_container() as c:
         jwt_manager = await c.get(BaseJWTManager)
 
@@ -128,7 +122,6 @@ async def test_validate_token_with_expired_token(di_container):
 
 
 async def test_validate_token_with_revoked_token(di_container):
-
     async with di_container() as c:
         jwt_manager: JWTManager = await c.get(BaseJWTManager)
         blacklist_repo = await c.get(TokenBlackListRepository)
@@ -178,10 +171,8 @@ async def test_validate_token_with_blacklisted_role(
         rbac_manager: RBACManager = await c.get(RBACManager)
         uow = await c.get(UnitOfWork)
 
-        user: dto.UserCredentials = (
-            await user_reader.get_user_credentials_by_email_or_username(
-                "test_email@test.com"
-            )
+        user: dto.UserCredentials = await user_reader.get_user_credentials_by_email(
+            "test_email@test.com"
         )
 
         security_user = SecurityUser.create_from_jwt_data(
@@ -194,6 +185,9 @@ async def test_validate_token_with_blacklisted_role(
         token_pair: dto.TokenPair = jwt_manager.create_token_pair(
             security_user, test_response
         )
+
+        assert token_pair.refresh_token
+        assert token_pair.access_token
 
         # Update role permissions
         user_role = await rbac_manager.get_role(

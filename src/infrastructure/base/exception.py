@@ -10,5 +10,5 @@ class InfrastructureException(AppException):
     value: str | None
 
     @property
-    def message(self):
+    def message(self) -> str:
         return "Infrastructure Error occurred"

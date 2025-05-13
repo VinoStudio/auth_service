@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 
 from redis.asyncio import Redis
@@ -54,7 +54,6 @@ class TokenType(Enum):
 
 class TokenBlackListRepository(RedisRepository):
     prefix = "revoked_user: "
-    password_reset_token_prefix = "reset_password_token: "
 
     async def add_to_blacklist(
         self, user_id: str, expiration_duration: float | None = None

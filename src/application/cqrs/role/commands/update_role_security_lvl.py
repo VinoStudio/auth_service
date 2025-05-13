@@ -1,18 +1,16 @@
 from dataclasses import dataclass
-from typing import List
 
+import structlog
+
+from src import domain
 from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.security import BaseJWTManager
 from src.application.cqrs.helpers import authorization_required
 from src.application.exceptions import AccessDeniedException
 from src.application.services.rbac.rbac_manager import RBACManager
-from src.infrastructure.base.uow import UnitOfWork
 from src.application.services.security.security_user import SecurityUser
-
-import structlog
-import src.domain as domain
-import src.application.dto as dto
+from src.infrastructure.base.uow import UnitOfWork
 
 logger = structlog.getLogger(__name__)
 
@@ -48,7 +46,7 @@ class UpdateRoleSecurityLvlCommandHandler(
                 "You have not enough permissions to modify security level"
             )
 
-        logger.info(f"Security level change initiated by ", user_id=security_user.id)
+        logger.info("Security level change initiated by ", user_id=security_user.id)
 
         role: domain.Role = await self._rbac_manager.get_role(
             role_name=command.role_name, request_from=security_user

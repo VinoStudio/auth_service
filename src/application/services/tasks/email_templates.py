@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 
-def generate_registration_html(user_data):
+def generate_registration_html(user_data: dict) -> str:
     """Generate HTML content for registration email"""
     return f"""
     <!DOCTYPE html>
@@ -12,14 +12,14 @@ def generate_registration_html(user_data):
             .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
             .header {{ background-color: #4a86e8; color: white; padding: 10px; text-align: center; }}
             .content {{ padding: 20px; border: 1px solid #ddd; }}
-            .button {{ background-color: #4a86e8; color: white; padding: 10px 15px; 
+            .button {{ background-color: #4a86e8; color: white; padding: 10px 15px;
                       text-decoration: none; border-radius: 4px; display: inline-block; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h1>Welcome, {user_data['username']}!</h1>
+                <h1>Welcome, {user_data["username"]}!</h1>
             </div>
             <div class="content">
                 <p>Thank you for joining our platform. Your account has been created successfully.</p>
@@ -32,7 +32,6 @@ def generate_registration_html(user_data):
 
 
 def generate_notification_html(
-    email: str,
     verification_url: str | None,
     username: str | None,
     title: str,
@@ -43,7 +42,6 @@ def generate_notification_html(
     security_note: str,
 ) -> str:
     """Generate stylish HTML for any notification email"""
-
     button_html = ""
     if verification_url and button_text:
         button_html = (
@@ -130,7 +128,7 @@ def generate_notification_html(
                 <p>Hello, {username}</p>
                 <p>{message}</p>
                 {button_html}
-                {f'<p>{expiration_note}</p>' if expiration_note else ''}
+                {f"<p>{expiration_note}</p>" if expiration_note else ""}
 
                 <div class="security-note">
                     <p><strong>Security Note:</strong> {security_note}</p>
@@ -159,7 +157,8 @@ def generate_reset_password_html(
         message=f"We received a request to reset the password for your account: <strong>{email}</strong>",
         button_text="Reset Password",
         expiration_note="This link will expire in 15 minutes.",
-        security_note="If you didn't request a password reset, please ignore this email or contact support if you have concerns about your account security.",
+        security_note="If you didn't request a password reset,"
+        " please ignore this email or contact support if you have concerns about your account security.",
     )
 
 
@@ -176,7 +175,8 @@ def generate_email_change_html(
         message=f"We received a request to change your email address to: <strong>{email}</strong>",
         button_text="Verify Email Address",
         expiration_note="This link will expire in 24 hours.",
-        security_note="If you didn't request this email change, please contact support immediately as someone may be attempting to access your account.",
+        security_note="If you didn't request this email change,"
+        " please contact support immediately as someone may be attempting to access your account.",
     )
 
 
@@ -186,7 +186,7 @@ def generate_password_changed_html(
     timestamp: str | None = None,
 ) -> str:
     if timestamp is None:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
     return generate_notification_html(
         email=email,
         verification_url=None,
@@ -196,7 +196,8 @@ def generate_password_changed_html(
         message=f"The password for your account (<strong>{email}</strong>) was changed on {timestamp}.",
         button_text=None,
         expiration_note="",
-        security_note="If you did not change your password, please contact our support team immediately or reset your password as your account may have been compromised.",
+        security_note="If you did not change your password, please contact our support team immediately"
+        " or reset your password as your account may have been compromised.",
     )
 
 
@@ -206,7 +207,7 @@ def generate_email_changed_html(
     timestamp: str | None = None,
 ) -> str:
     if timestamp is None:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
     return generate_notification_html(
         email=email,
         verification_url=None,
@@ -216,5 +217,6 @@ def generate_email_changed_html(
         message=f"The email address of your account (<strong>{email}</strong>) was changed on {timestamp}.",
         button_text=None,
         expiration_note="",
-        security_note="If you did not change your email address, please contact our support team immediately or reset your password as your account may have been compromised.",
+        security_note="If you did not change your email address, please contact our support team immediately"
+        " or reset your password as your account may have been compromised.",
     )

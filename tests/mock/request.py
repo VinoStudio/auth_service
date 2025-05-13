@@ -1,12 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 
 @dataclass
 class MockRequest:
-    cookies: Dict[str, str] = field(default_factory=dict)
+    cookies: dict[str, str] = field(default_factory=dict)
 
-    def get_cookie(self, key: str) -> Optional[str]:
+    def get_cookie(self, key: str) -> str | None:
         return self.cookies.get(key)
 
     def set_cookie(self, key: str, value: str, **kwargs) -> None:

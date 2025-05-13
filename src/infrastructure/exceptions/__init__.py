@@ -1,31 +1,37 @@
-from src.infrastructure.exceptions.repository import (
-    RepositoryException,
-    UserDoesNotExistException,
-    UserWithUsernameDoesNotExistException,
-    UserWithEmailDoesNotExistException,
-    UserIsDeletedException,
-    RoleDoesNotExistException,
-    PermissionDoesNotExistException,
-    OAuthUserDoesNotExistException,
-    OAuthAccountDoesNotExistException,
-)
 from src.infrastructure.exceptions.database import (
+    CommitException,
     DatabaseException,
-    RollbackErrorException,
-    CommitErrorException,
+    RollbackException,
+)
+from src.infrastructure.exceptions.message_broker import (
+    FailedToConsumeMessageException,
+    MessageBrokerException,
+)
+from src.infrastructure.exceptions.repository import (
+    OAuthAccountDoesNotExistException,
+    OAuthUserDoesNotExistException,
+    PermissionDoesNotExistException,
+    RepositoryException,
+    RoleDoesNotExistException,
+    UserDoesNotExistException,
+    UserIsDeletedException,
+    UserWithEmailDoesNotExistException,
+    UserWithUsernameDoesNotExistException,
 )
 
 __all__ = (
+    "CommitException",
     "DatabaseException",
-    "RepositoryException",
-    "RollbackErrorException",
-    "CommitErrorException",
-    "UserIsDeletedException",
-    "UserDoesNotExistException",
-    "UserWithUsernameDoesNotExistException",
-    "UserWithEmailDoesNotExistException",
-    "RoleDoesNotExistException",
-    "PermissionDoesNotExistException",
-    "OAuthUserDoesNotExistException",
+    "FailedToConsumeMessageException",
+    "MessageBrokerException",
     "OAuthAccountDoesNotExistException",
+    "OAuthUserDoesNotExistException",
+    "PermissionDoesNotExistException",
+    "RepositoryException",
+    "RoleDoesNotExistException",
+    "RollbackException",
+    "UserDoesNotExistException",
+    "UserIsDeletedException",
+    "UserWithEmailDoesNotExistException",
+    "UserWithUsernameDoesNotExistException",
 )

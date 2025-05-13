@@ -1,14 +1,12 @@
-from typing import Optional, List
 from dataclasses import dataclass
 
+from src import domain
+from src.application import dto
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.session.session_manager import BaseSessionManager
 from src.application.services.session.device_identifier import DeviceIdentifier
-from src.infrastructure.base.repository.session_repo import BaseSessionRepository
 from src.domain.session.values.device_info import DeviceInfo
-
-import src.domain as domain
-import src.application.dto as dto
+from src.infrastructure.base.repository.session_repo import BaseSessionRepository
 
 
 @dataclass
@@ -30,8 +28,7 @@ class SessionManager(BaseSessionManager):
 
     async def get_or_create_session(
         self, user_id: str, request: RequestProtocol
-    ) -> Optional[domain.Session]:
-
+    ) -> domain.Session | None:
         # Generate device identification
         device_data: dto.DeviceInformation = (
             self.device_identifier.generate_device_info(request)
@@ -57,7 +54,7 @@ class SessionManager(BaseSessionManager):
 
     async def get_user_session(
         self, user_id: str, device_id: str
-    ) -> Optional[domain.Session]:
+    ) -> domain.Session | None:
         # Try to find existing session for this user+device
         active_session = await self.session_repo.get_active_session_by_device_id(
             user_id=user_id,
@@ -85,5 +82,5 @@ class SessionManager(BaseSessionManager):
     async def update_session_activity(self, session_id: str) -> None:
         await self.session_repo.update_session_activity(session_id=session_id)
 
-    async def get_user_active_sessions(self, user_id: str) -> List[domain.Session]:
+    async def get_user_active_sessions(self, user_id: str) -> list[domain.Session]:
         return await self.session_repo.get_user_active_sessions(user_id=user_id)

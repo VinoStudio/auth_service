@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -13,7 +13,7 @@ class BaseJWTEncoder(ABC):
     """
 
     @abstractmethod
-    def encode(self, payload: Dict[str, Any]) -> str:
+    def encode(self, payload: dict[str, Any]) -> str:
         """
         Encode a payload dictionary into a JWT token string.
 
@@ -26,7 +26,7 @@ class BaseJWTEncoder(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def decode(self, token: str) -> Dict[str, Any]:
+    def decode(self, token: str) -> dict[str, Any]:
         """
         Decode a JWT token string back into its payload dictionary.
 

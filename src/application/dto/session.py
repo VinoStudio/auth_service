@@ -1,5 +1,6 @@
-from src.application.base.dto.dto import DTO
 from dataclasses import dataclass
+
+from src.application.base.dto.dto import DTO
 
 
 @dataclass(frozen=True)

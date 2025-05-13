@@ -1,14 +1,14 @@
-import structlog
-import requests
-import random
+import secrets
 import string
-import src.domain as domain
-import src.application.dto as dto
-
 from dataclasses import dataclass
-from datetime import datetime, UTC
-from typing import Dict, Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
+import requests
+import structlog
+
+from src import domain
+from src.application import dto
 from src.application.exceptions import (
     EmailAlreadyExistsException,
     MappingProviderException,
@@ -25,7 +25,7 @@ logger = structlog.getLogger(__name__)
 
 @dataclass
 class OAuthProviderFactory:
-    providers: Dict[str, OAuthProvider]
+    providers: dict[str, OAuthProvider]
 
     def get_provider(self, provider_name: str) -> OAuthProvider:
         if provider_name not in self.providers:
@@ -79,7 +79,6 @@ class OAuthManager:
         Raises:
             EmailAlreadyExistsException: If user not found, but OAuth email already taken
         """
-
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
         # Exchange code for tokens
@@ -124,7 +123,6 @@ class OAuthManager:
             OAuthAccountAlreadyAssociatedException: If the OAuth account is already associated with another user
             UserNotFoundException: If the specified user does not exist
         """
-
         # Get the provider
         provider = self.oauth_provider_factory.get_provider(provider_name)
 
@@ -155,13 +153,14 @@ class OAuthManager:
         if existing_oauth_account:
             if existing_oauth_account.is_active:
                 raise OAuthAccountAlreadyAssociatedException("provider_user_id")
-            else:
-                existing_oauth_account.reactivate()
-                await self.oauth_repo.update_oauth_account(existing_oauth_account)
-                logger.info(
-                    f"Successfully reactivated {provider_name} account for user {user_id}"
-                )
-                return None
+            existing_oauth_account.reactivate()
+            await self.oauth_repo.update_oauth_account(existing_oauth_account)
+            logger.info(
+                "Successfully reactivated OAuth account",
+                provider=provider_name,
+                user_id=user_id,
+            )
+            return
 
         associated_account = domain.OAuthAccount(
             user_id=user_id,
@@ -173,7 +172,9 @@ class OAuthManager:
         await self.oauth_repo.create_oauth_account(associated_account)
 
         logger.info(
-            f"Successfully associated {provider_name} account with user {user_id}"
+            "Successfully associated OAuth account",
+            provider=provider_name,
+            user_id=user_id,
         )
 
     async def disconnect_oauth_account(
@@ -209,7 +210,6 @@ class OAuthManager:
         Returns:
             The fully formed authorization URL for the specified provider
         """
-
         provider = self.oauth_provider_factory.get_provider(provider_name)
         if is_connect:
             url = provider.get_connect_url() + f"&state={state}"
@@ -228,7 +228,7 @@ class OAuthManager:
         code: str,
         state: str,
         is_connect: bool = False,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Exchange authorization code for OAuth tokens.
 
@@ -244,7 +244,6 @@ class OAuthManager:
         Returns:
             Dictionary containing tokens (typically access_token, refresh_token, etc.)
         """
-
         data = {
             "client_id": provider.client_id,
             "client_secret": provider.client_secret,
@@ -261,13 +260,18 @@ class OAuthManager:
 
         headers = {"Accept": "application/json"}
 
-        response = requests.post(provider.token_url, data=data, headers=headers)
+        response = requests.post(
+            provider.token_url,
+            data=data,
+            headers=headers,
+            timeout=15,
+        )
 
         return response.json()
 
     def _get_provider_user_info(
         self, provider: OAuthProvider, access_token: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get user information from OAuth provider.
 
@@ -283,14 +287,17 @@ class OAuthManager:
         """
         if provider.name == "github":
             return self._get_github_user_info(provider, access_token)
-        else:
-            headers = self._get_headers(provider, access_token)
-            response = requests.post(provider.userinfo_url, headers=headers)
-            return response.json()
+        headers = self._get_headers(provider, access_token)
+        response = requests.post(
+            provider.userinfo_url,
+            headers=headers,
+            timeout=15,
+        )
+        return response.json()
 
     def _get_github_user_info(
         self, provider: OAuthProvider, access_token: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Get GitHub user information including email.
 
@@ -304,11 +311,14 @@ class OAuthManager:
         Returns:
             Dictionary containing user profile information with email added
         """
-
         headers = self._get_headers(provider, access_token)
 
         # Get basic user profile
-        response = requests.get(provider.userinfo_url, headers=headers)
+        response = requests.get(
+            provider.userinfo_url,
+            headers=headers,
+            timeout=15,
+        )
         user_data = response.json()
 
         # Enrich with email information
@@ -319,7 +329,7 @@ class OAuthManager:
         return user_data
 
     @staticmethod
-    def _get_github_user_email(headers: Dict[str, str]) -> Optional[str]:
+    def _get_github_user_email(headers: dict[str, str]) -> str | None:
         """
         Extract primary or first email from GitHub emails endpoint.
 
@@ -332,9 +342,10 @@ class OAuthManager:
         Returns:
             Primary email address or first available one, None if unavailable
         """
-
         emails_response = requests.get(
-            "https://api.github.com/user/emails", headers=headers
+            "https://api.github.com/user/emails",
+            headers=headers,
+            timeout=15,
         )
 
         if not emails_response.ok:
@@ -362,7 +373,7 @@ class OAuthManager:
     async def _find_or_create_user(
         self,
         provider_name: str,
-        user_info: Dict[str, Any],
+        user_info: dict[str, Any],
     ) -> dto.OAuthUserIdentity | dto.OauthUserCredentials:
         """
         Find existing user or create new one based on OAuth data.
@@ -380,7 +391,6 @@ class OAuthManager:
         Raises:
             EmailAlreadyExistsException: If user not found by OAuth but email exists
         """
-
         # Parse and normalize user info
         parsed_info = self._parse_oauth_user_info(provider_name, user_info)
 
@@ -405,7 +415,7 @@ class OAuthManager:
 
     async def _create_user_from_oauth(
         self,
-        user_info: Dict[str, Any],
+        user_info: dict[str, Any],
         provider_name: str,
     ) -> dto.OauthUserCredentials:
         """
@@ -421,7 +431,6 @@ class OAuthManager:
         Returns:
             DTO containing user credentials and OAuth information for account creation
         """
-
         username = await self._generate_username(user_info)
 
         return dto.OauthUserCredentials(
@@ -436,7 +445,7 @@ class OAuthManager:
         )
 
     @staticmethod
-    def _extract_name_parts(user_info: Dict[str, Any]) -> Dict[str, str]:
+    def _extract_name_parts(user_info: dict[str, Any]) -> dict[str, str]:
         """
         Extract first, middle, and last name from a full name string.
 
@@ -451,7 +460,6 @@ class OAuthManager:
         Returns:
             Dictionary with 'first_name', 'middle_name', and 'last_name' keys
         """
-
         first_name = ""
         middle_name = ""
         last_name = ""
@@ -475,7 +483,7 @@ class OAuthManager:
     # -------------------- Helpers Methods --------------------
 
     @staticmethod
-    def _get_headers(provider: OAuthProvider, access_token: str) -> Dict[str, str]:
+    def _get_headers(provider: OAuthProvider, access_token: str) -> dict[str, str]:
         """
         Create appropriate HTTP headers for OAuth provider API requests.
 
@@ -492,7 +500,6 @@ class OAuthManager:
         Raises:
             MappingProviderException: If the provider is not supported
         """
-
         match provider.name:
             case "yandex":
                 headers = {"Authorization": f"OAuth {access_token}"}
@@ -509,8 +516,8 @@ class OAuthManager:
         return headers
 
     def _parse_oauth_user_info(
-        self, provider_name: str, user_info: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, provider_name: str, user_info: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Parse and normalize OAuth user information from different providers.
 
@@ -528,7 +535,6 @@ class OAuthManager:
         Raises:
             ValueError: If required fields cannot be extracted from the provider data
         """
-
         # Initialize with default empty structure
         parsed_profile = {
             "provider_user_id": None,
@@ -556,7 +562,7 @@ class OAuthManager:
         return parsed_profile
 
     def _parse_google_user_info(
-        self, user_info: Dict[str, Any], result: Dict[str, Any]
+        self, user_info: dict[str, Any], result: dict[str, Any]
     ) -> None:
         """Extract user information from Google OAuth response."""
         result["provider_user_id"] = user_info.get("sub")
@@ -570,10 +576,9 @@ class OAuthManager:
             self._fill_missing_name_parts(result)
 
     def _parse_yandex_user_info(
-        self, user_info: Dict[str, Any], result: Dict[str, Any]
+        self, user_info: dict[str, Any], result: dict[str, Any]
     ) -> None:
         """Extract user information from Yandex OAuth response."""
-
         result["provider_user_id"] = user_info.get("id")
         result["email"] = user_info.get("default_email")
 
@@ -594,7 +599,7 @@ class OAuthManager:
         )
 
     def _parse_github_user_info(
-        self, user_info: Dict[str, Any], result: Dict[str, Any]
+        self, user_info: dict[str, Any], result: dict[str, Any]
     ) -> None:
         """Extract user information from GitHub OAuth response."""
         result["provider_user_id"] = str(user_info.get("id"))
@@ -607,10 +612,12 @@ class OAuthManager:
             self._fill_missing_name_parts(result)
 
     def _parse_generic_user_info(
-        self, provider_name: str, user_info: Dict[str, Any], result: Dict[str, Any]
+        self, provider_name: str, user_info: dict[str, Any], result: dict[str, Any]
     ) -> None:
         """Generic parser for unknown providers using common field patterns."""
-        logger.warning(f"Unknown provider: {provider_name}, attempting generic parsing")
+        logger.warning(
+            "Unknown provider. Attempting generic parsing...", provider=provider_name
+        )
 
         # Try common field names for essential information
         result["provider_user_id"] = str(
@@ -629,7 +636,7 @@ class OAuthManager:
         if result["name"] and (not result["first_name"] or not result["last_name"]):
             self._fill_missing_name_parts(result)
 
-    def _fill_missing_name_parts(self, profile: Dict[str, Any]) -> None:
+    def _fill_missing_name_parts(self, profile: dict[str, Any]) -> None:
         """Extract name parts from full name when parts are missing."""
         name_parts = self._extract_name_parts({"name": profile["name"]})
 
@@ -643,7 +650,7 @@ class OAuthManager:
             profile["last_name"] = name_parts["last_name"]
 
     @staticmethod
-    def _validate_parsed_profile(provider_name: str, profile: Dict[str, Any]) -> None:
+    def _validate_parsed_profile(provider_name: str, profile: dict[str, Any]) -> None:
         """
         Ensure all required fields are present in the parsed profile.
 
@@ -657,7 +664,6 @@ class OAuthManager:
         Raises:
             ValueError: If required fields are missing or invalid
         """
-
         """Ensure all required fields are present in the parsed profile."""
         if not profile["provider_user_id"]:
             raise ValueError(
@@ -665,12 +671,12 @@ class OAuthManager:
             )
 
         # Lowercase email if it exists
-        if "email" in profile and profile["email"]:
+        if profile.get("email"):
             profile["email"] = profile["email"].lower()
         else:
             raise ValueError(f"Could not extract email from {provider_name} data")
 
-    async def _generate_username(self, user_info: Dict[str, Any]) -> str:
+    async def _generate_username(self, user_info: dict[str, Any]) -> str:
         """
         Generate a unique username based on OAuth user information.
 
@@ -686,7 +692,6 @@ class OAuthManager:
         Returns:
             A unique username string that doesn't exist in the system
         """
-
         username = "user"
 
         if user_info.get("email"):
@@ -702,7 +707,7 @@ class OAuthManager:
         adjectives = ["happy", "clever", "bright", "swift", "calm", "kind"]
         nouns = ["dolphin", "falcon", "panda", "tiger", "wolf", "eagle"]
 
-        username = f"{username}_{random.choice(adjectives)}_{random.choice(nouns)}"
+        username = f"{username}_{secrets.choice(adjectives)}_{secrets.choice(nouns)}"
 
         if not await self._check_if_username_exists(username):
             return username
@@ -711,7 +716,7 @@ class OAuthManager:
         return f"user_{datetime.now(UTC).timestamp()}"
 
     @staticmethod
-    def _generate_secure_password(length=12):
+    def _generate_secure_password(length: int | None = 12) -> str:
         """
         Generate a cryptographically secure random password.
 
@@ -727,26 +732,30 @@ class OAuthManager:
         Returns:
             A secure random password string
         """
-
         # Make sure length is at least 8
         length = max(length, 8)
 
-        # Create base password with minimum requirements
-        password = [
-            random.choice(string.ascii_uppercase),
-            random.choice(string.ascii_lowercase),
-            random.choice(string.digits),
+        # Create characters that must be included
+        required_chars = [
+            secrets.choice(string.ascii_uppercase),
+            secrets.choice(string.ascii_lowercase),
+            secrets.choice(string.digits),
         ]
 
         # Add remaining characters
-        remaining_length = length - len(password)
         chars = string.ascii_letters + string.digits
-        password.extend(random.choice(chars) for _ in range(remaining_length))
+        remaining_length = length - len(required_chars)
+        additional_chars = [secrets.choice(chars) for _ in range(remaining_length)]
 
-        # Shuffle the password
-        random.shuffle(password)
+        # Combine all characters
+        all_chars = required_chars + additional_chars
 
-        return "".join(password)
+        # Secure shuffle (using Fisher-Yates algorithm with secrets)
+        for i in range(len(all_chars) - 1, 0, -1):
+            j = secrets.randbelow(i + 1)
+            all_chars[i], all_chars[j] = all_chars[j], all_chars[i]
+
+        return "".join(all_chars)
 
     # -------------------- Validators --------------------
 

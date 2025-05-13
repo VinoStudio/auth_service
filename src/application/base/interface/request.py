@@ -1,6 +1,6 @@
-from typing import Protocol, Dict
+from typing import Protocol
 
 
 class RequestProtocol(Protocol):
     @property
-    def cookies(self) -> Dict[str, str]: ...
+    def cookies(self) -> dict[str, str]: ...

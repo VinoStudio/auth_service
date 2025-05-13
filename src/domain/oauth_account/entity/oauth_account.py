@@ -1,13 +1,11 @@
-from datetime import datetime, UTC
 from dataclasses import dataclass, field
-from uuid6 import uuid7
+from datetime import UTC, datetime
 
 from src.domain.base.entity.base import BaseEntity
 
 
 @dataclass
 class OAuthAccount(BaseEntity):
-    id: str = field(default_factory=lambda: str(uuid7()), kw_only=True)
     user_id: str
     provider: str
     provider_user_id: str
@@ -36,7 +34,7 @@ class OAuthAccount(BaseEntity):
         """Check if the OAuth account link is valid"""
         return self.is_active
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, OAuthAccount):
             return False
         return (
@@ -44,5 +42,5 @@ class OAuthAccount(BaseEntity):
             and self.provider_user_id == other.provider_user_id
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.provider, self.provider_user_id))

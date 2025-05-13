@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional, List
-from src.application.base.interface.request import RequestProtocol
 
-import src.domain as domain
+from src import domain
+from src.application.base.interface.request import RequestProtocol
 
 
 class BaseSessionManager(ABC):
@@ -17,7 +16,7 @@ class BaseSessionManager(ABC):
     @abstractmethod
     async def get_or_create_session(
         self, user_id: str, request: RequestProtocol
-    ) -> Optional[domain.Session]:
+    ) -> domain.Session | None:
         """
         Get an existing session for the user and device or create a new one.
 
@@ -34,13 +33,12 @@ class BaseSessionManager(ABC):
         Note:
             If an existing session is found, its activity timestamp is updated
         """
-
         raise NotImplementedError
 
     @abstractmethod
     async def get_user_session(
         self, user_id: str, device_id: str
-    ) -> Optional[domain.Session]:
+    ) -> domain.Session | None:
         """
         Get an active session for a specific user and device.
 
@@ -108,7 +106,7 @@ class BaseSessionManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_user_active_sessions(self, user_id: str) -> List[domain.Session]:
+    async def get_user_active_sessions(self, user_id: str) -> list[domain.Session]:
         """
         Get all active sessions for a specific user.
 

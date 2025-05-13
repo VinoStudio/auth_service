@@ -1,19 +1,20 @@
 from datetime import datetime
-from typing import List
+from typing import Self
 
 from pydantic import BaseModel
-import src.domain as domain
+
+from src import domain
 
 
 class GetUserResponseSchema(BaseModel):
     user_id: str
     username: str
-    roles: List[str]
+    roles: list[str]
     created_at: datetime
     is_deleted: bool
 
     @classmethod
-    def from_entity(cls, user: domain.User):
+    def from_entity(cls, user: domain.User) -> Self:
         return cls(
             user_id=user.id.to_raw(),
             username=user.username.to_raw(),
@@ -31,7 +32,7 @@ class GetUserSessionResponseSchema(BaseModel):
     is_active: bool
 
     @classmethod
-    def from_entity(cls, session: domain.Session):
+    def from_entity(cls, session: domain.Session) -> Self:
         return cls(
             user_id=session.user_id,
             user_agent=session.user_agent,
@@ -42,10 +43,10 @@ class GetUserSessionResponseSchema(BaseModel):
 
 
 class GetUserSessionsResponseSchema(BaseModel):
-    sessions: List[GetUserSessionResponseSchema]
+    sessions: list[GetUserSessionResponseSchema]
 
     @classmethod
-    def from_entity(cls, sessions: List[domain.Session]):
+    def from_entity(cls, sessions: list[domain.Session]) -> Self:
         return cls(
             sessions=[
                 GetUserSessionResponseSchema.from_entity(session)
@@ -60,7 +61,7 @@ class GetUserConnectedAccountResponseSchema(BaseModel):
     provider_email: str
 
     @classmethod
-    def from_entity(cls, account: domain.OAuthAccount):
+    def from_entity(cls, account: domain.OAuthAccount) -> Self:
         return cls(
             provider=account.provider,
             provider_user_id=account.provider_user_id,
@@ -69,10 +70,10 @@ class GetUserConnectedAccountResponseSchema(BaseModel):
 
 
 class GetUserConnectedAccountsResponseSchema(BaseModel):
-    accounts: List[GetUserConnectedAccountResponseSchema]
+    accounts: list[GetUserConnectedAccountResponseSchema]
 
     @classmethod
-    def from_entity(cls, accounts: List[domain.OAuthAccount]):
+    def from_entity(cls, accounts: list[domain.OAuthAccount]) -> Self:
         return cls(
             accounts=[
                 GetUserConnectedAccountResponseSchema.from_entity(account)
@@ -82,8 +83,8 @@ class GetUserConnectedAccountsResponseSchema(BaseModel):
 
 
 class GetUserRolesResponseSchema(BaseModel):
-    roles: List[str]
+    roles: list[str]
 
 
 class GetUserPermissionsResponseSchema(BaseModel):
-    permissions: List[str]
+    permissions: list[str]

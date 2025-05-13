@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 from abc import ABC
+from dataclasses import dataclass
 from typing import Any, Generic, TypeVar
-from src.domain.base.events.base import BaseEvent
 
+from src.domain.base.events.base import BaseEvent
 
 ET = TypeVar("ET", bound=type(BaseEvent))
 ER = TypeVar("ER", bound=Any)

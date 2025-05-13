@@ -1,17 +1,18 @@
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from src.domain.base.entity.aggregate import AggregateRoot
-from src.domain.session.entity.session import Session
-from src.domain.oauth_account.entity.oauth_account import OAuthAccount
-from src.domain.user.values import Password, Email, UserId, Username
-from typing import Set, Self
-from src.domain.user.exceptions import (
-    UserIsDeletedException,
-    PasswordDoesNotMatchException,
-)
-from src.domain.role.entity.role import Role
-from src.domain.permission.entity.permission import Permission
+from datetime import UTC, datetime
+from typing import Any, Self
+
 import orjson
+
+from src.domain.base.entity.aggregate import AggregateRoot
+from src.domain.oauth_account.entity.oauth_account import OAuthAccount
+from src.domain.role.entity.role import Role
+from src.domain.session.entity.session import Session
+from src.domain.user.exceptions import (
+    PasswordDoesNotMatchException,
+    UserIsDeletedException,
+)
+from src.domain.user.values import Email, Password, UserId, Username
 
 
 @dataclass
@@ -22,9 +23,9 @@ class User(AggregateRoot):
     password: Password
     jwt_data: bytes | None = field(default=None)
     deleted_at: datetime | None = field(default=None)
-    _roles: Set[Role] = field(default_factory=set)
-    _sessions: Set[Session] = field(default_factory=set)
-    _oauth_accounts: Set[OAuthAccount] = field(default_factory=set)
+    _roles: set[Role] = field(default_factory=set)
+    _sessions: set[Session] = field(default_factory=set)
+    _oauth_accounts: set[OAuthAccount] = field(default_factory=set)
     version: int = field(default=0, kw_only=True)
 
     @classmethod
@@ -36,7 +37,6 @@ class User(AggregateRoot):
         password: Password,
         role: Role,
     ) -> Self:
-
         user = User(
             id=user_id,
             username=username,
@@ -56,8 +56,7 @@ class User(AggregateRoot):
         for role in self._roles:
             roles.add(role.name.to_raw())
 
-            if role.security_level < security_lvl:
-                security_lvl = role.security_level
+            security_lvl = min(security_lvl, role.security_level)
 
             for permission in role.permission:
                 permissions.add(permission.permission_name.to_raw())
@@ -147,18 +146,18 @@ class User(AggregateRoot):
             self.deleted_at = None
             self._version_upgrade()
 
-    def _is_not_deleted(self):
+    def _is_not_deleted(self) -> None:
         if self.deleted_at:
             raise UserIsDeletedException(user_id=self.id.to_raw())
 
-    def _pass_is_match(self, password: str):
+    def _pass_is_match(self, password: str) -> None:
         if not self.password.verify(password=password):
             raise PasswordDoesNotMatchException("")
 
     def _version_upgrade(self) -> None:
         self.version += 1
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         return {
             "id": self.id.to_raw(),
             "username": self.username.to_raw(),
@@ -172,13 +171,13 @@ class User(AggregateRoot):
         }
 
     @property
-    def roles(self):
+    def roles(self) -> frozenset[Role]:
         return frozenset(self._roles)
 
     @property
-    def sessions(self):
+    def sessions(self) -> frozenset[Session]:
         return frozenset(self._sessions)
 
     @property
-    def oauth_accounts(self):
+    def oauth_accounts(self) -> frozenset[OAuthAccount]:
         return frozenset(self._oauth_accounts)

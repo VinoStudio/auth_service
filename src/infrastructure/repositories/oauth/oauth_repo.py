@@ -1,30 +1,22 @@
-from typing import List
-from sqlalchemy import select, text
 from dataclasses import dataclass
 
-from src.infrastructure.base.repository import SQLAlchemyRepository
-from src.infrastructure.base.repository.session_repo import BaseSessionRepository
-from src.infrastructure.exceptions import (
-    OAuthAccountDoesNotExistException,
-)
-from src.infrastructure.repositories.converters import (
-    OrmToDomainConverter,
-    DomainToOrmConverter,
-)
+from sqlalchemy import select, text
 
-import src.domain as domain
-import src.infrastructure.db.models as models
+from src import domain
+from src.infrastructure.base.repository import SQLAlchemyRepository
+from src.infrastructure.db import models
+from src.infrastructure.repositories.converters import (
+    DomainToOrmConverter,
+    OrmToDomainConverter,
+)
 from src.infrastructure.repositories.helpers import repository_exception_handler
 
 
-# BaseOAuthAccountRepository
 @dataclass
 class OAuthAccountRepository(SQLAlchemyRepository):
-
     @repository_exception_handler
     async def create_oauth_account(self, oauth_account: domain.OAuthAccount) -> None:
-        """Create a new OAuth account link"""
-
+        """Create a new OAuth account link."""
         oauth_account_model: models.OAuthAccount = (
             DomainToOrmConverter.domain_to_oauth_account(oauth_account)
         )
@@ -34,8 +26,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
 
     @repository_exception_handler
     async def update_oauth_account(self, oauth_account: domain.OAuthAccount) -> None:
-        """Update an existing OAuth account link"""
-
+        """Update an existing OAuth account link."""
         oauth_account_model: models.OAuthAccount = (
             DomainToOrmConverter.domain_to_oauth_account(oauth_account)
         )
@@ -58,20 +49,19 @@ class OAuthAccountRepository(SQLAlchemyRepository):
 
         await self._session.execute(
             stmt,
-            dict(
-                provider=provider,
-                provider_user_id=provider_user_id,
-                user_id=user_id,
-                is_active=False,
-            ),
+            {
+                "provider": provider,
+                "provider_user_id": provider_user_id,
+                "user_id": user_id,
+                "is_active": False,
+            },
         )
 
     @repository_exception_handler
     async def deactivate_oauth_account(
         self, provider: str, provider_user_id: str
     ) -> None:
-        """Deactivate a user session"""
-
+        """Deactivate a user session."""
         stmt = text(
             """
             UPDATE oauthaccount
@@ -83,7 +73,11 @@ class OAuthAccountRepository(SQLAlchemyRepository):
 
         await self._session.execute(
             stmt,
-            dict(provider=provider, provider_user_id=provider_user_id, is_active=False),
+            {
+                "provider": provider,
+                "provider_user_id": provider_user_id,
+                "is_active": False,
+            },
         )
 
     @repository_exception_handler
@@ -102,12 +96,12 @@ class OAuthAccountRepository(SQLAlchemyRepository):
 
         await self._session.execute(
             stmt,
-            dict(
-                provider=provider,
-                provider_user_id=provider_user_id,
-                user_id=user_id,
-                is_active=True,
-            ),
+            {
+                "provider": provider,
+                "provider_user_id": provider_user_id,
+                "user_id": user_id,
+                "is_active": True,
+            },
         )
 
     @repository_exception_handler
@@ -130,7 +124,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
     async def check_if_oauth_account_exists(
         self, provider: str, provider_user_id: str
     ) -> bool:
-        """Check if an OAuth account link exists"""
+        """Check if an OAuth account link exists."""
         query = """
             SELECT EXISTS (
                 SELECT 1
@@ -147,7 +141,7 @@ class OAuthAccountRepository(SQLAlchemyRepository):
     async def check_if_user_oauth_account_exists(
         self, provider: str, provider_user_id: str, user_id: str
     ) -> bool:
-        """Check if an OAuth account link exists"""
+        """Check if an OAuth account link exists."""
         query = """
             SELECT EXISTS (
                 SELECT 1

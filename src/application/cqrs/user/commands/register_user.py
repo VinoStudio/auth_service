@@ -1,15 +1,17 @@
-import structlog
 from dataclasses import dataclass, field
-from typing import Optional
+
+import structlog
 from uuid6 import uuid7
 
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
+from src import domain
+from src.application.base.commands import BaseCommand, CommandHandler
+from src.application.base.event_sourcing.event_publisher import BaseEventPublisher
 from src.application.base.interface.request import RequestProtocol
 from src.application.exceptions import (
-    UsernameAlreadyExistsException,
     EmailAlreadyExistsException,
+    UsernameAlreadyExistsException,
 )
-from src.application.base.commands import BaseCommand, CommandHandler
+from src.domain.user.values import Email, Password, UserId, Username
 from src.infrastructure.base.repository import BaseUserWriter
 from src.infrastructure.base.repository.role_repo import BaseRoleRepository
 from src.infrastructure.base.uow import UnitOfWork
@@ -17,16 +19,12 @@ from src.infrastructure.message_broker.events.internal.user_registered import (
     UserRegistered,
 )
 
-
-from src.domain.user.values import Email, Username, Password, UserId
-import src.domain as domain
-
 logger = structlog.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class RegisterUserCommand(BaseCommand):
-    request: Optional[RequestProtocol]
+    request: RequestProtocol | None
     username: str
     email: str
     password: str
@@ -43,7 +41,6 @@ class RegisterUserCommandHandler(CommandHandler[RegisterUserCommand, domain.User
     _uow: UnitOfWork
 
     async def handle(self, command: RegisterUserCommand) -> domain.User:
-
         if await self._user_writer.check_if_field_exists(
             field="username", value=command.username
         ):
@@ -78,8 +75,8 @@ class RegisterUserCommandHandler(CommandHandler[RegisterUserCommand, domain.User
             created_at=user.created_at,
         )
 
-        # await self._event_publisher.handle_event(event)
+        await self._event_publisher.handle_event(event)
 
-        # logger.info("Event created", event_type=event.event_type)
+        logger.info("Event created", event_type=event.event_type)
 
         return user

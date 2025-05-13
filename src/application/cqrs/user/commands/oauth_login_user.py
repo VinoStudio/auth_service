@@ -1,21 +1,18 @@
 from dataclasses import dataclass
-from typing import Optional
 
-from src.application.base.session.session_manager import BaseSessionManager
+import structlog
+
+from src import domain
+from src.application import dto
+from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security import BaseJWTManager
+from src.application.base.session.session_manager import BaseSessionManager
 from src.application.dto.token import TokenPair
-from src.application.base.commands import BaseCommand, CommandHandler
-
 from src.application.services.security.security_user import SecurityUser
 from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.base.uow import UnitOfWork
-
-
-import src.domain as domain
-import src.application.dto as dto
-import structlog
 
 logger = structlog.getLogger(__name__)
 
@@ -24,8 +21,8 @@ logger = structlog.getLogger(__name__)
 class OAuthLoginUserCommand(BaseCommand):
     user_id: str
     jwt_data: bytes
-    request: Optional[RequestProtocol]
-    response: Optional[ResponseProtocol]
+    request: RequestProtocol | None
+    response: ResponseProtocol | None
 
 
 @dataclass(frozen=True)

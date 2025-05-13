@@ -1,8 +1,7 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Protocol, Optional, Iterable
-from abc import abstractmethod, ABC
+
 import src.domain.user.entity.user as domain
-import src.infrastructure.db.models.user as models
 
 
 @dataclass
@@ -13,12 +12,6 @@ class BaseUserWriter(ABC):
 
     @abstractmethod
     async def update_user(self, user: domain.User) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def set_user_roles(
-        self, user_id: str, role: Optional[Iterable[domain.Role] | domain.Role] = None
-    ) -> None:
         raise NotImplementedError
 
     @abstractmethod

@@ -1,9 +1,8 @@
-from typing import List, TYPE_CHECKING
-
-from src.infrastructure.db.models import TimedBaseModel, UserMixin
-from sqlalchemy import String, TIMESTAMP, UniqueConstraint, Boolean
+from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from uuid6 import uuid7
+
+from src.infrastructure.db.models import TimedBaseModel, UserMixin
 
 
 class OAuthAccount(TimedBaseModel, UserMixin):

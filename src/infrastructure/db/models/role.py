@@ -1,16 +1,16 @@
-from src.infrastructure.db.models import UserMixin, BaseModel, TimedBaseModel
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, PrimaryKeyConstraint, func, text
 from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey, PrimaryKeyConstraint, String, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
 
+from src.infrastructure.db.models import BaseModel, TimedBaseModel
 
 if TYPE_CHECKING:
-    from src.infrastructure.db.models import RolePermissions, User, Permission
+    from src.infrastructure.db.models import Permission, User
 
 
 class UserRoles(BaseModel):
-
     __tablename__ = "user_roles"
     __table_args__ = (PrimaryKeyConstraint("user_id", "role_id"),)
 

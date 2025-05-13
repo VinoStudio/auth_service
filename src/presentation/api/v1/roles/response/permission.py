@@ -1,20 +1,21 @@
-from typing import List
-from pydantic import BaseModel, Field
+from typing import Self
 
-import src.domain as domain
+from pydantic import BaseModel
+
+from src import domain
 
 
 class CreatedPermissionResponseSchema(BaseModel):
     permission_name: str
 
     @classmethod
-    def from_entity(cls, permission: domain.Permission):
+    def from_entity(cls, permission: domain.Permission) -> Self:
         return cls(permission_name=permission.permission_name.to_raw())
 
 
 class GetPermissionsResponseSchema(BaseModel):
-    permissions: List[str]
+    permissions: list[str]
 
     @classmethod
-    def from_entity(cls, permissions: List[domain.Permission]):
+    def from_entity(cls, permissions: list[domain.Permission]) -> Self:
         return cls(permissions=[p.permission_name.to_raw() for p in permissions])

@@ -1,20 +1,17 @@
-import structlog
 from dataclasses import dataclass
 
+import structlog
 
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
-from src.application.exceptions import EmailTokenExpiredException
+from src import domain
 from src.application.base.commands import BaseCommand, CommandHandler
+from src.application.exceptions import EmailTokenExpiredException
 from src.application.services.tasks.notification_manager import (
     NotificationManager,
     NotificationType,
 )
-from src.infrastructure.base.repository import BaseUserWriter, BaseUserReader
+from src.domain.user.values import Email
+from src.infrastructure.base.repository import BaseUserReader, BaseUserWriter
 from src.infrastructure.base.uow import UnitOfWork
-
-
-from src.domain.user.values import Email, Username, Password, UserId
-import src.domain as domain
 from src.infrastructure.repositories import TokenBlackListRepository, TokenType
 
 logger = structlog.getLogger(__name__)

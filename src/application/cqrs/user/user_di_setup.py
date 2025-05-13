@@ -1,43 +1,39 @@
-from dishka import Scope, provide, Provider
+from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from src.application.cqrs.user.commands import (
-    LoginUserCommandHandler,
-    OAuthLoginUserCommandHandler,
     AddOAuthAccountRequestCommandHandler,
     AddOAuthAccountToCurrentUserCommandHandler,
-    DeactivateUsersOAuthAccountCommandHandler,
-    LogoutUserCommandHandler,
-    RefreshUserTokensCommandHandler,
-    ResetPasswordRequestCommandHandler,
-    RegisterUserCommandHandler,
-    RegisterOAuthUserCommandHandler,
-    ResetUserPasswordCommandHandler,
     ChangeEmailRequestCommandHandler,
     ChangeUserEmailCommandHandler,
+    DeactivateUsersOAuthAccountCommandHandler,
+    LoginUserCommandHandler,
+    LogoutUserCommandHandler,
+    OAuthLoginUserCommandHandler,
+    RefreshUserTokensCommandHandler,
+    RegisterOAuthUserCommandHandler,
+    RegisterUserCommandHandler,
+    ResetPasswordRequestCommandHandler,
+    ResetUserPasswordCommandHandler,
 )
-
+from src.application.cqrs.user.events import UserCreatedEventHandler
 from src.application.cqrs.user.queries import (
-    GetUserByUsernameHandler,
+    GetCurrentUserConnectedAccountsHandler,
     GetCurrentUserHandler,
-    GetUsersHandler,
     GetCurrentUserPermissionsHandler,
     GetCurrentUserRolesHandler,
-    GetUserByIdHandler,
-    GetUserRolesHandler,
-    GetUserPermissionsHandler,
     GetCurrentUserSessionHandler,
     GetCurrentUserSessionsHandler,
-    GetCurrentUserConnectedAccountsHandler,
+    GetUserByIdHandler,
+    GetUserByUsernameHandler,
+    GetUserPermissionsHandler,
+    GetUserRolesHandler,
+    GetUsersHandler,
 )
-
-from src.application.cqrs.user.events import UserCreatedEventHandler
 from src.application.services.tasks.notification_manager import NotificationManager
-from src.settings.config import Config
 
 
 class UserCommandProvider(Provider):
-
     register_user = provide(RegisterUserCommandHandler, scope=Scope.REQUEST)
     register_oauth_user = provide(RegisterOAuthUserCommandHandler, scope=Scope.REQUEST)
     add_oauth_account_request = provide(
@@ -63,8 +59,8 @@ class UserCommandProvider(Provider):
     change_user_email = provide(ChangeUserEmailCommandHandler, scope=Scope.REQUEST)
 
 
-# class UserEventProvider(Provider):
-#     user_registered = provide(RegisterUserCommandHandler, scope=Scope.APP)
+class UserEventProvider(Provider):
+    user_registered = provide(RegisterUserCommandHandler, scope=Scope.APP)
 
 
 class ExternalEventProvider(Provider):

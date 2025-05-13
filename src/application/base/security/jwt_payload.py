@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from dataclasses import dataclass
+from typing import Any
 
 from src.application.base.security import JWTUserInterface
 
@@ -15,7 +15,7 @@ class BaseJWTPayloadGenerator(ABC):
     """
 
     @abstractmethod
-    def generate(self, user: JWTUserInterface, token_type: Any) -> Dict[str, Any]:
+    def generate(self, user: JWTUserInterface, token_type: Any) -> dict[str, Any]:
         """
         Generate a JWT payload for the specified user and token type.
 

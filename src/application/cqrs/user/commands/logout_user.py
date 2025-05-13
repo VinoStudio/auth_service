@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 
+from src.application import dto
+from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security import BaseJWTManager
-from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.session.session_manager import BaseSessionManager
 from src.application.services.security.security_user import SecurityUser
 from src.infrastructure.base.uow import UnitOfWork
-
-import src.application.dto as dto
 
 
 @dataclass(frozen=True)
@@ -24,7 +23,6 @@ class LogoutUserCommandHandler(CommandHandler[LogoutUserCommand, None]):
     _uow: UnitOfWork
 
     async def handle(self, command: LogoutUserCommand) -> None:
-
         refresh_token: str = self._jwt_manager.get_token_from_cookie(command.request)
 
         # if user banned, roles changed, it will lead to exception while logout. To be done.

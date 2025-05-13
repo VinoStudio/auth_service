@@ -1,12 +1,12 @@
 from dataclasses import dataclass
+
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from src import domain
 from src.application.base.events.external_event_handler import ExternalEventHandler
 from src.application.services.tasks.notification_manager import NotificationManager
 from src.infrastructure.message_broker.events.external.user_created import UserCreated
 from src.infrastructure.repositories import UserReader
-
-import src.domain as domain
 
 
 @dataclass(frozen=True)

@@ -1,19 +1,17 @@
-from typing import Dict, Any
-from dataclasses import dataclass
-from user_agents import parse
 import hashlib
+from dataclasses import dataclass
+
 import orjson
+from user_agents import parse
 
+from src.application import dto
 from src.application.base.interface.request import RequestProtocol
-
-import src.application.dto as dto
 
 
 @dataclass
 class DeviceIdentifier:
     @staticmethod
     def generate_device_info(request: RequestProtocol) -> dto.DeviceInformation:
-
         user_agent_string = request.headers.get("user-agent", "")
         headers = dict(request.headers)
 
@@ -50,14 +48,9 @@ class DeviceIdentifier:
 
     @staticmethod
     def verify_device(
-        request: RequestProtocol, jwt_device_data: Dict[str, str]
+        request: RequestProtocol, jwt_device_data: dict[str, str]
     ) -> bool:
         # Generate current device fingerprint
         current_device = DeviceIdentifier.generate_device_info(request)
 
-        # Main verification: device hash must match
-        if current_device.device_id != jwt_device_data.get("di"):
-            # Optional fuzzy matching here if needed
-            return False
-
-        return True
+        return current_device.device_id == jwt_device_data.get("di")

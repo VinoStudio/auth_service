@@ -1,17 +1,18 @@
-from dishka import Scope, provide, Provider
+from dishka import Provider, Scope, provide
+
 from src.application.base.security import (
-    BaseJWTEncoder,
-    BaseJWTPayloadGenerator,
     BaseCookieManager,
+    BaseJWTEncoder,
     BaseJWTManager,
+    BaseJWTPayloadGenerator,
 )
-from src.application.services.security.jwt_manager import JWTManager
 from src.application.services.security.cookie_manager import CookieManager
 from src.application.services.security.jwt_encoder import JWTEncoder
+from src.application.services.security.jwt_manager import JWTManager
 from src.application.services.security.jwt_payload_generator import JWTPayloadGenerator
 from src.application.services.security.oauth_manager import (
-    OAuthProviderFactory,
     OAuthManager,
+    OAuthProviderFactory,
 )
 from src.infrastructure.repositories import TokenBlackListRepository
 from src.infrastructure.repositories.role.role_invalidation_repo import (
@@ -66,11 +67,11 @@ class JWTProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_oauth_providers(self, config: Config) -> OAuthProviderFactory:
         return OAuthProviderFactory(
-            providers=dict(
-                google=config.google_oauth,
-                yandex=config.yandex_oauth,
-                github=config.github_oauth,
-            )
+            providers={
+                "google": config.google_oauth,
+                "yandex": config.yandex_oauth,
+                "github": config.github_oauth,
+            }
         )
 
     oauth_provider = provide(OAuthManager, scope=Scope.REQUEST)

@@ -1,18 +1,17 @@
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from typing import Any, Dict, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
+from src.application import dto
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
-
-import src.application.dto as dto
 
 if TYPE_CHECKING:
     from src.application.base.security.jwt_user import JWTUserInterface
 
 
 @dataclass
-class BaseJWTManager:
+class BaseJWTManager(ABC):
     """
     Manages JWT authentication tokens including creation, validation, and revocation.
 
@@ -43,7 +42,6 @@ class BaseJWTManager:
         Returns:
             dto.TokenPair: Object containing both access_token and refresh_token
         """
-
         raise NotImplementedError
 
     @abstractmethod
@@ -71,12 +69,11 @@ class BaseJWTManager:
             response: The HTTP response object to which the cookie will be added
             token: The refresh token to store in the cookie
         """
-
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def get_access_token_from_request(request) -> str:
+    def get_access_token_from_request(request: RequestProtocol) -> str:
         """
         Extract and return the access token from the request's Authorization header.
 
@@ -92,7 +89,6 @@ class BaseJWTManager:
         Raises:
             AccessRejectedException: If the token is missing, empty, or incorrectly formatted
         """
-
         raise NotImplementedError
 
     @abstractmethod
@@ -124,7 +120,6 @@ class BaseJWTManager:
             TokenExpiredException: If the token has expired
             TokenValidationError: If the token cannot be decoded or is invalid
         """
-
         raise NotImplementedError
 
     @abstractmethod
@@ -151,7 +146,6 @@ class BaseJWTManager:
             TokenValidationError: If the current token is invalid
             AccessRejectedException: If the refresh token is missing from cookies
         """
-
         raise NotImplementedError
 
     @abstractmethod
@@ -170,5 +164,4 @@ class BaseJWTManager:
         Raises:
             JWTError: If the token cannot be decoded
         """
-
         raise NotImplementedError

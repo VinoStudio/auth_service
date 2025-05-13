@@ -1,110 +1,103 @@
-from dishka import Scope, provide, Provider, decorate
+from dishka import Provider, Scope, decorate, provide
 
-from src.application.base.event_publisher.event_dispatcher import BaseEventDispatcher
-from src.application.base.event_publisher.event_publisher import BaseEventPublisher
+from src.application.base.event_sourcing.event_consumer import BaseEventConsumer
+from src.application.base.event_sourcing.event_publisher import BaseEventPublisher
 from src.application.base.mediator.command import BaseCommandMediator
 from src.application.base.mediator.query import BaseQueryMediator
-from src.application.cqrs.user.events import UserCreatedEventHandler
-from src.application.event_handlers.event_dispatcher import EventDispatcher
-from src.application.event_handlers.event_publisher import EventPublisher
-from src.application.mediator.command_mediator import CommandMediator
-from src.application.mediator.query_mediator import QueryMediator
-from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
-
-from src.application.cqrs.user.commands import (
-    RegisterUserCommand,
-    RegisterUserCommandHandler,
-    RegisterOAuthUserCommand,
-    RegisterOAuthUserCommandHandler,
-    AddOAuthAccountRequestCommand,
-    AddOAuthAccountRequestCommandHandler,
-    AddOAuthAccountToCurrentUserCommand,
-    AddOAuthAccountToCurrentUserCommandHandler,
-    DeactivateUsersOAuthAccountCommand,
-    DeactivateUsersOAuthAccountCommandHandler,
-    LoginUserCommand,
-    LoginUserCommandHandler,
-    OAuthLoginUserCommand,
-    OAuthLoginUserCommandHandler,
-    LogoutUserCommand,
-    LogoutUserCommandHandler,
-    RefreshUserTokensCommand,
-    RefreshUserTokensCommandHandler,
-    ResetPasswordRequestCommand,
-    ResetPasswordRequestCommandHandler,
-    ResetUserPasswordCommand,
-    ResetUserPasswordCommandHandler,
-    ChangeEmailRequestCommand,
-    ChangeEmailRequestCommandHandler,
-    ChangeUserEmailCommand,
-    ChangeUserEmailCommandHandler,
-)
-
-from src.application.cqrs.role.commands import (
-    CreateRoleCommand,
-    CreateRoleCommandHandler,
-    AssignRoleCommand,
-    AssignRoleCommandHandler,
-    DeleteRoleCommand,
-    DeleteRoleCommandHandler,
-    RemoveRoleCommand,
-    RemoveRoleCommandHandler,
-    UpdateRoleSecurityLvlCommand,
-    UpdateRoleSecurityLvlCommandHandler,
-    UpdateRoleDescriptionCommand,
-    UpdateRoleDescriptionCommandHandler,
-    UpdateRolePermissionsCommand,
-    UpdateRolePermissionsCommandHandler,
-    RemoveRolePermissionsCommand,
-    RemoveRolePermissionsCommandHandler,
-)
-
 from src.application.cqrs.permission.commands import (
     CreatePermissionCommand,
     CreatePermissionCommandHandler,
     DeletePermissionCommand,
     DeletePermissionCommandHandler,
 )
-
+from src.application.cqrs.permission.queries import (
+    GetAllPermissionsHandler,
+    GetAllPermissionsQuery,
+)
+from src.application.cqrs.role.commands import (
+    AssignRoleCommand,
+    AssignRoleCommandHandler,
+    CreateRoleCommand,
+    CreateRoleCommandHandler,
+    DeleteRoleCommand,
+    DeleteRoleCommandHandler,
+    RemoveRoleCommand,
+    RemoveRoleCommandHandler,
+    RemoveRolePermissionsCommand,
+    RemoveRolePermissionsCommandHandler,
+    UpdateRoleDescriptionCommand,
+    UpdateRoleDescriptionCommandHandler,
+    UpdateRolePermissionsCommand,
+    UpdateRolePermissionsCommandHandler,
+    UpdateRoleSecurityLvlCommand,
+    UpdateRoleSecurityLvlCommandHandler,
+)
+from src.application.cqrs.role.queries import (
+    GetAllRolesHandler,
+    GetAllRolesQuery,
+)
+from src.application.cqrs.user.commands import (
+    AddOAuthAccountRequestCommand,
+    AddOAuthAccountRequestCommandHandler,
+    AddOAuthAccountToCurrentUserCommand,
+    AddOAuthAccountToCurrentUserCommandHandler,
+    ChangeEmailRequestCommand,
+    ChangeEmailRequestCommandHandler,
+    ChangeUserEmailCommand,
+    ChangeUserEmailCommandHandler,
+    DeactivateUsersOAuthAccountCommand,
+    DeactivateUsersOAuthAccountCommandHandler,
+    LoginUserCommand,
+    LoginUserCommandHandler,
+    LogoutUserCommand,
+    LogoutUserCommandHandler,
+    OAuthLoginUserCommand,
+    OAuthLoginUserCommandHandler,
+    RefreshUserTokensCommand,
+    RefreshUserTokensCommandHandler,
+    RegisterOAuthUserCommand,
+    RegisterOAuthUserCommandHandler,
+    RegisterUserCommand,
+    RegisterUserCommandHandler,
+    ResetPasswordRequestCommand,
+    ResetPasswordRequestCommandHandler,
+    ResetUserPasswordCommand,
+    ResetUserPasswordCommandHandler,
+)
+from src.application.cqrs.user.events import UserCreatedEventHandler
+from src.application.cqrs.user.events.internal.user_registered import (
+    UserRegisteredEventHandler,
+)
 from src.application.cqrs.user.queries import (
-    GetUserById,
-    GetUserByIdHandler,
-    GetUserByUsername,
-    GetUserByUsernameHandler,
     GetCurrentUser,
+    GetCurrentUserConnectedAccounts,
+    GetCurrentUserConnectedAccountsHandler,
     GetCurrentUserHandler,
-    GetCurrentUserRoles,
-    GetCurrentUserRolesHandler,
     GetCurrentUserPermissions,
     GetCurrentUserPermissionsHandler,
+    GetCurrentUserRoles,
+    GetCurrentUserRolesHandler,
     GetCurrentUserSession,
     GetCurrentUserSessionHandler,
     GetCurrentUserSessions,
     GetCurrentUserSessionsHandler,
-    GetCurrentUserConnectedAccounts,
-    GetCurrentUserConnectedAccountsHandler,
-    GetUserRoles,
-    GetUserRolesHandler,
+    GetUserById,
+    GetUserByIdHandler,
+    GetUserByUsername,
+    GetUserByUsernameHandler,
     GetUserPermissions,
     GetUserPermissionsHandler,
+    GetUserRoles,
+    GetUserRolesHandler,
     GetUsers,
     GetUsersHandler,
 )
-
-from src.application.cqrs.role.queries import (
-    GetAllRolesQuery,
-    GetAllRolesHandler,
-)
-
-from src.application.cqrs.permission.queries import (
-    GetAllPermissionsQuery,
-    GetAllPermissionsHandler,
-)
-
+from src.application.event_sourcing.event_consumer import EventConsumer
+from src.application.event_sourcing.event_publisher import EventPublisher
+from src.application.mediator.command_mediator import CommandMediator
+from src.application.mediator.query_mediator import QueryMediator
+from src.infrastructure.base.message_broker.producer import AsyncMessageProducer
 from src.infrastructure.message_broker.events import UserRegistered
-from src.application.cqrs.user.events.internal.user_registered import (
-    UserRegisteredEventHandler,
-)
 from src.infrastructure.message_broker.events.external.user_created import UserCreated
 
 
@@ -124,8 +117,8 @@ class MediatorProvider(Provider):
         return EventPublisher(_message_broker=message_broker)
 
     @provide(scope=Scope.APP)
-    async def get_event_dispatcher(self) -> BaseEventDispatcher:
-        return EventDispatcher()
+    async def get_event_dispatcher(self) -> BaseEventConsumer:
+        return EventConsumer()
 
 
 class MediatorConfigProvider(Provider):
@@ -147,7 +140,6 @@ class MediatorConfigProvider(Provider):
         add_oauth_account_request: AddOAuthAccountRequestCommandHandler,
         deactivate_users_oauth_account: DeactivateUsersOAuthAccountCommandHandler,
     ) -> BaseCommandMediator:
-
         command_mediator.register_command(RegisterUserCommand, [register_user])
         command_mediator.register_command(
             RegisterOAuthUserCommand, [register_oauth_user]
@@ -193,7 +185,6 @@ class MediatorConfigProvider(Provider):
         update_role_permissions: UpdateRolePermissionsCommandHandler,
         remove_role_permissions: RemoveRolePermissionsCommandHandler,
     ) -> BaseCommandMediator:
-
         command_mediator.register_command(CreateRoleCommand, [create_role])
         command_mediator.register_command(AssignRoleCommand, [assign_role])
         command_mediator.register_command(DeleteRoleCommand, [delete_role])
@@ -239,13 +230,12 @@ class MediatorConfigProvider(Provider):
     @decorate
     async def register_external_events(
         self,
-        event_dispatcher: BaseEventDispatcher,
+        event_consumer: BaseEventConsumer,
         user_created: UserCreatedEventHandler,
-    ) -> BaseEventDispatcher:
+    ) -> BaseEventConsumer:
+        event_consumer.register_handler(UserCreated, [user_created])
 
-        event_dispatcher.register_handler(UserCreated, [user_created])
-
-        return event_dispatcher
+        return event_consumer
 
     @decorate
     async def register_user_queries(
@@ -263,7 +253,6 @@ class MediatorConfigProvider(Provider):
         get_current_user_connected_accounts: GetCurrentUserConnectedAccountsHandler,
         get_users: GetUsersHandler,
     ) -> BaseQueryMediator:
-
         query_mediator.register_query(GetUserById, get_user_by_id)
         query_mediator.register_query(GetUserByUsername, get_user_by_username)
         query_mediator.register_query(GetCurrentUser, get_current_user)
@@ -288,7 +277,6 @@ class MediatorConfigProvider(Provider):
         query_mediator: BaseQueryMediator,
         get_roles: GetAllRolesHandler,
     ) -> BaseQueryMediator:
-
         query_mediator.register_query(GetAllRolesQuery, get_roles)
 
         return query_mediator
@@ -299,7 +287,6 @@ class MediatorConfigProvider(Provider):
         query_mediator: BaseQueryMediator,
         get_permissions: GetAllPermissionsHandler,
     ) -> BaseQueryMediator:
-
         query_mediator.register_query(GetAllPermissionsQuery, get_permissions)
 
         return query_mediator

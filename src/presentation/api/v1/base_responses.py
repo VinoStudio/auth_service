@@ -1,31 +1,29 @@
-import structlog
-from litestar.openapi.spec import Example
-from litestar.openapi.datastructures import ResponseSpec
-from typing import Type, List, Any, Dict, Optional, Tuple, Iterable
-
 import inspect
-import litestar.status_codes as status
 import re
+from collections.abc import Iterable
+from typing import Any
+
+import litestar.status_codes as status
+import structlog
+from litestar.openapi.datastructures import ResponseSpec
+from litestar.openapi.spec import Example
 
 from src.application.base.exception import ApplicationException
 from src.application.exceptions import (
-    TokenValidationError,
+    AccessDeniedException,
+    AccessRejectedException,
     TokenExpiredException,
     TokenRevokedException,
-    AccessRejectedException,
-    ValidationException,
-    AccessDeniedException,
+    TokenValidationError,
 )
 from src.domain.base.exceptions.application import AppException
-from src.domain.permission.exceptions import WrongPermissionNameFormatException
-from src.domain.role.exceptions.role import WrongRoleNameFormatException
 from src.infrastructure.base.exception import InfrastructureException
 from src.infrastructure.exceptions import (
-    RoleDoesNotExistException,
+    DatabaseException,
     PermissionDoesNotExistException,
+    RoleDoesNotExistException,
     UserDoesNotExistException,
     UserIsDeletedException,
-    DatabaseException,
 )
 from src.presentation.api.exception_configuration import ErrorResponse
 
@@ -44,18 +42,18 @@ class ExampleGenerator:
     """
 
     @staticmethod
-    def _get_param_info(exception_class: Type[Any]) -> Dict[str, Any]:
+    def _get_param_info(exception_class: type[Any]) -> dict[str, Any]:
         """Get parameter info from the class and its bases."""
         param_info = {"name": None, "required": False}
 
         # Check the exception class and its parent classes
-        classes_to_check = [exception_class] + list(exception_class.__mro__[1:])
+        classes_to_check = [exception_class, *exception_class.__mro__[1:]]
 
         for cls in classes_to_check:
             if hasattr(cls, "__annotations__"):
                 # Check dataclass field annotations
-                for name, _ in cls.__annotations__.items():
-                    if name != "message" and name != "return":  # Skip methods
+                for name in cls.__annotations__:
+                    if name not in ("message", "return"):  # Skip methods
                         param_info["name"] = name
                         param_info["required"] = True
                         return param_info
@@ -75,7 +73,7 @@ class ExampleGenerator:
 
     @staticmethod
     def _get_sample_value(
-        exception_class: Type[Any], param_name: Optional[str] = None
+        exception_class: type[Any], param_name: str | None = None
     ) -> Any:
         """Generate appropriate sample value based on exception class and parameter name."""
         name = exception_class.__name__
@@ -90,7 +88,7 @@ class ExampleGenerator:
             "PermissionInUseException": "Permission 'users:write' is assigned to 3 roles and cannot be deleted",
             "AccessDeniedException": "You do not have the required permissions for this operation",
             "AccessRejectedException": "You must be signed in to perform this operation",
-            "RoleCreationAccessDeniedException": "You cannot create a role with higher privileges than your current role",
+            "RoleCreationAccessDeniedException": "You cannot create a role with higher privileges than you have",
             "TokenRevokedException": "The refresh token has been revoked",
             "TokenExpiredException": "Your authentication token has expired",
             "WrongPasswordFormatException": "Password format is invalid",
@@ -146,7 +144,7 @@ class ExampleGenerator:
         return f"sample_{param_name}"
 
     @staticmethod
-    def _detect_status_code(exception_class: Type[Any]) -> int:
+    def _detect_status_code(exception_class: type[Any]) -> int:
         """Detect appropriate status code based on exception class name and hierarchy."""
         name = exception_class.__name__
         bases = [cls.__name__ for cls in exception_class.__mro__]
@@ -157,23 +155,19 @@ class ExampleGenerator:
             or "ResourceNotFoundException" in bases
         ):
             return 404
-        elif (
+        if (
             any(term in name for term in ["AlreadyExists", "InUse"])
             or "ResourceExistsException" in bases
         ):
             return 409
-        elif (
-            "Unauthorized" in name or "AccessDenied" in name or "RBACException" in bases
-        ):
+        if "Unauthorized" in name or "AccessDenied" in name or "RBACException" in bases:
             return 403
-        elif "Validation" in name or "WrongFormat" in name or "Invalid" in name:
+        if "Validation" in name or "WrongFormat" in name or "Invalid" in name:
             return 400
-        elif "Authentication" in name or "Token" in name:
-            if "Expired" in name or "Revoked" in name:
+        if "Authentication" in name or "Token" in name:
+            if "Expired" in name or "Revoked" in name or "Validation" in name:
                 return 401
-            elif "Validation" in name:
-                return 401
-            elif "RBAC" in name:
+            if "RBAC" in name:
                 return 403
 
         # Default fallback
@@ -181,8 +175,8 @@ class ExampleGenerator:
 
     @staticmethod
     def _create_example_instance(
-        exception_class: Type[Any],
-    ) -> Tuple[Optional[Any], Optional[str]]:
+        exception_class: type[Any],
+    ) -> tuple[Any | None, str | None]:
         """Create an instance of the exception with appropriate sample data.
         Returns a tuple of (instance, error_message) where error_message is None if successful.
         """
@@ -192,7 +186,7 @@ class ExampleGenerator:
         if not param_info["required"]:
             try:
                 return exception_class(), None
-            except Exception as e:
+            except (ValueError, IndexError) as e:
                 return None, str(e)
 
         sample_value = ExampleGenerator._get_sample_value(exception_class, param_name)
@@ -200,18 +194,17 @@ class ExampleGenerator:
         try:
             if param_name:
                 return exception_class(**{param_name: sample_value}), None
-            else:
-                return exception_class(), None
-        except Exception as e:
+            return exception_class(), None
+        except ValueError as e:
             return None, str(e)
 
     @staticmethod
     def _create_examples(
-        exception_classes: Type[Any] | Iterable[Type[Any]], status_code: int
-    ) -> List[Example]:
+        exception_classes: type[Any] | Iterable[type[Any]], status_code: int
+    ) -> list[Example]:
         """Internal method to generate examples with specified status code."""
         if not isinstance(exception_classes, tuple):
-            exception_classes = exception_classes
+            exception_classes = tuple(exception_classes)
 
         examples = []
 
@@ -237,7 +230,11 @@ class ExampleGenerator:
             else:
                 # Either creation failed or no message attribute
                 if error:
-                    print(f"Warning: Failed to create example for {name}: {error}")
+                    logger.warning(
+                        "Warning: Failed to create example for: ",
+                        name=name,
+                        error=error,
+                    )
 
                 # Use class name as fallback
                 value["detail"] = f"{readable_name} occurred"
@@ -254,39 +251,39 @@ class ExampleGenerator:
     # Public methods for specific status codes
 
     @staticmethod
-    def create_bad_request_examples(*exception_classes: Type[Any]) -> List[Example]:
+    def create_bad_request_examples(*exception_classes: type[Any]) -> list[Example]:
         """Generate examples for 400 Bad Request exceptions."""
         return ExampleGenerator._create_examples(exception_classes, 400)
 
     @staticmethod
-    def create_unauthorized_examples(*exception_classes: Type[Any]) -> List[Example]:
+    def create_unauthorized_examples(*exception_classes: type[Any]) -> list[Example]:
         """Generate examples for 401 Unauthorized exceptions."""
         return ExampleGenerator._create_examples(exception_classes, 401)
 
     @staticmethod
-    def create_forbidden_examples(*exception_classes: Type[Any]) -> List[Example]:
+    def create_forbidden_examples(*exception_classes: type[Any]) -> list[Example]:
         """Generate examples for 403 Forbidden exceptions."""
         return ExampleGenerator._create_examples(exception_classes, 403)
 
     @staticmethod
-    def create_not_found_examples(*exception_classes: Type[Any]) -> List[Example]:
+    def create_not_found_examples(*exception_classes: type[Any]) -> list[Example]:
         """Generate examples for 404 Not Found exceptions."""
         return ExampleGenerator._create_examples(exception_classes, 404)
 
     @staticmethod
-    def create_conflict_examples(*exception_classes: Type[Any]) -> List[Example]:
+    def create_conflict_examples(*exception_classes: type[Any]) -> list[Example]:
         """Generate examples for 409 Conflict exceptions."""
         return ExampleGenerator._create_examples(exception_classes, 409)
 
     @staticmethod
-    def create_server_error_examples(*exception_classes: Type[Any]) -> List[Example]:
+    def create_server_error_examples(*exception_classes: type[Any]) -> list[Example]:
         """Generate examples for 500 Server Error exceptions."""
         return ExampleGenerator._create_examples(exception_classes, 500)
 
     @staticmethod
     def create_examples_from_exceptions(
-        *exception_classes: Type[Any],
-    ) -> Dict[int, List[Example]]:
+        *exception_classes: type[Any],
+    ) -> dict[int, list[Example]]:
         """Automatically categorize exceptions by status code and generate examples."""
         result = {}
 
@@ -304,8 +301,8 @@ class ExampleGenerator:
 
     @staticmethod
     def create_examples_for_route(
-        exception_mapping: Dict[int, List[Type[Any]]],
-    ) -> Dict[int, List[Example]]:
+        exception_mapping: dict[int, list[type[Any]]],
+    ) -> dict[int, list[Example]]:
         """Generate examples for a route with predefined status codes and exceptions."""
         result = {}
 

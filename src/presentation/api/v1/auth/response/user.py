@@ -1,7 +1,10 @@
 from datetime import datetime
+from typing import Self
+
 from pydantic import BaseModel
 
-import src.domain as domain
+from src import domain
+
 
 class CreateUserResponseSchema(BaseModel):
     user_id: str
@@ -10,7 +13,7 @@ class CreateUserResponseSchema(BaseModel):
     is_deleted: datetime | None
 
     @classmethod
-    def from_entity(cls, user: domain.User):
+    def from_entity(cls, user: domain.User) -> Self:
         return cls(
             user_id=user.id.to_raw(),
             username=user.username.to_raw(),

@@ -1,17 +1,14 @@
 from functools import lru_cache
-from typing import AsyncGenerator
-from dishka import provide, Scope, Provider
+
 from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-    async_sessionmaker,
     AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
 )
 
 from src.settings.config import Config
-from src.settings.config import Config
 
-config = Config()
 
 @lru_cache(maxsize=1)
 async def build_engine(config: Config) -> AsyncEngine:
@@ -30,9 +27,3 @@ def build_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSessio
         expire_on_commit=False,
         autoflush=False,
     )
-
-# async def get_session() -> AsyncGenerator[AsyncSession, None]:
-#     engine = await build_engine(config)
-#     session_factory = build_session_factory(engine)
-#     async with session_factory() as session:
-#         yield session

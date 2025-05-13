@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
-from src.infrastructure.base.message_broker.base import MessageBroker
 from dataclasses import dataclass
+
 from aiokafka import AIOKafkaProducer
+
+from src.infrastructure.base.message_broker.base import MessageBroker
 
 
 @dataclass
-class AsyncMessageProducer(MessageBroker):
+class AsyncMessageProducer(MessageBroker, ABC):
     producer: AIOKafkaProducer
 
     @abstractmethod

@@ -1,7 +1,9 @@
-from src.application.base.security.jwt_encoder import BaseJWTEncoder
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Any
+
 from jose import jwt
+
+from src.application.base.security.jwt_encoder import BaseJWTEncoder
 
 
 @dataclass(frozen=True)
@@ -22,7 +24,7 @@ class JWTEncoder(BaseJWTEncoder):
     secret_key: str
     algorithm: str
 
-    def encode(self, payload: Dict[str, Any]) -> str:
+    def encode(self, payload: dict[str, Any]) -> str:
         """
         Encode a payload dictionary into a JWT token string.
 
@@ -37,7 +39,7 @@ class JWTEncoder(BaseJWTEncoder):
         """
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def decode(self, token: str) -> Dict[str, Any]:
+    def decode(self, token: str) -> dict[str, Any]:
         """
         Decode a JWT token string back into its payload dictionary.
 

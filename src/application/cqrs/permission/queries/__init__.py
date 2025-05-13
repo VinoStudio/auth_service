@@ -1,6 +1,6 @@
 from src.application.cqrs.permission.queries.get_all_permissions import (
-    GetAllPermissionsQuery,
     GetAllPermissionsHandler,
+    GetAllPermissionsQuery,
 )
 
-__all__ = ("GetAllPermissionsQuery", "GetAllPermissionsHandler")
+__all__ = ("GetAllPermissionsHandler", "GetAllPermissionsQuery")

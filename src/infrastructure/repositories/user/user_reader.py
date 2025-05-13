@@ -1,28 +1,24 @@
-from typing import Iterable, Sequence, Set, List
 from dataclasses import dataclass
+
+from sqlalchemy import Select, text
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy import text
 
-from src.application.dto.user import UserCredentials
-from src.infrastructure.db.models import User
-from src.infrastructure.exceptions.repository import (
-    UserDoesNotExistException,
-    UserWithUsernameDoesNotExistException,
-    UserWithEmailDoesNotExistException,
-    UserIsDeletedException,
-    OAuthUserDoesNotExistException,
-)
-from src.infrastructure.base.repository.base import SQLAlchemyRepository
+from src import domain
+from src.application import dto
 from src.infrastructure.base.repository import BaseUserReader
+from src.infrastructure.base.repository.base import SQLAlchemyRepository
+from src.infrastructure.db import models
+from src.infrastructure.exceptions.repository import (
+    OAuthUserDoesNotExistException,
+    UserDoesNotExistException,
+    UserIsDeletedException,
+    UserWithEmailDoesNotExistException,
+    UserWithUsernameDoesNotExistException,
+)
+from src.infrastructure.repositories.converters import OrmToDomainConverter
 from src.infrastructure.repositories.helpers import repository_exception_handler
 from src.infrastructure.repositories.pagination import Pagination
-from src.infrastructure.repositories.converters import OrmToDomainConverter
-from sqlalchemy import text
-
-import src.infrastructure.db.models as models
-import src.application.dto as dto
-import src.domain as domain
 
 
 @dataclass
@@ -85,11 +81,10 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
     async def get_user_by_oauth_provider_and_id(
         self, provider: str, provider_user_id: str
     ) -> domain.User:
-
         stmt = self.get_user().where(
             models.OAuthAccount.provider == provider,
             models.OAuthAccount.provider_user_id == provider_user_id,
-            models.OAuthAccount.is_active == True,
+            models.OAuthAccount.is_active,
         )
 
         result = await self._session.execute(stmt)
@@ -103,11 +98,10 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         return OrmToDomainConverter.user_to_domain(user)
 
     @repository_exception_handler
-    async def get_user_oauth_accounts(self, user_id: str) -> List[domain.OAuthAccount]:
-
+    async def get_user_oauth_accounts(self, user_id: str) -> list[domain.OAuthAccount]:
         stmt = select(models.OAuthAccount).where(
             models.OAuthAccount.user_id == user_id,
-            models.OAuthAccount.is_active == True,
+            models.OAuthAccount.is_active,
         )
         result = await self._session.execute(stmt)
         oauth_accounts = result.scalars().all()
@@ -118,24 +112,22 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         ]
 
     @repository_exception_handler
-    async def get_user_credentials_by_email_or_username(
-        self, email_or_username: str
-    ) -> dto.UserCredentials:
+    async def get_user_credentials_by_email(self, email: str) -> dto.UserCredentials:
         result = await self._session.execute(
             text(
                 """
                 SELECT u.id, u.username, u.jwt_data, u.hashed_password
                 FROM "user" u
-                WHERE (u.email = :email_or_username OR u.username = :email_or_username) and u.deleted_at is null
+                WHERE (u.email = :email) and u.deleted_at is null
                 """
             ),
-            {"email_or_username": email_or_username},
+            {"email": email},
         )
 
         fetched_user = result.fetchone()
 
         if fetched_user is None:
-            raise UserDoesNotExistException(email_or_username)
+            raise UserDoesNotExistException(email)
 
         return dto.UserCredentials(*fetched_user)
 
@@ -149,7 +141,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
                 SELECT u.id, u.jwt_data
                 FROM "user" u
                 JOIN oauthaccount oa ON u.id = oa.user_id
-                WHERE oa.provider = :provider_name 
+                WHERE oa.provider = :provider_name
                   AND oa.provider_user_id = :provider_user_id
                   AND u.deleted_at IS NULL
                   AND oa.is_active IS TRUE
@@ -172,7 +164,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         )
 
     @repository_exception_handler
-    async def get_all_users(self, pagination: Pagination) -> List[domain.User]:
+    async def get_all_users(self, pagination: Pagination) -> list[domain.User]:
         stmt = self.get_user().limit(pagination.limit).offset(pagination.offset)
 
         result = await self._session.execute(stmt)
@@ -183,6 +175,9 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
 
     @repository_exception_handler
     async def check_field_exists(self, field_name: str, value: str) -> bool:
+        if field_name not in ("username", "email"):
+            raise ValueError("Field must be either 'username' or 'email'")
+
         result = await self._session.execute(
             text(
                 f"""
@@ -191,7 +186,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
                     FROM "user"
                     WHERE {field_name} = :{field_name}
                 )
-                """
+                """  # noqa S608
             ),
             {field_name: value},
         )
@@ -206,9 +201,9 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         return await self.check_field_exists("email", email)
 
     @repository_exception_handler
-    async def get_user_roles_by_id(
+    async def get_user_roles_by_user_id(
         self, user_id: str, pagination: Pagination
-    ) -> Sequence[str]:
+    ) -> list[str]:
         query = text(
             """
             SELECT r.name
@@ -216,7 +211,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
             JOIN user_roles ur ON r.id = ur.role_id
             WHERE ur.user_id = :user_id
             ORDER BY r.security_level
-            LIMIT :limit 
+            LIMIT :limit
             OFFSET :offset
             """
         )
@@ -232,9 +227,9 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         return [row[0] for row in result.fetchall()]
 
     @repository_exception_handler
-    async def get_user_permissions(
+    async def get_user_permissions_by_user_id(
         self, user_id: str, pagination: Pagination
-    ) -> Set[str]:
+    ) -> set[str]:
         """Get all permission names that a user has through their roles."""
         query = text(
             """
@@ -243,8 +238,8 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
             JOIN role_permissions rp ON p.id = rp.permission_id
             JOIN user_roles ur ON rp.role_id = ur.role_id
             WHERE ur.user_id = :user_id
-            ORDER BY p.name
-            LIMIT :limit 
+            ORDER BY :order
+            LIMIT :limit
             OFFSET :offset
         """
         )
@@ -255,12 +250,13 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
                 "user_id": user_id,
                 "limit": pagination.limit,
                 "offset": pagination.offset,
+                "order": pagination.order,
             },
         )
         return {row[0] for row in result}
 
     @staticmethod
-    def get_user():
+    def get_user() -> Select:
         """Returns a base query with standard eager loading options for users"""
         return select(models.User).options(
             selectinload(models.User.roles).selectinload(models.Role.permissions),
@@ -269,7 +265,7 @@ class UserReader(SQLAlchemyRepository, BaseUserReader):
         )
 
     @staticmethod
-    def get_user_roles():
+    def get_user_roles() -> Select:
         """Returns a base query with standard eager loading options for user roles"""
         return select(models.Role).options(
             selectinload(models.User.roles).selectinload(models.Role.permissions),

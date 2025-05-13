@@ -1,17 +1,16 @@
 from typing import TYPE_CHECKING
 
-from src.infrastructure.db.models import BaseModel, UserMixin, TimedBaseModel
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Boolean, String, func, ForeignKey
 from uuid6 import uuid7
 
+from src.infrastructure.db.models import BaseModel, TimedBaseModel
+
 if TYPE_CHECKING:
-    from src.infrastructure.db.models import User
     from src.infrastructure.db.models import Role
 
 
 class RolePermissions(BaseModel):
-
     __tablename__ = "role_permissions"
 
     role_id: Mapped[str] = mapped_column(
@@ -38,8 +37,8 @@ class Permission(TimedBaseModel):
         lazy="noload",
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)

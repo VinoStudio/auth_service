@@ -1,29 +1,26 @@
 from dataclasses import dataclass
-from typing import Optional
 
-from src.application.base.session.session_manager import BaseSessionManager
+from src import domain
+from src.application import dto
+from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.base.interface.request import RequestProtocol
 from src.application.base.interface.response import ResponseProtocol
 from src.application.base.security import BaseJWTManager
+from src.application.base.session.session_manager import BaseSessionManager
 from src.application.dto.token import TokenPair
-from src.application.base.commands import BaseCommand, CommandHandler
 from src.application.exceptions import PasswordIsInvalidException
 from src.application.services.security.security_user import SecurityUser
+from src.domain.user.values import Password
 from src.infrastructure.base.repository import BaseUserReader
 from src.infrastructure.base.uow import UnitOfWork
-
-from src.domain.user.values import Password
-
-import src.domain as domain
-import src.application.dto as dto
 
 
 @dataclass(frozen=True)
 class LoginUserCommand(BaseCommand):
-    email_or_username: str
+    email: str
     password: str
-    request: Optional[RequestProtocol]
-    response: Optional[ResponseProtocol]
+    request: RequestProtocol | None
+    response: ResponseProtocol | None
 
 
 @dataclass(frozen=True)
@@ -35,9 +32,7 @@ class LoginUserCommandHandler(CommandHandler[LoginUserCommand, TokenPair]):
 
     async def handle(self, command: LoginUserCommand) -> TokenPair:
         user_credentials: dto.UserCredentials = (
-            await self._user_reader.get_user_credentials_by_email_or_username(
-                command.email_or_username
-            )
+            await self._user_reader.get_user_credentials_by_email(command.email)
         )
 
         user_pass = Password(user_credentials.hashed_password)
