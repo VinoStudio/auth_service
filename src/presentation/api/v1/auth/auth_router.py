@@ -242,7 +242,7 @@ class AuthController(Controller):
         "Session will be deactivated. "
         "Current user_id will be added to blacklist as a key and logout timestamp as a value.",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="User logged out",
                 data_container=Response,
                 examples=[

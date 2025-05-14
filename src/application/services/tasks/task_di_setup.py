@@ -8,5 +8,5 @@ class NotificationManagerProvider(Provider):
     @provide(scope=Scope.APP)
     async def get_notification_manager(self, config: Config) -> NotificationManager:
         return NotificationManager(
-            username=config.smtp.user,
+            notification_email=config.smtp.user,
         )
