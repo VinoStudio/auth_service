@@ -607,7 +607,7 @@ class AsyncKafkaProducer(AsyncMessageProducer):
 ```
 
 AsyncKafkaProducer produce message to Kafka topic. It is a part of application layer event sourcing logic
-witch we describe below in detail.
+which we describe below in detail.
 
 
 For multiple consumers, project implements `KafkaConsumerManager` class that contains `AsyncMessageConsumer` instances.
@@ -671,7 +671,7 @@ class AsyncKafkaConsumer(AsyncMessageConsumer):
         ...
 ```
 In current implementation, we receive message from Kafka topic. Convert it to Event Command instance and send it
-to Event Consumer witch handle the logic of processing the event. 
+to Event Consumer which handle the logic of processing the event. 
 
 Event Consumer in this example is a part of Event Sourcing that implemented in Application Layer.
 
@@ -810,9 +810,513 @@ class UserRegistered(IntegrationEvent):
 
 This project is a part of other microservice [user_service](https://github.com/VinoStudio/user_service/tree/main).
 Since user_service represents user profile data, it works with different values
-(first_name, last_name, middle_name, etc...) and auth_service does not need to store, 
+(first_name, last_name, middle_name, etc...) which auth_service does not need to store, 
 decision was made to split events.
 
+## Services
+
+### JWT Authentication & Security
+
+This project implements a comprehensive JWT-based authentication system with separate access and refresh tokens for secure API access.
+
+####  Security Module
+
+The security module provides a complete token management solution with the following key features:
+
+- Token pair generation (access and refresh tokens)
+- HTTP-only cookie management for refresh tokens
+- Automatic token refresh mechanism
+- Token revocation capabilities
+- Role-based access control with invalidation support
+
+#### JWT Manager
+
+The core component is JWTManager which orchestrates all token operations:
+
+``` python code
+@dataclass
+class JWTManager(BaseJWTManager):
+    payload_generator: BaseJWTPayloadGenerator  # Creates token payloads
+    jwt_encoder: BaseJWTEncoder                 # Handles encoding/decoding
+    cookie_manager: BaseCookieManager           # Manages HTTP cookies
+    blacklist_repo: TokenBlackListRepository    # Tracks revoked users
+    role_invalidation: RoleInvalidationRepository  # Manages role invalidation
+```
+
+The manager handles:
+
+- Creating new token pairs for authenticated users
+- Extracting tokens from requests (Authorization header for access or cookies for refresh tokens) 
+- Validating tokens (expiration, revocation, role validation)
+- Refreshing token pairs
+- Revoking user access
+
+#### Security User Interface
+
+The core component of Authorization in project. It contains all necessary data to user authentication received from
+access token payload (roles, permissions, security_lvl, identifier, device_id) for future access control.
+
+``` python code
+@dataclass
+class SecurityUser(JWTUserInterface):
+    id: str
+    roles: list[str]
+    permissions: list[str]
+    security_level: int | None = field(default=None)
+    device_id: str | None = field(default=None)
+    
+    ...
+        
+    @classmethod
+    def create_from_jwt_data(
+        cls, jwt_data: bytes, device_id: str | None = None
+    ) -> Self:
+        # Implementation...
+    
+    @classmethod
+    def create_from_token_dto(cls, token_dto: Token) -> Self:
+        # Implementation...
+    
+```
+
+#### How it works:
+
+As an example, lets take protected Authentication Bearer endpoint "assign_role" in rbac_router.
+It handles the AssignRoleCommand that follows to:
+
+``` python code
+@dataclass(frozen=True)
+class AssignRoleCommandHandler(CommandHandler[AssignRoleCommand, domain.User]):
+    _jwt_manager: BaseJWTManager
+    _rbac_manager: RBACManager
+    _user_reader: BaseUserReader
+    _blacklist_repo: TokenBlackListRepository
+    _uow: UnitOfWork
+
+    @authorization_required
+    async def handle(
+        self, command: AssignRoleCommand, security_user: SecurityUser
+    ) -> domain.User:
+        role: domain.Role = await self._rbac_manager.get_role(
+            role_name=command.role_name, request_from=security_user
+        )
+        ...
+```
+
+#### Authentication Flow:
+
+1. Client sends a request with a JWT Bearer token in the Authorization header
+2. The authorization_required decorator intercepts the request
+3. JWTManager extracts and validates the token
+4. If valid, a SecurityUser instance is created from the token payload
+5. The handler receives both the command and the authenticated SecurityUser
+6. Access control decisions can now be made based on user roles and permissions
+
+This pattern enforces security by:
+
+- Centralizing authentication logic
+- Preventing unauthenticated access
+- Making security context explicitly available to handlers
+- Separating authentication between presentation and application layers
+- Supporting role-based access control decisions
+
+
+#### OAuth Manager
+The project supports multiple OAuth providers through a factory-based system:
+
+``` python code
+@dataclass
+class OAuthManager:
+    oauth_provider_factory: OAuthProviderFactory
+    oauth_repo: OAuthAccountRepository
+    user_reader: BaseUserReader
+    ...
+    async def handle_oauth_callback(...) -> dto.OauthUserCredentials | dto.OAuthUserIdentity:
+        provider = self.oauth_provider_factory.get_provider(provider_name)
+        # Exchange code for tokens
+        oauth_tokens = self._convert_callback_to_token(
+            provider,
+            code,
+            state=state,
+        )
+        # Get user info from provider
+        user_info = self._get_provider_user_info(provider, oauth_tokens["access_token"])
+        # Find or create user in our system
+        result = await self._find_or_create_user(provider_name, user_info)
+
+        return result
+    ...
+```
+OAuth Features:
+
+- Multiple Provider Support: Integrates with various OAuth providers (Google, GitHub, etc.)
+- Complete OAuth Flow: Handles authorization URLs, callbacks, and token exchange
+- Account Association: Link/unlink multiple OAuth identities with current user account
+- Automatic User Creation: Creates new application users from OAuth profiles
+
+OAuth Workflow:
+1. Authentication Initiation:
+   - Generate provider-specific authorization URL
+   - Include state parameter for security
+
+2. Callback Processing:
+    - Exchange authorization code for tokens
+    - Retrieve user information from provider
+    - Find or create application user. Created data receives from provider, 
+if fields are missing or in conflict with existing data - generates random values.
+    - Provide application token pair(not OAuth pair) for authentication
+
+3. Account Operations:
+    - Associate OAuth identities with existing users
+    - Disconnect OAuth accounts from users
+    - Handle account reactivation
+
+### RBAC Management
+
+The Role-Based Access Control system provides fine-grained authorization through a hierarchical security model:
+
+``` python code
+@dataclass(eq=False)
+class RBACManager(BaseRBACManager):
+    role_repository: BaseRoleRepository
+    user_writer: BaseUserWriter
+    permission_repository: BasePermissionRepository
+    role_invalidation: RoleInvalidationRepository
+    system_roles: ClassVar[tuple[str]] = (...)
+    protected_permissions: ClassVar[tuple[str]] = (...)
+    ...
+    
+    @require_permission("role:create")
+    async def create_role(
+        self,
+        role_dto: dto.RoleCreation,
+        request_from: JWTUserInterface,
+    ) -> domain.Role: 
+      # Implementation...
+    @require_permission("role:update")
+    async def update_role(
+        self,
+        role: domain.Role,
+        request_from: JWTUserInterface,
+    ) -> domain.Role: 
+      # Implementation...
+      
+    ...
+    @require_permission("permission:create")
+    async def create_permission(
+        self,
+        permission_dto: dto.PermissionCreation,
+        request_from: JWTUserInterface,
+    ) -> domain.Permission:
+      # Implementation...
+```
+#### Permission-Based Authorization
+All RBAC operations are protected by permission checks using the @require_permission decorator:
+
+#### RBAC Features
+
+The RBAC system implements several security mechanisms:
+
+- Hierarchical Security Levels: 
+  - Higher-level roles can only be managed by users with equal or higher security clearance
+  - System roles can only be managed by system users (security_lvl = 0 or 1)
+  - User cant assign higher-level or own role to another user or to self
+  - User cant grant protected system permissions to roles (cls.protected_permissions)
+- Permission Validation: Ensures users can't grant permissions they don't possess to new roles
+- Role Invalidation: When roles change, existing jwt-tokens with those roles will be invalidated
+- Usage Tracking: Prevents deletion of roles/permissions that are still assigned
+
+#### RBAC workflow:
+1. JWT Manager validates the token and creates a SecurityUser
+2. The @require_permission decorator checks if the user has the required permission
+3. RBACManager performs additional security validations (security level, system role protection)
+4. If all checks pass, the requested operation is performed
+
+#### RBAC Implementation mentions:
+The current RBAC Manager builds a flexible, secure system offering hierarchical role-based access control.
+For example:
+- Owner (security_lvl = 0) can manage all system changes
+- CEO (security_lvl = 1), as owner's deputy, has nearly identical RBAC operations as the owner
+- Senior Manager (security_lvl = 2) has restricted rights compared to Owner or CEO and cannot elevate themselves to CEO level
+- Senior Managers can grant permissions to lower-level employees (security_lvl < 4 or 5) but cannot hire other Senior Managers or share their own permission level
+- Only members with the "assign:role" permission can hire/manage other employees
+
+While the current RBAC manager implementation is somewhat overcomplicated,
+it satisfies the complex requirements for hierarchical access control.
+The main limitation is that the RBAC configuration would need adaptation between different projects.
+The current implementation serves as an example
+of how such a system could work in a real project with predefined roles and permissions.
+
+### Session Management
+
+The system tracks user sessions across multiple devices with the SessionManager:
+``` python code
+@dataclass
+class SessionManager(BaseSessionManager):
+    session_repo: BaseSessionRepository
+    device_identifier: DeviceIdentifier
+    
+    async def get_or_create_session(
+        self, user_id: str, request: RequestProtocol
+    ) -> domain.Session | None:
+      # Implementation...
+
+    async def get_user_session(
+        self, user_id: str, device_id: str
+    ) -> domain.Session | None:
+      # Implementation...
+
+    async def deactivate_user_session(self, user_id: str, device_id: str) -> None:
+      # Implementation...
+
+    async def deactivate_session(self, session_id: str) -> None:
+      # Implementation...
+```
+
+#### Session Features
+
+- Device Fingerprinting: Uniquely identifies devices connecting to the system
+- Multi-device Support: Tracks and manages sessions across different devices for each user
+- Activity Tracking: Monitors and updates user activity timestamps
+- Selective Termination: Allows deactivation of specific sessions or all user sessions
+- Session collection: After logout sessions are deactivated, not deleted. It may be useful for analytics
+
+#### Session Lifecycle: 
+
+1. When a user authenticates, the system creates or retrieves a session for their device
+2. Each API request updates the session's last activity timestamp
+3. Sessions can be terminated individually or collectively
+4. Device information is stored with each session for user verification
+
+The session management system works seamlessly with JWT authentication to provide a complete security solution that handles both authentication (proving identity) and session state (tracking activity).
+
+#### Device Fingerprinting
+
+The DeviceIdentifier class creates unique device signatures:
+
+``` python code
+@dataclass
+class DeviceIdentifier:
+    @staticmethod
+    def generate_device_info(request: RequestProtocol) -> dto.DeviceInformation:
+    ...
+    @staticmethod
+    def verify_device(
+        request: RequestProtocol, jwt_device_data: dict[str, str]
+    ) -> bool:
+      # Implementation...
+```
+
+This component:
+- Parses user-agent strings to extract browser, OS, and device details
+- Combines request headers to create a unique device profile
+- Generates SHA-256 hash as a device identifier
+- Creates a simplified user agent string for readability
+
+#### Device Fingerprinting Limitations
+The idea of device fingerprinting is to enhance security by binding sessions to specific devices and detecting potential token theft across different browsers or computers. This will be validated through middleware (not implemented yet).
+
+However, the current implementation is too weak from a security perspective and requires refactoring. The key issue is that we need more complex data that only the legitimate user can possess. The current approach has several limitations:
+1. User-agent data only provides basic information about OS and browser families. While it includes version details, this creates another problem - when browser or OS versions update, the device identifier will change, causing users to lose access to the system.
+2. There's a significant risk that attackers could use the same OS and browser versions as the legitimate user, compromising the effectiveness of this approach.
+
+Why not include IP addresses in the device identifier? This is because many users don't have static IP addresses, and address changes would lead to system access loss, creating a poor user experience.
+
+### Notification System
+
+The notification system provides secure, asynchronous delivery of authentication-related communications:
+
+``` python code
+@dataclass(eq=False)
+class NotificationManager:
+    notification_email: str
+    ...
+    async def send_notification(
+        self,
+        notification_type: NotificationType,
+        email: str,
+        token: str | None,
+        username: str | None,
+    ) -> None:
+        # Implementation...
+```
+
+#### Notification Types
+
+The system supports various predefined notification types:
+- Password Reset: Sends verification links for password recovery
+- Email Change: Validates new email addresses before confirmation
+
+Each notification type has a standardized structure including:
+- Email subject
+- HTML template function
+- Asynchronous delivery task
+- Token requirements for verification links
+
+#### Asynchronous Processing with Celery
+
+Notifications are processed asynchronously via Celery tasks, ensuring that authentication operations aren't blocked by email delivery:
+
+``` python code
+celery = Celery(__name__, broker=config.redis.redis_url)
+
+@celery.task(
+    name="notifications.send_notification_email",
+    autoretry_for=(smtplib.SMTPException, ConnectionError),
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+    soft_time_limit=30,
+    time_limit=60,
+)
+def send_notification_email(self: Task, msg: bytes) -> None:
+    # Implementation...
+```
+
+The Celery configuration includes:
+- Redis as the message broker
+- Automatic retries with exponential backoff for failed deliveries
+- Configurable time limits to prevent hung tasks
+- Secure SMTP configuration for email delivery
+- Serialization settings for message handling
+
+This approach ensures reliable delivery of critical security notifications even when external email services experience temporary outages.
+
+## Dependency Injection
+
+The project uses the dishka framework to implement a robust dependency injection system,
+making components loosely coupled and highly testable.
+
+``` python code
+@lru_cache(maxsize=1)
+def get_container() -> AsyncContainer:
+    return make_async_container(
+        ConfigProvider(),
+        DatabaseProvider(),
+        JWTProvider(),
+        RBACProvider(),
+        # Additional providers...
+    )
+```
+
+#### Container Structure
+
+The DI container organizes dependencies into logical provider groups:
+
+- Infrastructure Providers - Database, repositories, message brokers
+- Service Providers - JWT, RBAC, session management, notifications
+- CQRS Providers - Commands, events, queries, mediators
+- Application Providers - Business logic components
+- 
+#### Provider Scopes
+
+Dependencies are managed with appropriate lifecycles:
+
+- Application scope - Single instances shared across the application
+- Request scope - New instances for each request
+
+This approach ensures services 
+like database connections are properly shared and disposed,
+while request-specific components remain isolated.
+
+#### Benefits of the DI system enables:
+- Clean separation of concerns
+- Simplified testing through component substitution
+- Centralized configuration management
+- Automatic dependency resolution
+
+## Presentation Layer
+### Simplified Authentication Workflow:
+
+```mermaid
+sequenceDiagram
+    title Authentication Workflow
+    participant Client
+    participant API
+    participant CQRS
+    participant DB as database
+
+    Note over Client, API: User Registration
+    Client ->> API: POST /auth/register {email, username, password etc...}
+    API ->> CQRS: Command(**received_data)
+    CQRS ->> DB: Insert new user 
+    CQRS->>API: Created User Data
+    API-->>Client: 201 • {user_id, username, created_at, is_deleted=false}
+
+    Note over Client, API: Login Process
+    Client->>API: POST /auth/login {email, password}
+    API->>CQRS: Command(**received_data, response)
+    CQRS->>DB: Verify credentials
+    DB->>CQRS: UserCredentials(DTO)
+    CQRS->>CQRS: Generate access + refresh.
+    CQRS->>CQRS: Create or update <br> existing session
+    CQRS->>DB: User Session
+    CQRS-->>API: Set-Cookie: refresh=jwt HttpOnly Secure SameSite=Strict
+    CQRS->>API: Access Token
+    API-->>Client: 201 • {access_token}
+    API-->>Client: Cookie: {refresh_token: refresh_token}
+
+    Note over Client, API: Refresh Process
+    Client->>API: POST /auth/refresh | Cookie: {refresh_token: refresh_token}
+    API ->> CQRS: Command(Response, Request)
+    CQRS->>CQRS: Validate refresh token <br> through Redis
+    CQRS->>CQRS: Generate & issue new pair
+    CQRS->>API: Access Token
+    CQRS-->>API: Set-Cookie: refresh=jwt HttpOnly Secure SameSite=Strict
+    API-->>Client: 200 • {access_token}
+    API-->>Client: Cookie: {refresh_token: refresh_token}
+
+    Note over Client, API: User Logout process
+    Client->>API: POST /auth/logout | Cookie: {refresh_token: refresh_token}
+    API->>CQRS: Command(Response, Request)
+    CQRS->>CQRS: Validate refresh token <br> through Redis
+    CQRS->>CQRS: Set key: user_id with current <br> time_stamp as a value into <br> redis(blacklist tokens)
+    CQRS->>CQRS: Delete refresh_token from cookie
+    CQRS->>DB: Set current session active=False
+    CQRS-->>API: Ok
+    API-->>Client: Response {Cookie: None, message: logged out} 
+```
+
+### User invalidation in detail in refresh process:
+
+```mermaid
+flowchart TD
+    A[POST /auth/refresh/ with Bearer Token in Header] --> B[API Layer]
+    B --> C[RefreshUserTokensCommandHandler]
+    C --> D[JWTManager.refresh_tokens]
+
+    D --> E{Refresh Token in Cookie?}
+    E -- No --> F[Raise AccessRejectedException]
+    E -- Yes --> G[Validate Refresh Token]
+
+    G --> H[Extract user_id and token_iat from Token]
+    H --> I{user_id in Redis?}
+    I -- Yes --> J[Get blacklisted_timestamp from Redis]
+    J --> K{token_iat < blacklisted_timestamp?}
+    K -- Yes --> L[Raise TokenRevokedException]
+    K -- No --> M[Extract roles from Token]
+
+    I -- No --> M
+
+    M --> N[For each role: check in Redis]
+    N --> O{role in Redis?}
+    O -- Yes --> P[Get role_revoked_timestamp]
+    P --> Q{token_iat < role_revoked_timestamp?}
+    Q -- Yes --> R[Raise TokenRevokedException]
+    Q -- No --> S[Continue]
+    O -- No --> S
+
+    S --> T[All roles validated]
+    T --> U[Generate new Access & Refresh Tokens]
+    U --> V[Set Refresh Token in Cookie]
+    V --> W[Return Access Token with 201 Created]
+
+    %% Exceptions
+    F -.-> X[User must login]
+    L -.-> X
+    R -.-> X
+```
 
 ### Mentions of Domain-Driven Design
 While this project follows Domain-Driven Design principles, we've made intentional trade-offs to optimize performance in critical paths while maintaining the core benefits of DDD.

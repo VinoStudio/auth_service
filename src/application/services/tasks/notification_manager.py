@@ -79,10 +79,10 @@ class NotificationManager:
     It uses async task processing for delivery.
 
     Attributes:
-        username: SMTP Email address used as the sender for notifications
+        notification_email: SMTP Email address used as the sender for notifications
     """
 
-    username: str
+    notification_email: str
 
     async def send_registration_notification(self, user_data: dict[str, str]) -> None:
         """
@@ -106,7 +106,7 @@ class NotificationManager:
             # Create email message
             msg = MIMEMultipart("alternative")
             msg["Subject"] = "Welcome to Our Platform!"
-            msg["From"] = self.username
+            msg["From"] = self.notification_email
             msg["To"] = user_data["email"]
 
             # Generate HTML content
@@ -168,7 +168,7 @@ class NotificationManager:
             # Create email message
             msg = MIMEMultipart("alternative")
             msg["Subject"] = notification_schema["subject"]
-            msg["From"] = self.username
+            msg["From"] = self.notification_email
             msg["To"] = email
 
             # Prepare template data

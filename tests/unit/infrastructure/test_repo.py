@@ -193,7 +193,7 @@ async def test_get_user_by_username(
         # Lookup by username
         found_user = await user_reader.get_user_by_username(username="username")
         assert found_user is not None
-        assert found_user.username.to_raw() == "username"
+        assert found_user.notification_email.to_raw() == "username"
         assert found_user.id.to_raw() == "user_id"
         assert found_user.deleted_at is None
         assert found_user.roles is not None
