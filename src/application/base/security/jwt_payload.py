@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from src.application.base.security import JWTUserInterface
+from src.application.base.security.jwt_user import JWTUserInterface
 
 
 @dataclass(frozen=True)

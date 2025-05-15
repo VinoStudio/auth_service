@@ -1,0 +1,16 @@
+services:
+  postgres_migration:
+    container_name: auth_service.postgres_migration
+    build:
+      context: ..
+    restart:
+      on-failure:5
+    env_file:
+      - ../.env
+    depends_on:
+      postgres_auth:
+        condition: service_healthy
+    volumes:
+      - ../src/infrastructure/db/migrations:/app/src/infrastructure/db/migrations:ro
+      - ../alembic.ini:/app/alembic.ini:ro
+    command: "python -m alembic upgrade head"

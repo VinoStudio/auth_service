@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from src.domain.base.entity.base import BaseEntity
 
 
-@dataclass
+@dataclass(eq=False)
 class OAuthAccount(BaseEntity):
     user_id: str
     provider: str

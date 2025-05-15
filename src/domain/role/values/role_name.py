@@ -8,7 +8,7 @@ ROLE_NAME_PATTER_REGEX = re.compile(r"^[a-z0-9_]{2,30}$")
 
 
 @dataclass(frozen=True)
-class RoleName(ValueObject):
+class RoleName(ValueObject[str]):
     value: str
 
     def _validate(self) -> None:

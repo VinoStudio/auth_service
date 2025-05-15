@@ -5,7 +5,7 @@ from src.domain.permission.entity.permission import Permission
 from src.domain.role.values.role_name import RoleName
 
 
-@dataclass
+@dataclass(eq=False)
 class Role(BaseEntity):
     name: RoleName
     description: str = field(default="", kw_only=True)

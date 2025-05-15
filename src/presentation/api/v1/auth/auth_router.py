@@ -132,7 +132,7 @@ class AuthController(Controller):
         "Refresh token is set into the cookie. "
         "Session will be created.",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="User logged in",
                 data_container=Response,
                 examples=[
@@ -187,6 +187,7 @@ class AuthController(Controller):
             tokens, *_ = await command_handler.handle_command(command)
 
             response.content = {"access_token": tokens.access_token}
+            response.status_code = status.HTTP_200_OK
 
             return response
 
@@ -199,7 +200,7 @@ class AuthController(Controller):
         "Access token is returned in the response body. "
         "Refresh token is set into the cookie.",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="Tokens successfully refreshed",
                 data_container=Response,
                 examples=[
@@ -229,6 +230,7 @@ class AuthController(Controller):
             tokens, *_ = await command_handler.handle_command(command)
 
             response.content = {"access_token": tokens.access_token}
+            response.status_code = status.HTTP_200_OK
 
             return response
 
@@ -273,6 +275,7 @@ class AuthController(Controller):
             await command_handler.handle_command(command)
 
             response.content = {"message": "Successfully logged out"}
+            response.status_code = status.HTTP_200_OK
 
             return response
 
@@ -284,7 +287,7 @@ class AuthController(Controller):
         "User must provide valid email address connected to his account. "
         "Email of password reset will be sent to user with generated token for operation confirmation.",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="Email of password reset has been sent",
                 data_container=Response,
                 examples=[
@@ -327,6 +330,7 @@ class AuthController(Controller):
             await command_handler.handle_command(command)
 
             response.content = {"message": "Email of password reset has been sent"}
+            response.status_code = status.HTTP_200_OK
 
             return response
 
@@ -338,7 +342,7 @@ class AuthController(Controller):
         "Front-end must provide token and new password. "
         "Token must be valid. User credentials will be found from token as key.",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="Password successfully has been reset",
                 data_container=Response,
                 examples=[
@@ -390,7 +394,7 @@ class AuthController(Controller):
         "Valid email address must be provided. "
         "Email of email change will be sent to user with generated token for operation confirmation.",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="Notification of email change has been sent",
                 data_container=Response,
                 examples=[
@@ -433,6 +437,7 @@ class AuthController(Controller):
             await command_handler.handle_command(command)
 
             response.content = {"message": "Notification of email change has been sent"}
+            response.status_code = status.HTTP_200_OK
 
             return response
 
@@ -443,7 +448,7 @@ class AuthController(Controller):
         description="Confirm email change with valid token and new email. "
         "Front-end must provide token and new email. ",
         responses={
-            status.HTTP_201_CREATED: ResponseSpec(
+            status.HTTP_200_OK: ResponseSpec(
                 description="Email successfully has been changed",
                 data_container=Response,
                 examples=[
@@ -484,5 +489,6 @@ class AuthController(Controller):
             await command_handler.handle_command(command)
 
             response.content = {"message": "Email successfully has been changed"}
+            response.status_code = status.HTTP_200_OK
 
             return response
