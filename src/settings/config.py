@@ -121,7 +121,7 @@ class JWTSettings(BaseSettings):
 class LoggingSettings(BaseSettings):
     render_json_logs: bool = False
     path: Path | None = None
-    level: str = "DEBUG"
+    level: str = "INFO"
 
 
 class SMTPSettings(BaseSettings):

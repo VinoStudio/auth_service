@@ -195,7 +195,7 @@ class ExampleGenerator:
             if param_name:
                 return exception_class(**{param_name: sample_value}), None
             return exception_class(), None
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             return None, str(e)
 
     @staticmethod

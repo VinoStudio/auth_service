@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, PrimaryKeyConstraint, String, text
+from sqlalchemy import ForeignKey, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
 
@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 class UserRoles(BaseModel):
     __tablename__ = "user_roles"
-    __table_args__ = (PrimaryKeyConstraint("user_id", "role_id"),)
 
     user_id: Mapped[str] = mapped_column(
         ForeignKey("user.id", ondelete="cascade", onupdate="cascade"),

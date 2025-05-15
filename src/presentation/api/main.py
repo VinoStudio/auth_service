@@ -36,7 +36,7 @@ def create_app() -> Litestar:
         middleware=[prometheus_config.middleware],
         openapi_config=OpenAPIConfig(
             title="Auth Microservice",
-            version="0.0.1",
+            version="1.0.0",
             description="Authentication and authorization service with JWT and OAuth",
             path="/docs",
             tags=[

@@ -5,7 +5,7 @@ from src.domain.base.entity.base import BaseEntity
 from src.domain.session.values.device_info import DeviceInfo
 
 
-@dataclass
+@dataclass(eq=False)
 class Session(BaseEntity):
     user_id: str
     user_agent: str

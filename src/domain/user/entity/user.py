@@ -15,7 +15,7 @@ from src.domain.user.exceptions import (
 from src.domain.user.values import Email, Password, UserId, Username
 
 
-@dataclass
+@dataclass(eq=False)
 class User(AggregateRoot):
     id: UserId
     username: Username

@@ -1,16 +1,103 @@
-## Project Setup
+## Dependencies
 
-1. Start the web app:
+#### Presentation:
+- [Litestar](https://litestar.dev/)
 
+#### Infrastructure:
+- [Postgres](https://www.postgresql.org/docs/current/index.html)
+- [Redis](https://redis.io/)
+- [Kafka](https://kafka.apache.org/)
+
+#### Observation:
+- [Prometheus](https://prometheus.io/)
+- [Alloy](https://github.com/alloy/alloy)
+- [Grafana](https://grafana.com/)
+- [Loki](https://grafana.com/loki/)
+
+#### Python Libs:
+- [Pydantic](https://pydantic-docs.helpmanual.io/)
+- [SQLAlchemy](https://www.sqlalchemy.org/)
+- [Alembic](https://alembic.sqlalchemy.org/en/latest/)
+- [Celery](https://docs.celeryq.dev/en/stable/)
+- [dishka](https://dishka.readthedocs.io/en/latest/)
+- [aiokafka](https://aiokafka.readthedocs.io/en/stable/)
+- [structlog](https://www.structlog.org/en/stable/)
+
+#### Deployment:
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+#### Formatting/Linting:
+- [black](https://black.readthedocs.io/en/stable/)
+- [ruff](https://beta.ruff.rs/docs/rules/)
+- [mypy](https://mypy.readthedocs.io/en/stable/)
+
+#### Project Manager:
+- [uv](https://docs.astral.sh/uv/)
+
+## Running the Application
+
+This project is containerized with Docker for easy setup and deployment. Follow these steps to get started:
+
+### Requirements:
+
+- Docker and Docker Compose installed on your system
+- Git (to clone the repository)
+
+### Setup: 
+1. Clone the repository:
+```bach
+git clone https://github.com/VinoStudio/auth_service.git
+cd [repo-directory]
+```
+2. Configure environment variables
+
+```bash
+cp .env.example .env
+```
+Edit the .env file with your preferred settings
+
+### Starting and Stopping the Application
+The application uses a Docker Compose setup with multiple services:
+1. Run the application:
 ```bash
 make app
 ```
 
-2. Run observation (grafana): 
-
+2. Run observation (grafana, alloy, loki, prometheus):
 ```bash
 make start_logs
 ```
+
+3. Stop application running containers by:
+```bash
+make down
+```
+
+4. Stop observation:
+```bash
+make stop-logs
+```
+
+### Accessing Services
+
+Once running, you can access:
+- Auth Service API: http://localhost:8002/docs
+- PgAdmin: http://localhost:5437
+
+You can change API port by editing the .env file
+To change PgAdmin, Postgres ports, edit the docker-compose.yaml
+
+### Troubleshooting
+If you encounter issues:
+```bash
+#View application logs in you terminal window:
+make logs
+
+#Access the application container:
+make app-exec
+```
+
 
 ## Architectural Overview
 
@@ -1038,7 +1125,8 @@ For example:
 - Owner (security_lvl = 0) can manage all system changes
 - CEO (security_lvl = 1), as owner's deputy, has nearly identical RBAC operations as the owner
 - Senior Manager (security_lvl = 2) has restricted rights compared to Owner or CEO and cannot elevate themselves to CEO level
-- Senior Managers can grant permissions to lower-level employees (security_lvl < 4 or 5) but cannot hire other Senior Managers or share their own permission level
+- Senior Managers can grant permissions to lower-level employees (security_lvl > 4 or 5)
+but cannot hire other Senior Managers or share their own permission level
 - Only members with the "assign:role" permission can hire/manage other employees
 
 While the current RBAC manager implementation is somewhat overcomplicated,
@@ -1227,6 +1315,38 @@ while request-specific components remain isolated.
 - Automatic dependency resolution
 
 ## Presentation Layer
+
+###### The presentation layer serves as the interface between clients and the application core, handling all HTTP requests and responses.
+
+![API](./screenshots/api.png)
+
+#### Components: 
+
+- Route Handlers: Implemented using Litestar controllers that map HTTP endpoints to application logic
+- Request/Response Models: Pydantic models ensuring type safety and validation
+
+### API Versioning
+
+The API is versioned (v1) to ensure backward compatibility as the application evolves:
+
+#### Feature Modules
+
+Each domain has its own dedicated module with:
+
+- Router: Defines endpoints and HTTP methods (e.g., user_router.py, auth_router.py)
+- Request Models: Input validation schemas (under request directories)
+- Response Models: Output formatting schemas (under response directories)
+
+#### Best Practices
+
+- Clear separation between HTTP concerns and business logic
+- Consistent error handling across all endpoints
+- Standardized response formats
+- Input validation before processing requests
+- Proper status codes and headers in responses
+
+## Project Workflow
+
 ### Simplified Authentication Workflow:
 
 ```mermaid
@@ -1254,7 +1374,7 @@ sequenceDiagram
     CQRS->>DB: User Session
     CQRS-->>API: Set-Cookie: refresh=jwt HttpOnly Secure SameSite=Strict
     CQRS->>API: Access Token
-    API-->>Client: 201 • {access_token}
+    API-->>Client: 200 • {access_token}
     API-->>Client: Cookie: {refresh_token: refresh_token}
 
     Note over Client, API: Refresh Process
@@ -1275,10 +1395,10 @@ sequenceDiagram
     CQRS->>CQRS: Delete refresh_token from cookie
     CQRS->>DB: Set current session active=False
     CQRS-->>API: Ok
-    API-->>Client: Response {Cookie: None, message: logged out} 
+    API-->>Client: 200 • Response {Cookie: None, message: logged out} 
 ```
 
-### User invalidation in detail in refresh process:
+### User validation process with /auth/refresh uri example:
 
 ```mermaid
 flowchart TD
@@ -1290,12 +1410,12 @@ flowchart TD
     E -- No --> F[Raise AccessRejectedException]
     E -- Yes --> G[Validate Refresh Token]
 
-    G --> H[Extract user_id and token_iat from Token]
+    G --> H[Extract user_id and token_iat from Token payload]
     H --> I{user_id in Redis?}
     I -- Yes --> J[Get blacklisted_timestamp from Redis]
     J --> K{token_iat < blacklisted_timestamp?}
     K -- Yes --> L[Raise TokenRevokedException]
-    K -- No --> M[Extract roles from Token]
+    K -- No --> M[Extract roles from Token payload]
 
     I -- No --> M
 

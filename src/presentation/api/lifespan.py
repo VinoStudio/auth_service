@@ -57,18 +57,16 @@ async def consume_in_background() -> None:
     await consumer_manager.start_consuming()
 
 
-async def create_tables() -> None:
-    container = get_container()
-    engine = await container.get(AsyncEngine)
-    async with engine.begin() as e:
-        await e.run_sync(BaseModel.metadata.create_all)
+# async def create_tables() -> None:
+#     container = get_container()
+#     engine = await container.get(AsyncEngine)
+#     async with engine.begin() as e:
+#         await e.run_sync(BaseModel.metadata.create_all)
 
 
 async def dispose_engine() -> None:
     container = get_container()
     engine = await container.get(AsyncEngine)
-    async with engine.begin() as e:
-        await e.run_sync(BaseModel.metadata.drop_all)
     await engine.dispose()
 
 
@@ -77,7 +75,6 @@ async def lifespan(_app: Litestar) -> AsyncGenerator[None, None]:
     create_kafka_topic()
     configure_logging()
 
-    await create_tables()
     await seed_roles_and_permissions()
     await init_message_broker()
     await start_kafka_consumers()
